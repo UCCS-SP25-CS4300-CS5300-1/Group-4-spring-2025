@@ -24,7 +24,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure--*9gky9w%c4c%zw@q90zx-_yiex1@oqy^$!l(m7r9$%x5e5e^z'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = 'DEBUG' in os.environ
+DEBUG = True if not 'PRODUCTION' in os.environ else False
 
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', '.fly.dev', 'group-4-spring-2025.fly.dev']
 
@@ -39,6 +39,9 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'home',
+    'users',
+    'crispy_forms',
+    'crispy_bootstrap5',
 ]
 
 MIDDLEWARE = [
@@ -79,7 +82,7 @@ WSGI_APPLICATION = 'myproject.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join('/app/database', 'db.sqlite3') if not DEBUG else BASE_DIR / 'db.sqlite3',
+        'NAME': os.path.join('/app/database', 'db.sqlite3') if 'PRODUCTION' in os.environ else BASE_DIR / 'db.sqlite3',
     }
 }
 
@@ -130,3 +133,9 @@ MEDIA_ROOT = BASE_DIR / 'mediafiles'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
+CRISPY_TEMPLATE_PACK = "bootstrap5"
+
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/'

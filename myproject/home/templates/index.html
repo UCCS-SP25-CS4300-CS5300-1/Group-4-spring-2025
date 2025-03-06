@@ -19,21 +19,40 @@
                 <li><a href="#contact">Contact</a></li>
             </ul>
             <div class="auth-buttons">
-                <a href="#" class="login-btn">Login</a>
-                <a href="#" class="signup-btn">Sign Up</a>
+                {% if user.is_authenticated %}
+                    <span class="user-greeting">Hello, {{ user.username }}</span>
+                    <a href="{% url 'logout' %}" class="logout-btn">Logout</a>
+                {% else %}
+                    <a href="{% url 'login' %}" class="login-btn">Login</a>
+                    <a href="{% url 'register' %}" class="signup-btn">Sign Up</a>
+                {% endif %}
             </div>
         </nav>
         <div class="hero">
             <div class="hero-content">
                 <h1>AI-Powered Job Search Automation</h1>
                 <p>Let artificial intelligence find and apply to the perfect jobs for you, while you focus on preparing for interviews.</p>
-                <a href="#" class="cta-button">Get Started For Free</a>
+                {% if user.is_authenticated %}
+                    <a href="#" class="cta-button">View Dashboard</a>
+                {% else %}
+                    <a href="{% url 'register' %}" class="cta-button">Get Started For Free</a>
+                {% endif %}
             </div>
             <div class="hero-image">
                 <img src="{% static 'images/job-search.jpg' %}" alt="Job search illustration">
             </div>
         </div>
     </header>
+    
+    {% if messages %}
+    <div class="messages-container">
+        {% for message in messages %}
+            <div class="message {{ message.tags }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    </div>
+    {% endif %}
     
     <main>
         <section id="features" class="features">
