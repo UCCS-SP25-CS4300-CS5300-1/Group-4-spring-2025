@@ -1,24 +1,54 @@
+{% extends 'base.html' %}
 {% load static %}
 {% block title %}
-<title>Dashboard</title>
+Dashboard
 {% endblock %}
-<table style="width:100%;">
-    <tr>
-        <td>Search Term</td>
-        <td>Job Title</td>
-        <td>Link</td>
-        <td>Progress</td>
-    </tr>
-    <tr>
-        <td>&nbsp</td>
-        <td>&nbsp</td>
-        <td>&nbsp</td>
-        <td>&nbsp</td>
-    </tr>
-    <tr>
-        <td>&nbsp</td>
-        <td>&nbsp</td>
-        <td>&nbsp</td>
-        <td>&nbsp</td>
-    </tr>
-</table>
+
+{% block content %}
+<div class="container">
+
+    <div class="d-flex justify-content-end" style="padding-top: 20px;">
+        {% if linkedIn_username %}
+            <p>LinkedIn Username: {{ linkedIn_username }}</p>
+        {% else %}
+            <p> LinkedIn Username: None Given</p>
+        {% endif %}
+    </div>
+
+    <div style="padding-top: 15px;">
+        <form method="POST" action="" class="d-flex flex-row mb-3 justify-content-end">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <input type="submit" value="Search" style="margin-left: 20px; height: 28px;">
+            
+        </form>
+    </div>
+
+
+
+    <br/>
+    <br/>
+    <div class="">
+        <table style="width:100%;">
+            <tr>
+                <td>Search Term</td>
+                <td>Job Title</td>
+                <td>Link</td>
+                <td>Progress</td>
+            </tr>
+            <tr>
+                <td>&nbsp</td>
+                <td>&nbsp</td>
+                <td>&nbsp</td>
+                <td>&nbsp</td>
+            </tr>
+            <tr>
+                <td>&nbsp</td>
+                <td>&nbsp</td>
+                <td>&nbsp</td>
+                <td>&nbsp</td>
+            </tr>
+        </table>
+    </div>
+</div>
+{% endblock %}
