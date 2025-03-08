@@ -2,6 +2,13 @@ from django.shortcuts import render
 
 def index(request):
     context = {}
-    if(request.user.is_authenticated):
+    if request.user.is_authenticated:
         context['user'] = request.user
-    return render(request, 'home/templates/index.html', context)
+    return render(request, 'index.html', context)
+
+
+def dashboard(request):
+
+    context = {}
+
+    return render(request, 'dashboard.html', context)
