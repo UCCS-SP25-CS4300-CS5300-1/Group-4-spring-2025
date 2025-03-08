@@ -1,7 +1,7 @@
 asgiref==3.8.1
 coverage==7.6.12
 crispy-bootstrap5==2024.10
-Django==5.2a1
+Django==4.2.20
 django-crispy-forms==2.3
 gunicorn==23.0.0
 packaging==24.2

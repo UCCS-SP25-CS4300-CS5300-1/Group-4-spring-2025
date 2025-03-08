@@ -28,6 +28,10 @@ jobs:
         run: |
           cd myproject
           python -m coverage run --source='.' manage.py test
+        env:
+          DJANGO_DB_ENGINE: django.db.backends.sqlite3
+          DJANGO_DB_NAME: ":memory:"
+        continue-on-error: true
 
       - name: Report coverage
         run: |

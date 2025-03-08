@@ -9,9 +9,9 @@ NC='\033[0m'
 echo -e "${BLUE}=========== Installing coverage package ===========${NC}"
 ## other pips cause fucking issues
 if(command -v pip3 &> /dev/null); then
-    pip3 install coverage
+    pip3 install -r requirements.txt
 elif(command -v pip &> /dev/null); then
-    pip install coverage
+    pip install -r requirements.txt
 else
     echo -e "${RED}Error: Could not find pip or pip3. Please install pip first.${NC}"
     exit 1
@@ -21,7 +21,11 @@ echo -e "${BLUE}=========== Running tests with coverage ===========${NC}"
 cd myproject
 
 ## Try different ways of running coverage
-if(command -v python3 &> /dev/null); then
+if [ "$(expr substr $(uname -s) 1 5)" == "MINGW" ] || [ "$(expr substr $(uname -s) 1 4)" == "MSYS" ]; then
+    ## Windows-specific commands
+    echo -e "${BLUE}Running on Windows...${NC}"
+    py -m coverage run --source='.' manage.py test
+elif(command -v python3 &> /dev/null); then
     python3 -m coverage run --source='.' manage.py test
 elif(command -v python &> /dev/null); then
     python -m coverage run --source='.' manage.py test
@@ -31,14 +35,20 @@ else
 fi
 
 echo -e "${BLUE}=========== Coverage Report ===========${NC}"
-if(command -v python3 &> /dev/null); then
+if [ "$(expr substr $(uname -s) 1 5)" == "MINGW" ] || [ "$(expr substr $(uname -s) 1 4)" == "MSYS" ]; then
+    ## Windows-specific commands
+    py -m coverage report
+elif(command -v python3 &> /dev/null); then
     python3 -m coverage report
 else
     python -m coverage report
 fi
 
 echo -e "${BLUE}=========== Generating HTML Coverage Report ===========${NC}"
-if(command -v python3 &> /dev/null); then
+if [ "$(expr substr $(uname -s) 1 5)" == "MINGW" ] || [ "$(expr substr $(uname -s) 1 4)" == "MSYS" ]; then
+    ## Windows-specific commands
+    py -m coverage html
+elif(command -v python3 &> /dev/null); then
     python3 -m coverage html
 else
     python -m coverage html
