@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -36,7 +36,7 @@ jobs:
           python -m coverage xml
 
       - name: Archive code coverage results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: code-coverage-report
           path: myproject/htmlcov/
