@@ -3,7 +3,8 @@
 
 ## Live Site
 
-live site: [https://group-4-spring-2025.fly.dev/](https://group-4-spring-2025.fly.dev/)
+live site (prod): [https://applierpilot.ai/](https://applierpilot.ai/)
+live site (dev): [https://group-4-spring-2025.fly.dev/](https://group-4-spring-2025.fly.dev/)
 
 ### Local Development Setup
 

@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure--*9gky9w%c4c%zw@q90zx-_yiex1@oqy^$!l(m7r9$%x5e5e^z
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True if not 'PRODUCTION' in os.environ else False
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '.fly.dev', 'group-4-spring-2025.fly.dev']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '.fly.dev', 'group-4-spring-2025.fly.dev', 'applierpilot.com', 'www.applierpilot.com']
 
 
 # Application definition
