@@ -1,7 +1,13 @@
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
 from django.shortcuts import render, redirect
 from django.contrib.auth import login, authenticate, logout
 from django.contrib import messages
-from .forms import UserRegistrationForm, UserLoginForm
+from django.views import generic
+
+from .forms import UserRegistrationForm, UserLoginForm, EditProfileForm
+from .models import Profile
+
 
 def register_view(request):
     if(request.method == 'POST'):
@@ -40,3 +46,24 @@ def logout_view(request):
     logout(request)
     messages.info(request, "You have successfully logged out.")
     return redirect('index')
+
+@login_required
+def update_user(request):
+    if request.method == 'POST':
+        profile_form = EditProfileForm(request.POST, request.FILES, instance=request.user.profile)
+
+        if profile_form.is_valid():
+            profile_form.save()
+            messages.success(request, f"Your account has been updated.")
+            return redirect('index')
+    else:
+        profile_form = EditProfileForm(instance=request.user.profile)
+
+    return render(request, 'edit_profile.html', {'form': profile_form})
+"""
+class EditProfilePageView(generic.UpdateView):
+    model = Profile
+    template_name = 'edit_profile.html'
+    fields = ['avatar', 'linkedIn_username', 'linkedIn_password']
+    success_url = '/'
+"""
