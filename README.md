@@ -52,6 +52,14 @@ This will generate a coverage report showing what percentage of the code is cove
 
 The report will be available in HTML format at `myproject/htmlcov/index.html`.
 
+### CI Pipeline
+
+The project uses GitHub Actions for CI with the following features:
+
+1. **Automated Testing**: Tests run on every commit and pull request
+2. **Coverage Reporting**: Test coverage metrics are reported in the console
+3. **AI Code Review**: Pull requests are automatically reviewed using OpenAI's GPT-o3-mini
+
 ### Docker Local Testing
 
 1. Build the Docker image:
