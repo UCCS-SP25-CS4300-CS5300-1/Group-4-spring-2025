@@ -4,9 +4,10 @@ from django.shortcuts import render, redirect
 from django.contrib.auth import login, authenticate, logout
 from django.contrib import messages
 from django.views import generic
+from pypdf import PdfReader
 
-from .forms import UserRegistrationForm, UserLoginForm, EditProfileForm
-from .models import Profile
+from .forms import UserRegistrationForm, UserLoginForm, EditProfileForm, ResumeUploadForm
+from .models import Profile, Resume
 
 
 def register_view(request):
@@ -60,6 +61,26 @@ def update_user(request):
         profile_form = EditProfileForm(instance=request.user.profile)
 
     return render(request, 'edit_profile.html', {'form': profile_form})
+
+def upload_resume(request):
+    if request.method == 'POST':
+        resume_form = ResumeUploadForm(request.POST, request.FILES)
+
+        if resume_form.is_valid():
+            resume_instance = resume_form.save()
+            file = resume_instance.resume
+
+            reader = PdfReader(file)
+            page = reader.pages[0]
+            text = page.extract_text()
+            message = f"The first 10 characters of the text from your resume is {text[:10]}"
+
+            return render(request, 'upload_resume.html', {'form': resume_form, 'message': message})
+    else:
+        resume_form = ResumeUploadForm()
+
+    return render(request, 'upload_resume.html', {'form': resume_form})
+
 """
 class EditProfilePageView(generic.UpdateView):
     model = Profile
