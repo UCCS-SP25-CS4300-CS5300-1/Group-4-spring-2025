@@ -1,8 +1,14 @@
+import os
+from io import BytesIO
+from pypdf import PdfWriter
 from django.test import TestCase, Client
 from django.urls import reverse, resolve
+from django.conf import settings
 from django.contrib.auth.models import User
-from .forms import UserRegistrationForm, UserLoginForm
-from .models import get_user_by_email
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.core.files.storage import default_storage
+from .forms import UserRegistrationForm, UserLoginForm, ResumeUploadForm
+from .models import Resume, get_user_by_email
 from .signals import user_created_callback
 from .views import login_view, register_view, logout_view
 
@@ -68,6 +74,23 @@ class UserLoginFormTest(TestCase):
             'password': 'StrongTestPass123',
         })
         self.assertFalse(form.is_valid())
+
+class ResumeUploadFormTest(TestCase):
+    def test_resume_upload_valid_pdf(self):
+        form = ResumeUploadForm(data={})
+        form.files['resume'] = SimpleUploadedFile("resume.pdf", b"%PDF-1.4 lorem ipsum", content_type="application/pdf")
+        self.assertTrue(form.is_valid())
+
+    def test_resume_upload_invalid_pdf(self):
+        form = ResumeUploadForm(data={})
+        form.files['resume'] = SimpleUploadedFile("resume.txt", b"lorem ipsum", content_type="text/plain")
+        self.assertFalse(form.is_valid())   
+        self.assertEqual(form.errors['resume'], ['The file must be in PDF format.'])
+
+    def test_resume_upload_no_file(self):
+        form = ResumeUploadForm(data={})
+        self.assertFalse(form.is_valid())   
+        self.assertEqual(form.errors['resume'], ['This field is required.'])        
 
 class UserViewsTest(TestCase):
     def setUp(self):
@@ -142,6 +165,26 @@ class UserViewsTest(TestCase):
         response = self.client.get(self.home_url)
         self.assertFalse(response.wsgi_request.user.is_authenticated)
 
+class ResumeViewTest(TestCase):
+    def test_upload_resume_POST_valid(self):
+        writer = PdfWriter() 
+        writer.add_page(writer.add_blank_page(width=210, height=297))
+
+        written_file = BytesIO()
+        writer.write(written_file)
+        written_file.seek(0) # go to start of file
+        uploaded_file = SimpleUploadedFile("some_resume.pdf", written_file.read(), content_type="application/pdf")
+
+        response = self.client.post(reverse('upload_resume'), {'resume': uploaded_file})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "The first 10 characters of the text from your resume is")
+        os.remove(os.path.join(settings.MEDIA_ROOT, 'resumes', "some_resume.pdf"))
+
+    def test_upload_resume_GET_valid(self):
+        response = self.client.get(reverse('upload_resume'))
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn('message', response.context)
+
 class UserAuthenticationTest(TestCase):
     def setUp(self):
         self.client = Client()
@@ -162,7 +205,7 @@ class UserAuthenticationTest(TestCase):
         response = self.client.get(self.home_url)
         self.assertContains(response, 'Login')
         self.assertContains(response, 'Sign Up')
-        self.assertNotContains(response, 'Hello, testuser')
+        self.assertNotContains(response, 'Hello, testuser')      
 
 class UserModelTest(TestCase):
     def setUp(self):
@@ -191,6 +234,16 @@ class UserModelTest(TestCase):
     def test_user_string_representation(self):
         """Test the string representation of a user"""
         self.assertEqual(str(self.user), self.user.username)
+
+class ResumeModelTest(TestCase):
+    def test_resume_upload(self):
+        file = SimpleUploadedFile("some_resume.pdf", b"%PDF-1.4 lorem ipsum", content_type="application/pdf")
+        resume = Resume.objects.create(resume=file)
+        self.assertEqual(resume.resume.name, 'resumes/some_resume.pdf')
+        self.assertTrue(os.path.exists(resume.resume.path))
+        self.assertIsNotNone(resume.uploaded_at)
+        self.assertEqual(str(resume), "Resume 1")
+        resume.resume.delete()
 
 class UserSignalsTest(TestCase):
     def test_user_created_callback(self):
@@ -225,3 +278,4 @@ class UserUrlsTest(TestCase):
     def test_logout_url_resolves_to_logout_view(self):
         url = reverse('logout')
         self.assertEqual(resolve(url).func, logout_view)
+
