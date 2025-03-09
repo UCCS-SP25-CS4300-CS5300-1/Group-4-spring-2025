@@ -9,7 +9,6 @@ class Profile(models.Model):
     linkedIn_username = models.CharField(max_length=100)
     linkedIn_password = models.CharField(max_length=100)
 
-
     def __str__(self):
         return self.user.username
 
@@ -21,3 +20,10 @@ def get_user_by_email(email):
         return User.objects.get(email=email)
     except User.DoesNotExist:
         return None
+
+class Resume(models.Model):
+    resume = models.FileField(upload_to='resumes/')
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Resume {self.id}"  
