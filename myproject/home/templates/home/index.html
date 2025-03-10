@@ -21,6 +21,7 @@
             <div class="auth-buttons">
                 {% if user.is_authenticated %}
                     <span class="user-greeting">Hello, {{ user.username }}</span>
+                    <a href="{% url 'profile' %}" class="profile-btn">My Profile</a>
                     <a href="{% url 'logout' %}" class="logout-btn">Logout</a>
                 {% else %}
                     <a href="{% url 'login' %}" class="login-btn">Login</a>

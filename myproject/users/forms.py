@@ -48,11 +48,3 @@ class ResumeUploadForm(forms.ModelForm):
                 raise ValidationError("The file must be in PDF format.")
             
         return resume
-
-"""
-class UpdateProfileForm(forms.ModelForm):
-    avatar = forms.ImageField(widget=forms.FileInput(attrs={'class': 'form-control-file'}))
-    linkedIn_username = forms.CharField(label='LinkedIn username')
-    linkedIn_password = forms.CharField(max_length=32, widget=forms.PasswordInput)
-"""
-
