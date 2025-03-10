@@ -21,7 +21,7 @@ def register_view(request):
     else:
         form = UserRegistrationForm()
     
-    return render(request, 'register.html', {'form': form})
+    return render(request, 'users/register.html', {'form': form})
 
 def login_view(request):
     if(request.method == 'POST'):
@@ -41,7 +41,7 @@ def login_view(request):
     else:
         form = UserLoginForm()
     
-    return render(request, 'login.html', {'form': form})
+    return render(request, 'users/login.html', {'form': form})
 
 def logout_view(request):
     logout(request)
@@ -60,7 +60,7 @@ def update_user(request):
     else:
         profile_form = EditProfileForm(instance=request.user.profile)
 
-    return render(request, 'edit_profile.html', {'form': profile_form})
+    return render(request, 'users/edit_profile.html', {'form': profile_form})
 
 def upload_resume(request):
     if request.method == 'POST':
@@ -75,11 +75,11 @@ def upload_resume(request):
             text = page.extract_text()
             message = f"The first 10 characters of the text from your resume is {text[:10]}"
 
-            return render(request, 'upload_resume.html', {'form': resume_form, 'message': message})
+            return render(request, 'users/upload_resume.html', {'form': resume_form, 'message': message})
     else:
         resume_form = ResumeUploadForm()
 
-    return render(request, 'upload_resume.html', {'form': resume_form})
+    return render(request, 'users/upload_resume.html', {'form': resume_form})
 
 """
 class EditProfilePageView(generic.UpdateView):

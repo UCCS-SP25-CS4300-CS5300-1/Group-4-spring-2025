@@ -109,7 +109,7 @@ class UserViewsTest(TestCase):
     def test_register_view_GET(self):
         response = self.client.get(self.register_url)
         self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, 'register.html')
+        self.assertTemplateUsed(response, 'users/register.html')
     
     def test_register_view_POST_valid(self):
         response = self.client.post(self.register_url, {
@@ -130,13 +130,13 @@ class UserViewsTest(TestCase):
             'password2': 'NewUserPass123',
         })
         self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, 'register.html')
+        self.assertTemplateUsed(response, 'users/register.html')
         self.assertFalse(User.objects.filter(email='newuser@example.com').exists())
     
     def test_login_view_GET(self):
         response = self.client.get(self.login_url)
         self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, 'login.html')
+        self.assertTemplateUsed(response, 'users/login.html')
     
     def test_login_view_POST_valid(self):
         response = self.client.post(self.login_url, {
@@ -153,7 +153,7 @@ class UserViewsTest(TestCase):
             'password': 'WrongPassword',
         })
         self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, 'login.html')
+        self.assertTemplateUsed(response, 'users/login.html')
         self.assertFalse(response.wsgi_request.user.is_authenticated)
     
     def test_logout_view(self):

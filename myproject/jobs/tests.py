@@ -66,7 +66,19 @@ class JobSearchTests(TestCase):
         # looking for jobs with a minimum salary of 60000 and maximum salary of 90000
         response = self.client.get(url, {'salary_min': '60000', 'salary_max': '90000'})
         self.assertEqual(response.status_code, 200)
-        # only "remote developer" qualifies based on our sample data
+        
+        ## Only "Remote Developer" should be returned because:
+        ## - It has salary_min=70000 which is in the range 60000-90000
+        ## - It has salary_max=100000 which overlaps with the range 60000-90000
+        
+        ## Software Engineer (50000-80000) should NOT be in the results because
+        ## the test is specifically filtering for jobs with their salary_min at least 60000
         self.assertNotContains(response, "Software Engineer")
+        
+        ## Marketing Specialist (40000-60000) should NOT be in the results because
+        ## its salary_max is below the requested minimum
         self.assertNotContains(response, "Marketing Specialist")
+        
+        ## Remote Developer (70000-100000) should be in the results because
+        ## its salary falls within the requested range
         self.assertContains(response, "Remote Developer")
