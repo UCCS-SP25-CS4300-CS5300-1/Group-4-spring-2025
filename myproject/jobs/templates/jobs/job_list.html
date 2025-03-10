@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Job Search</title>
+</head>
+<body>
+    <h1>Search Jobs</h1>
+    <!-- Filteing Form -->
+    <form method="GET" action="{% url 'search_jobs' %}">
+        <label for="industry">Industry:</label>
+        <input type="text" id="industry" name="industry" placeholder="e.g., Technology">
+        <br><br>
+        
+        <label for="location">Location:</label>
+        <input type="text" id="location" name="location" placeholder="e.g., Denver">
+        <br><br>
+        
+        <label for="remote">Remote Options:</label>
+        <select id="remote" name="remote">
+            <option value="">Any</option>
+            <option value="yes">Remote</option>
+            <option value="no">On-site</option>
+        </select>
+        <br><br>
+        
+        <label for="salary_min">Minimum Salary:</label>
+        <input type="number" id="salary_min" name="salary_min">
+        <br><br>
+        
+        <label for="salary_max">Maximum Salary:</label>
+        <input type="number" id="salary_max" name="salary_max">
+        <br><br>
+        
+        <button type="submit">Search</button>
+    </form>
+    
+    <!-- Displaying the filtered jobs -->
+    <h2>Job Listings</h2>
+    <ul>
+        {% for job in jobs %}
+            <li>
+                <strong>{{ job.title }}</strong><br>
+                Industry: {{ job.industry }}<br>
+                Location: {{ job.location }}<br>
+                Remote: {{ job.is_remote|yesno:"Yes,No" }}<br>
+                Salary: {% if job.salary_min %} ${{ job.salary_min }} {% endif %} - {% if job.salary_max %} ${{ job.salary_max }} {% endif %}
+            </li>
+        {% empty %}
+            <li>No jobs match your criteria.</li>
+        {% endfor %}
+    </ul>
+</body>
+</html>
