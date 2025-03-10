@@ -24,9 +24,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure--*9gky9w%c4c%zw@q90zx-_yiex1@oqy^$!l(m7r9$%x5e5e^z'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True if not 'PRODUCTION' in os.environ else False
+DEBUG = True if not 'PRODUCTION' in os.environ or 'DJANGO_DEBUG' in os.environ else False
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '.fly.dev', 'group-4-spring-2025.fly.dev', 'applierpilot.com', 'www.applierpilot.com']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '.fly.dev', 'group-4-spring-2025.fly.dev', 'applierpilot.com', 'www.applierpilot.com', 'editor-aziz-5.devedu.io']
 
 
 # Application definition
@@ -56,8 +56,6 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
-ALLOWED_HOSTS = ['editor-aziz-5.devedu.io', '127.0.0.1', 'localhost']
-
 
 ROOT_URLCONF = 'myproject.urls'
 
@@ -149,3 +147,21 @@ CRISPY_TEMPLATE_PACK = "bootstrap5"
 
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
+
+if(not DEBUG):
+    CSRF_COOKIE_SECURE = True
+    SESSION_COOKIE_SECURE = True
+    
+    CSRF_USE_SESSIONS = True
+    
+    CSRF_TRUSTED_ORIGINS = [
+        'https://group-4-spring-2025.fly.dev',
+        'https://applierpilot.com', 
+        'https://www.applierpilot.com',
+        'https://localhost:8000'
+    ]
+
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    
+    if(not os.environ.get('DOCKER_TEST')):
+        SECURE_SSL_REDIRECT = True

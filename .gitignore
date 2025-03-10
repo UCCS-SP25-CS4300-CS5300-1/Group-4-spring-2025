@@ -5,3 +5,5 @@ htmlcov/
 __pycache__/
 myproject/mediafiles
 venv/
+certs/
+*.pem
