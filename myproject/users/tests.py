@@ -99,6 +99,7 @@ class UserViewsTest(TestCase):
         self.login_url = reverse('login')
         self.logout_url = reverse('logout')
         self.home_url = reverse('index')
+        self.profile_url = reverse('profile')
         
         self.user = User.objects.create_user(
             username='testuser',
@@ -119,7 +120,7 @@ class UserViewsTest(TestCase):
             'password2': 'NewUserPass123',
         })
         self.assertEqual(response.status_code, 302)
-        self.assertRedirects(response, self.home_url)
+        self.assertRedirects(response, self.profile_url)
         self.assertTrue(User.objects.filter(username='newuser').exists())
     
     def test_register_view_POST_invalid(self):
@@ -144,7 +145,7 @@ class UserViewsTest(TestCase):
             'password': 'StrongTestPass123',
         })
         self.assertEqual(response.status_code, 302)
-        self.assertRedirects(response, self.home_url)
+        self.assertRedirects(response, self.profile_url)
         self.assertTrue(response.wsgi_request.user.is_authenticated)
     
     def test_login_view_POST_invalid(self):
@@ -165,6 +166,22 @@ class UserViewsTest(TestCase):
         response = self.client.get(self.home_url)
         self.assertFalse(response.wsgi_request.user.is_authenticated)
 
+    def test_profile_view(self):
+        """Test that the profile view works for authenticated users"""
+        self.client.login(username='testuser', password='StrongTestPass123')
+        response = self.client.get(self.profile_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'users/profile.html')
+        self.assertEqual(response.context['user'], self.user)
+        self.assertTrue('profile' in response.context)
+        self.assertEqual(response.context['profile'], self.user.profile)
+        
+    def test_profile_view_redirect_unauthenticated(self):
+        """Test that unauthenticated users are redirected from the profile view"""
+        response = self.client.get(self.profile_url)
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(response.url.startswith('/accounts/login/'))
+
 class ResumeViewTest(TestCase):
     def test_upload_resume_POST_valid(self):
         writer = PdfWriter() 
@@ -184,6 +201,32 @@ class ResumeViewTest(TestCase):
         response = self.client.get(reverse('upload_resume'))
         self.assertEqual(response.status_code, 200)
         self.assertNotIn('message', response.context)
+
+    def test_upload_resume_GET(self):
+        """Test that the upload resume GET view works"""
+        response = self.client.get(reverse('upload_resume'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'users/upload_resume.html')
+        self.assertIsInstance(response.context['form'], ResumeUploadForm)
+
+    def test_upload_resume_POST_invalid_format(self):
+        """Test upload_resume view with an invalid file format (not PDF)"""
+        file = SimpleUploadedFile(
+            "resume.txt", 
+            b"This is a text file, not a PDF", 
+            content_type="text/plain"
+        )
+        
+        response = self.client.post(
+            reverse('upload_resume'),
+            {'resume': file},
+            follow=True
+        )
+        
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'users/upload_resume.html')
+        self.assertTrue(response.context['form'].errors)
+        self.assertEqual(Resume.objects.count(), 0)
 
 class UserAuthenticationTest(TestCase):
     def setUp(self):

@@ -82,3 +82,61 @@ class JobSearchTests(TestCase):
         ## Remote Developer (70000-100000) should be in the results because
         ## its salary falls within the requested range
         self.assertContains(response, "Remote Developer")
+
+    def test_search_by_salary_min_only(self):
+        url = reverse('search_jobs')
+        response = self.client.get(url, {'salary_min': '45000'})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Software Engineer")  ## 50000
+        self.assertContains(response, "Remote Developer")   ## 70000
+        ## Jobs with min salary < 45000 should not be in results
+        self.assertNotContains(response, "Marketing Specialist")  ## 40000
+
+    def test_search_by_salary_max_only(self):
+        url = reverse('search_jobs')
+        response = self.client.get(url, {'salary_max': '65000'})
+        self.assertEqual(response.status_code, 200)
+        ## Jobs with max salary <= 65000 should be in results
+        self.assertContains(response, "Marketing Specialist")  ## 60000
+        ## Jobs with max salary > 65000 should not be in results
+        self.assertNotContains(response, "Software Engineer")  ## 80000
+        self.assertNotContains(response, "Remote Developer")   ## 100000
+
+    def test_search_no_filters(self):
+        url = reverse('search_jobs')
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        ## All jobs should be present when no filters are applied
+        self.assertContains(response, "Software Engineer")
+        self.assertContains(response, "Marketing Specialist")
+        self.assertContains(response, "Remote Developer")
+
+    def test_search_with_non_numeric_salary(self):
+        """Test search with non-numeric salary values"""
+        url = reverse('search_jobs')
+        response = self.client.get(url, {'salary_min': 'abc', 'salary_max': 'xyz'})
+        self.assertEqual(response.status_code, 200)
+        ## All jobs should be present since invalid filters are ignored
+        self.assertContains(response, "Software Engineer")
+        self.assertContains(response, "Marketing Specialist")
+        self.assertContains(response, "Remote Developer")
+    
+    def test_search_with_empty_filters(self):
+        """Test search with empty but provided filter parameters"""
+        url = reverse('search_jobs')
+        response = self.client.get(url, {'industry': '', 'location': '', 'remote': ''})
+        self.assertEqual(response.status_code, 200)
+        ##   All jobs should be present when empty filters are applied
+        self.assertContains(response, "Software Engineer")
+        self.assertContains(response, "Marketing Specialist")
+        self.assertContains(response, "Remote Developer")
+
+class JobModelTests(TestCase):
+    def test_job_string_representation(self):
+        job = Job.objects.create(
+            title="Test Job",
+            description="Description",
+            industry="Test Industry",
+            location="Test Location"
+        )
+        self.assertEqual(str(job), "Test Job")

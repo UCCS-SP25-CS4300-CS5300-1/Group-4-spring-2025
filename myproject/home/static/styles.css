@@ -442,6 +442,21 @@ footer {
     color: #2563eb;
 }
 
+.profile-btn {
+    padding: 8px 16px;
+    background-color: #fff;
+    color: #2563eb;
+    border-radius: 5px;
+    text-decoration: none;
+    margin-right: 10px;
+    transition: all 0.3s ease;
+}
+
+.profile-btn:hover {
+    background-color: #e9ecef;
+    color: #1d4ed8;
+}
+
 /* Messages container */
 .messages-container {
     max-width: 1200px;

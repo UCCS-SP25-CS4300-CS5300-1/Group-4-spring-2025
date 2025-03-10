@@ -6,6 +6,7 @@ from django.contrib import messages
 from django.views import generic
 from pypdf import PdfReader
 
+from jobs.models import Job
 from .forms import UserRegistrationForm, UserLoginForm, EditProfileForm, ResumeUploadForm
 from .models import Profile, Resume
 
@@ -17,7 +18,7 @@ def register_view(request):
             user = form.save()
             login(request, user)
             messages.success(request, f"Account created for {user.username}!")
-            return redirect('index')
+            return redirect('profile')
     else:
         form = UserRegistrationForm()
     
@@ -33,7 +34,7 @@ def login_view(request):
             if(user is not None):
                 login(request, user)
                 messages.info(request, f"You are now logged in as {username}.")
-                return redirect('index')
+                return redirect('profile')
             else:
                 messages.error(request, "Invalid username or password.")
         else:
@@ -81,10 +82,17 @@ def upload_resume(request):
 
     return render(request, 'users/upload_resume.html', {'form': resume_form})
 
-"""
-class EditProfilePageView(generic.UpdateView):
-    model = Profile
-    template_name = 'edit_profile.html'
-    fields = ['avatar', 'linkedIn_username', 'linkedIn_password']
-    success_url = '/'
-"""
+@login_required
+def profile_view(request):
+    """
+    Display the user's profile information
+    """
+    latest_resume = Resume.objects.order_by('-uploaded_at').first()
+    
+    context = {
+        'user': request.user,
+        'profile': request.user.profile,
+        'latest_resume': latest_resume,
+    }
+    
+    return render(request, 'users/profile.html', context)
