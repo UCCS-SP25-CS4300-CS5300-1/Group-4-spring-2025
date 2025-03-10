@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'home',
+    'jobs',
     'users',
     'crispy_forms',
     'crispy_bootstrap5',
@@ -55,6 +56,8 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+ALLOWED_HOSTS = ['editor-aziz-5.devedu.io', '127.0.0.1', 'localhost']
+
 
 ROOT_URLCONF = 'myproject.urls'
 
