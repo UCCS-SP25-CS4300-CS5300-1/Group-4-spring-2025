@@ -6,12 +6,18 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+  pull-requests: write
+
 jobs:
-  test:
+  test-and-review:
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -23,6 +29,9 @@ jobs:
           python -m pip install --upgrade pip
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
           pip install coverage
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            pip install openai
+          fi
 
       - name: Run tests with coverage
         run: |
@@ -31,7 +40,6 @@ jobs:
         env:
           DJANGO_DB_ENGINE: django.db.backends.sqlite3
           DJANGO_DB_NAME: ":memory:"
-        continue-on-error: true
 
       - name: Report coverage
         run: |
@@ -46,21 +54,88 @@ jobs:
           name: code-coverage-report
           path: myproject/htmlcov/
 
-  ai-code-review:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pull-requests: write
-    if: github.event_name == 'pull_request'
-
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: AI Code Review
-        uses: anc95/ChatGPT-CodeReview@main
+      - name: Custom AI Code Review
+        if: github.event_name == 'pull_request'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          MODEL: "gpt-o3-mini"
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          echo "Generating diff for PR #$PR_NUMBER"
+          git fetch origin main
+          DIFF=$(git diff origin/main..HEAD)
+
+          if [ -z "$DIFF" ]; then
+            echo "No changes to review"
+            exit 0
+          fi
+
+          cat > review.py << 'EOF'
+          import os
+          import json
+          import requests
+          import openai
+          import sys
+          import traceback
+
+          def main():
+              try:
+                  pr_number = os.environ.get('PR_NUMBER')
+                  repo = os.environ.get('REPO')
+                  github_token = os.environ.get('GITHUB_TOKEN')
+                  
+                  if(not all([pr_number, repo, github_token])):
+                      raise ValueError("Missing required environment variables: PR_NUMBER, REPO, or GITHUB_TOKEN")
+                  
+                  if(not os.environ.get('OPENAI_API_KEY')):
+                      raise ValueError("Missing OpenAI API key")
+                  
+                  openai.api_key = os.environ.get('OPENAI_API_KEY')
+
+                  try:
+                      with open('diff.txt', 'r') as f:
+                          diff = f.read()
+                  except Exception as e:
+                      raise IOError(f"Failed to read diff file: {str(e)}")
+
+                  try:
+                      response = openai.chat.completions.create(
+                          model="gpt-o3-mini",
+                          messages=[
+                              {"role": "system", "content": "You are a helpful code reviewer. Review the following code diff and provide constructive feedback. Focus on bugs, security issues, performance problems, and maintainability concerns."},
+                              {"role": "user", "content": f"Please review this code diff:\n\n{diff}"}
+                          ],
+                      )
+                      review_comment = response.choices[0].message.content
+                  except Exception as e:
+                      raise RuntimeError(f"OpenAI API call failed: {type(e).__name__}")
+
+                  url = f"https://api.github.com/repos/{repo}/issues/{pr_number}/comments"
+                  headers = {
+                      "Authorization": f"token {github_token}",
+                      "Accept": "application/vnd.github.v3+json"
+                  }
+                  data = {
+                      "body": f"## AI Code Review\n\n{review_comment}"
+                  }
+
+                  try:
+                      response = requests.post(url, headers=headers, data=json.dumps(data))
+                      response.raise_for_status()
+                      print("Review posted to PR")
+                  except requests.exceptions.RequestException as e:
+                      raise RuntimeError(f"Failed to post comment to GitHub: {type(e).__name__}")
+                      
+              except Exception as e:
+                  print(f"Error: {type(e).__name__}: {str(e)}")
+                  return 1
+              
+              return 0
+
+          if(__name__ == "__main__"):
+              sys.exit(main())
+          EOF
+
+          echo "$DIFF" > diff.txt
+          python review.py
