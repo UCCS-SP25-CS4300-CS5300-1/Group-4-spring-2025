@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Colors for better readability
+## Colors for better readability
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 RED='\033[0;31m'
@@ -15,6 +15,8 @@ else
     echo -e "${GREEN}No running containers on port 8000${NC}"
 fi
 
+docker rm -f temp-container 2>/dev/null || true
+
 echo -e "${BLUE}========== Generating SSL certificates for local testing ==========${NC}"
 mkdir -p ./certs
 if [ ! -f ./certs/key.pem ] || [ ! -f ./certs/cert.pem ]; then
@@ -23,7 +25,13 @@ if [ ! -f ./certs/key.pem ] || [ ! -f ./certs/cert.pem ]; then
         echo -e "${RED}OpenSSL not found. Please install it to generate certificates.${NC}"
         exit 1
     fi
-    openssl req -x509 -newkey rsa:4096 -nodes -out ./certs/cert.pem -keyout ./certs/key.pem -days 365 -subj "/CN=localhost"
+    ## git bash being fucking awful
+    MSYS_NO_PATHCONV=1 openssl req -x509 -newkey rsa:4096 -nodes \
+        -out ./certs/cert.pem \
+        -keyout ./certs/key.pem \
+        -days 365 \
+        -subj "/CN=localhost" \
+        -addext "subjectAltName=DNS:localhost,IP:127.0.0.1"
     echo -e "${GREEN}Self-signed certificates generated in ./certs/${NC}"
 else
     echo -e "${GREEN}Using existing certificates in ./certs/${NC}"
@@ -37,9 +45,17 @@ echo -e "${GREEN}The application will be available at https://localhost:8000/${N
 echo -e "${RED}NOTE: Browser security warnings are expected since we're using a self-signed certificate${NC}"
 echo -e "${GREEN}Press Ctrl+C to stop the container${NC}"
 
+CERT_PATH=$(cd ./certs && pwd)
+
+echo -e "${BLUE}========== Installing SSL certificates ==========${NC}"
+docker create --name temp-container applierpilotai:latest
+docker cp "${CERT_PATH}/cert.pem" temp-container:/app/ssl/cert.pem
+docker cp "${CERT_PATH}/key.pem" temp-container:/app/ssl/key.pem
+docker commit temp-container applierpilotai:latest
+docker rm temp-container
+
 docker run -p 8000:8000 \
-  -v "$(pwd)/certs/key.pem:/app/key.pem" \
-  -v "$(pwd)/certs/cert.pem:/app/cert.pem" \
-  -e "GUNICORN_CMD_ARGS=--timeout 120 --workers 2 --keyfile=/app/key.pem --certfile=/app/cert.pem --log-level debug" \
+  -e "GUNICORN_CMD_ARGS=--timeout 120 --workers 2 --keyfile=/app/ssl/key.pem --certfile=/app/ssl/cert.pem --log-level debug" \
   -e "PRODUCTION=1" \
+  -e "RUNNING_FROM_SCRIPT=1" \
   applierpilotai:latest 

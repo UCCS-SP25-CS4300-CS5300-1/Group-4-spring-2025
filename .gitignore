@@ -7,3 +7,5 @@ myproject/mediafiles
 venv/
 certs/
 *.pem
+
+*.*********s

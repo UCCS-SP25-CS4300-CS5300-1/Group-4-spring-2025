@@ -8,9 +8,10 @@ from django.contrib.auth.models import User
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.files.storage import default_storage
 from .forms import UserRegistrationForm, UserLoginForm, ResumeUploadForm
-from .models import Resume, get_user_by_email
+from .models import Resume, get_user_by_email, Profile
 from .signals import user_created_callback
 from .views import login_view, register_view, logout_view
+from django.utils import timezone
 
 class UserRegistrationFormTest(TestCase):
     def test_registration_form_valid_data(self):
@@ -100,6 +101,7 @@ class UserViewsTest(TestCase):
         self.logout_url = reverse('logout')
         self.home_url = reverse('index')
         self.profile_url = reverse('profile')
+        self.edit_profile_url = reverse('edit_profile')
         
         self.user = User.objects.create_user(
             username='testuser',
@@ -182,20 +184,75 @@ class UserViewsTest(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertTrue(response.url.startswith('/accounts/login/'))
 
+    def test_edit_profile_GET(self):
+        """Test that the edit profile view works for authenticated users"""
+        self.client.login(username='testuser', password='StrongTestPass123')
+        response = self.client.get(self.edit_profile_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'users/edit_profile.html')
+        self.assertTrue('form' in response.context)
+
+    def test_edit_profile_POST_valid(self):
+        """Test that users can update their profile"""
+        self.client.login(username='testuser', password='StrongTestPass123')
+        response = self.client.post(self.edit_profile_url, {
+            'linkedIn_username': 'new_linkedin',
+            'linkedIn_password': 'new_password'
+        })
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, self.home_url)
+        
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.profile.linkedIn_username, 'new_linkedin')
+        self.assertEqual(self.user.profile.linkedIn_password, 'new_password')
+
+    def test_edit_profile_POST_invalid(self):
+        """Test that invalid profile updates are handled"""
+        self.client.login(username='testuser', password='StrongTestPass123')
+        response = self.client.post(self.edit_profile_url, {})
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'users/edit_profile.html')
+        self.assertTrue('form' in response.context)
+
+    def test_edit_profile_unauthenticated(self):
+        """Test that unauthenticated users cannot edit profiles"""
+        response = self.client.get(self.edit_profile_url)
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(response.url.startswith('/accounts/login/'))
+
+    def test_profile_view_shows_ai_status(self):
+        """Test that the profile view shows AI whitelist status"""
+        self.client.login(username='testuser', password='StrongTestPass123')
+        response = self.client.get(self.profile_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'AI Access Status')
+        self.assertContains(response, 'Not Whitelisted')  # Default status
+
+        # Change status and test again
+        self.user.profile.whitelisted_for_ai = True
+        self.user.profile.save()
+        response = self.client.get(self.profile_url)
+        self.assertContains(response, 'Whitelisted')
+
 class ResumeViewTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.uploaded_files = []
+
     def test_upload_resume_POST_valid(self):
         writer = PdfWriter() 
         writer.add_page(writer.add_blank_page(width=210, height=297))
 
         written_file = BytesIO()
         writer.write(written_file)
-        written_file.seek(0) # go to start of file
+        written_file.seek(0) ## zooms to start of file
         uploaded_file = SimpleUploadedFile("some_resume.pdf", written_file.read(), content_type="application/pdf")
 
         response = self.client.post(reverse('upload_resume'), {'resume': uploaded_file})
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "The first 10 characters of the text from your resume is")
-        os.remove(os.path.join(settings.MEDIA_ROOT, 'resumes', "some_resume.pdf"))
+        
+        self.uploaded_files.extend(Resume.objects.all())
 
     def test_upload_resume_GET_valid(self):
         response = self.client.get(reverse('upload_resume'))
@@ -227,6 +284,15 @@ class ResumeViewTest(TestCase):
         self.assertTemplateUsed(response, 'users/upload_resume.html')
         self.assertTrue(response.context['form'].errors)
         self.assertEqual(Resume.objects.count(), 0)
+
+    def tearDown(self):
+        for resume in self.uploaded_files:
+            if(resume.resume):
+                try:
+                    resume.resume.delete(save=False)
+                except:
+                    pass
+        Resume.objects.all().delete()
 
 class UserAuthenticationTest(TestCase):
     def setUp(self):
@@ -278,15 +344,61 @@ class UserModelTest(TestCase):
         """Test the string representation of a user"""
         self.assertEqual(str(self.user), self.user.username)
 
+    def test_profile_creation(self):
+        """Test that profiles are created automatically"""
+        self.assertTrue(hasattr(self.user, 'profile'))
+
+    def test_whitelisted_for_ai_default(self):
+        """Test that regular users are not whitelisted by default"""
+        self.assertFalse(self.user.profile.whitelisted_for_ai)
+
+    def test_profile_str(self):
+        """Test the string representation of Profile"""
+        self.assertEqual(str(self.user.profile), 'testuser')
+
 class ResumeModelTest(TestCase):
     def test_resume_upload(self):
         file = SimpleUploadedFile("some_resume.pdf", b"%PDF-1.4 lorem ipsum", content_type="application/pdf")
         resume = Resume.objects.create(resume=file)
-        self.assertEqual(resume.resume.name, 'resumes/some_resume.pdf')
+        self.assertTrue(resume.resume.name.startswith('resumes/some_resume'))
+        self.assertTrue(resume.resume.name.endswith('.pdf'))
         self.assertTrue(os.path.exists(resume.resume.path))
         self.assertIsNotNone(resume.uploaded_at)
         self.assertEqual(str(resume), "Resume 1")
         resume.resume.delete()
+
+    def test_resume_str_representation(self):
+        """Test the string representation of resumes with different IDs"""
+        file1 = SimpleUploadedFile("resume1.pdf", b"%PDF-1.4 test1", content_type="application/pdf")
+        file2 = SimpleUploadedFile("resume2.pdf", b"%PDF-1.4 test2", content_type="application/pdf")
+        
+        resume1 = Resume.objects.create(resume=file1)
+        resume2 = Resume.objects.create(resume=file2)
+        
+        self.assertEqual(str(resume1), "Resume 1")
+        self.assertEqual(str(resume2), "Resume 2")
+        
+        resume1.resume.delete()
+        resume2.resume.delete()
+
+    def test_resume_upload_time(self):
+        """Test that uploaded_at is automatically set"""
+        file = SimpleUploadedFile("resume.pdf", b"%PDF-1.4 test", content_type="application/pdf")
+        resume = Resume.objects.create(resume=file)
+        
+        self.assertIsNotNone(resume.uploaded_at)
+        self.assertTrue(resume.uploaded_at <= timezone.now())
+        
+        resume.resume.delete()
+
+    def tearDown(self):
+        for resume in Resume.objects.all():
+            if(resume.resume):
+                try:
+                    resume.resume.delete()
+                except:
+                    pass
+        Resume.objects.all().delete()
 
 class UserSignalsTest(TestCase):
     def test_user_created_callback(self):
@@ -322,3 +434,161 @@ class UserUrlsTest(TestCase):
         url = reverse('logout')
         self.assertEqual(resolve(url).func, logout_view)
 
+class AdminPanelTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.admin_user = User.objects.create_superuser(
+            username='admin',
+            email='admin@example.com',
+            password='AdminPass123'
+        )
+        self.regular_user = User.objects.create_user(
+            username='regular',
+            email='regular@example.com',
+            password='RegularPass123'
+        )
+        self.regular_user.profile.linkedIn_username = 'regular_linkedin'
+        self.regular_user.profile.save()
+        
+        self.client.login(username='admin', password='AdminPass123')
+
+    def test_admin_can_access_admin_panel(self):
+        response = self.client.get('/admin/')
+        self.assertEqual(response.status_code, 200)
+
+    def test_admin_can_view_user_list(self):
+        response = self.client.get('/admin/auth/user/')
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'regular')
+        self.assertContains(response, 'admin')
+
+    def test_admin_can_edit_user(self):
+        response = self.client.get(f'/admin/auth/user/{self.regular_user.id}/change/')
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'regular')
+        self.assertContains(response, 'regular@example.com')
+
+    def test_admin_can_make_user_staff(self):
+        self.assertFalse(self.regular_user.is_staff)
+        response = self.client.post('/admin/auth/user/', {
+            'action': 'make_staff',
+            '_selected_action': [self.regular_user.id],
+        })
+        self.regular_user.refresh_from_db()
+        self.assertTrue(self.regular_user.is_staff)
+
+    def test_admin_can_make_user_inactive(self):
+        self.assertTrue(self.regular_user.is_active)
+        response = self.client.post('/admin/auth/user/', {
+            'action': 'make_inactive',
+            '_selected_action': [self.regular_user.id],
+        })
+        self.regular_user.refresh_from_db()
+        self.assertFalse(self.regular_user.is_active)
+
+    def test_regular_user_cannot_access_admin(self):
+        self.client.logout()
+        self.client.login(username='regular', password='RegularPass123')
+        response = self.client.get('/admin/')
+        self.assertEqual(response.status_code, 302)
+
+    def test_admin_can_view_resumes(self):
+        resume = Resume.objects.create(
+            resume=SimpleUploadedFile("test_resume.pdf", b"%PDF-1.4 test content", content_type="application/pdf")
+        )
+        response = self.client.get('/admin/users/resume/')
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'test_resume.pdf')
+
+    def test_linkedin_display_in_admin(self):
+        response = self.client.get('/admin/auth/user/')
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'regular_linkedin')
+
+    def tearDown(self):
+        for resume in Resume.objects.all():
+            if(resume.resume):
+                try:
+                    resume.resume.delete()
+                except:
+                    pass
+        Resume.objects.all().delete()
+        User.objects.all().delete()
+        Profile.objects.all().delete()
+
+class UserAdminTest(TestCase):
+    def setUp(self):
+        self.admin_user = User.objects.create_superuser(
+            username='adminuser',
+            password='StrongTestPass123',
+            email='admin@test.com'
+        )
+        
+        self.user1 = User.objects.create_user(
+            username='user1',
+            password='StrongTestPass123',
+            email='user1@test.com'
+        )
+        self.user2 = User.objects.create_user(
+            username='user2',
+            password='StrongTestPass123',
+            email='user2@test.com'
+        )
+        
+        self.client = Client()
+        self.client.login(username='adminuser', password='StrongTestPass123')
+
+    def test_whitelist_for_ai_action(self):
+        """Test the admin action to whitelist users for AI"""
+        url = reverse('admin:auth_user_changelist')
+        
+        data = {
+            'action': 'whitelist_for_ai',
+            '_selected_action': [self.user1.id, self.user2.id],
+        }
+        self.client.post(url, data)
+        
+        self.user1.refresh_from_db()
+        self.user2.refresh_from_db()
+        
+        self.assertTrue(self.user1.profile.whitelisted_for_ai)
+        self.assertTrue(self.user2.profile.whitelisted_for_ai)
+
+    def test_remove_ai_whitelist_action(self):
+        """Test the admin action to remove AI whitelist"""
+        self.user1.profile.whitelisted_for_ai = True
+        self.user1.profile.save()
+        self.user2.profile.whitelisted_for_ai = True
+        self.user2.profile.save()
+        
+        url = reverse('admin:auth_user_changelist')
+        
+        data = {
+            'action': 'remove_ai_whitelist',
+            '_selected_action': [self.user1.id, self.user2.id],
+        }
+        self.client.post(url, data)
+        
+        self.user1.refresh_from_db()
+        self.user2.refresh_from_db()
+
+        self.assertFalse(self.user1.profile.whitelisted_for_ai)
+        self.assertFalse(self.user2.profile.whitelisted_for_ai)
+
+    def test_cannot_remove_superuser_whitelist(self):
+        """Test that superuser whitelist cannot be removed"""
+        url = reverse('admin:auth_user_changelist')
+        
+        data = {
+            'action': 'remove_ai_whitelist',
+            '_selected_action': [self.admin_user.id],
+        }
+        self.client.post(url, data)
+        
+        self.admin_user.refresh_from_db()
+        
+        self.assertTrue(self.admin_user.profile.whitelisted_for_ai)
+
+    def test_superuser_whitelisted_for_ai(self):
+        """Test that superusers are automatically whitelisted"""
+        self.assertTrue(self.admin_user.profile.whitelisted_for_ai)

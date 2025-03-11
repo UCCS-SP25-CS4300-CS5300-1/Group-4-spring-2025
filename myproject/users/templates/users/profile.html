@@ -18,6 +18,13 @@
             <p><strong>Username:</strong> {{ user.username }}</p>
             <p><strong>Full Name:</strong> {{ user.first_name }} {{ user.last_name }}</p>
             <p><strong>Email:</strong> {{ user.email }}</p>
+            <p><strong>AI Access Status:</strong> 
+                {% if profile.whitelisted_for_ai %}
+                    <span class="badge bg-success">Whitelisted</span>
+                {% else %}
+                    <span class="badge bg-secondary">Not Whitelisted</span>
+                {% endif %}
+            </p>
         </div>
     </div>
     
