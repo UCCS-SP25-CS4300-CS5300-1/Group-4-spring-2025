@@ -52,7 +52,6 @@ class Command(BaseCommand):
                     email=email,
                     password='ChangeMe123!' 
                 )
-                self.stdout.write(self.style.SUCCESS(f'Created new superuser {email} with temporary password "ChangeMe123!"'))
                 if(not hasattr(user, 'profile')):
                     Profile.objects.create(user=user)
                 self.stdout.write(

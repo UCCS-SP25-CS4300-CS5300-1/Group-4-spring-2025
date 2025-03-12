@@ -7,5 +7,5 @@ myproject/mediafiles
 venv/
 certs/
 *.pem
-
+debug.log
 *.*********s
