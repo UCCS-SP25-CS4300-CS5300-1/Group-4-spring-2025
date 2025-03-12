@@ -152,7 +152,11 @@ if(not DEBUG):
     CSRF_COOKIE_SECURE = True
     SESSION_COOKIE_SECURE = True
     
-    CSRF_USE_SESSIONS = True
+    CSRF_USE_SESSIONS = False
+    
+    CSRF_COOKIE_HTTPONLY = False
+    
+    CSRF_COOKIE_SAMESITE = 'Lax'
     
     CSRF_TRUSTED_ORIGINS = [
         'https://group-4-spring-2025.fly.dev',
@@ -165,3 +169,53 @@ if(not DEBUG):
     
     if(not os.environ.get('DOCKER_TEST')):
         SECURE_SSL_REDIRECT = True
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+        'file': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': '/app/debug.log' if 'PRODUCTION' in os.environ else 'debug.log',
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console', 'file'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+        'django.request': {
+            'handlers': ['console', 'file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'django.security': {
+            'handlers': ['console', 'file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'users': {  # Your app's logger
+            'handlers': ['console', 'file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    },
+}

@@ -12,6 +12,7 @@ class Command(BaseCommand):
             'glebberkez@gmail.com',
             'ccolbert@uccs.edu',
             'kbilyeu@uccs.edu',
+            'azizcsecj@gmail.com',
         ]
 
     def add_arguments(self, parser):

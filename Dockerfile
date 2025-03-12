@@ -18,19 +18,29 @@ RUN mkdir -p /app/database \
     && chown -R root:root /app/ssl \
     && chmod -R 600 /app/ssl
 
-RUN python manage.py migrate
 RUN python manage.py collectstatic --noinput
 
-RUN python manage.py create_admin_team 
+RUN echo '#!/bin/bash\n\
+    set -e\n\
+    \n\
+    ## Run migrations at container startup\n\
+    echo "Running database migrations..."\n\
+    python manage.py migrate\n\
+    \n\
+    ## Create admin team if it does not exist\n\
+    echo "Setting up admin team..."\n\
+    python manage.py create_admin_team || true\n\
+    \n\
+    if [ "$RUNNING_FROM_SCRIPT" = "1" ]; then\n\
+    echo "The application will be available at https://localhost:8000/"\n\
+    echo "NOTE: Browser security warnings are expected since we are using a self-signed certificate"\n\
+    echo "Press Ctrl+C to stop the container"\n\
+    fi\n\
+    \n\
+    ## Execute the command passed to docker run\n\
+    exec "$@"' > /app/entrypoint.sh
 
-COPY <<-"EOF" /app/entrypoint.sh
-#!/bin/bash
-if [ "$RUNNING_FROM_SCRIPT" = "1" ]; then
-    echo -e "${GREEN}The application will be available at https://localhost:8000/${NC}"
-    echo -e "${RED}NOTE: Browser security warnings are expected since we're using a self-signed certificate${NC}"
-    echo -e "${GREEN}Press Ctrl+C to stop the container${NC}"
-fi
-exec "$@"
-EOF
+RUN chmod +x /app/entrypoint.sh
 
+ENTRYPOINT ["/app/entrypoint.sh"]
 CMD ["gunicorn", "myproject.wsgi:application", "--bind", "0.0.0.0:8000", "--access-logfile", "-"] 

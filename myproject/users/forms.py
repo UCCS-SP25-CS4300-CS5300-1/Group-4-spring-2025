@@ -21,7 +21,7 @@ class UserRegistrationForm(UserCreationForm):
         return user
 
 class UserLoginForm(AuthenticationForm):
-    username = forms.CharField(label='Email / Username')
+    username = forms.CharField(label='Username')
     
     class Meta:
         model = User
