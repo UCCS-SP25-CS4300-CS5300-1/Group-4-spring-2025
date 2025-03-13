@@ -69,7 +69,7 @@ The project uses GitHub Actions for CI with the following features:
 
 1. **Automated Testing**: Tests run on every commit and pull request
 2. **Coverage Reporting**: Test coverage metrics are reported in the console
-3. **AI Code Review**: Pull requests are automatically reviewed using OpenAI's GPT-o3-mini
+3. **AI Code Review**: Pull requests are automatically reviewed using OpenAI's GPT-o3-mini for code quality and style
 
 ### Production Deployment
 

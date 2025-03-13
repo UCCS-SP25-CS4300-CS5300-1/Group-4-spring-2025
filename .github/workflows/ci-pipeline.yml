@@ -101,7 +101,7 @@ jobs:
 
                   try:
                       response = openai.chat.completions.create(
-                          model="gpt-o3-mini",
+                          model="gpt-4o-mini",
                           messages=[
                               {"role": "system", "content": "You are a helpful code reviewer. Review the following code diff and provide constructive feedback. Focus on bugs, security issues, performance problems, and maintainability concerns."},
                               {"role": "user", "content": f"Please review this code diff:\n\n{diff}"}
