@@ -9,3 +9,4 @@ pillow==11.1.0
 sqlparse==0.5.3
 whitenoise==6.9.0
 pypdf==5.3.1
+requests==2.31.0
