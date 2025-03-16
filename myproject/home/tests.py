@@ -87,7 +87,8 @@ class DashboardViewTest(TestCase):
         """Test that unauthenticated users are redirected to login"""
         response = self.client.get(self.dashboard_url)
         self.assertEqual(response.status_code, 302)
-        self.assertTrue(response.url.startswith('/accounts/login/'))
+        self.assertTrue(response.url.startswith('/users/login/'))
+        self.assertTrue('next=/dashboard/' in response.url)
     
     def test_dashboard_authenticated_user(self):
         """Test that authenticated users can access the dashboard"""
@@ -207,3 +208,58 @@ class StaticContentTest(TestCase):
         self.assertContains(response, '<main>')
         self.assertContains(response, 'id="features"')
         self.assertContains(response, 'id="how-it-works"')
+
+class AuthRedirectTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.dashboard_url = reverse('dashboard')
+        self.profile_url = reverse('profile')
+        
+        # Create a test user
+        self.user = User.objects.create_user(
+            username='testuser',
+            email='test@example.com',
+            password='StrongTestPass123'
+        )
+    
+    def test_dashboard_redirects_to_login(self):
+        """Test that dashboard redirects to login when user is not authenticated"""
+        response = self.client.get(self.dashboard_url)
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(response.url.startswith('/users/login/'))
+        self.assertTrue('next=/dashboard/' in response.url)
+    
+    def test_profile_redirects_to_login(self):
+        """Test that profile redirects to login when user is not authenticated"""
+        response = self.client.get(self.profile_url)
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(response.url.startswith('/users/login/'))
+        self.assertTrue('next=/users/profile/' in response.url)
+    
+    def test_dashboard_accessible_when_authenticated(self):
+        """Test that dashboard is accessible when user is authenticated"""
+        self.client.login(username='testuser', password='StrongTestPass123')
+        response = self.client.get(self.dashboard_url)
+        self.assertEqual(response.status_code, 200)
+    
+    def test_profile_accessible_when_authenticated(self):
+        """Test that profile is accessible when user is authenticated"""
+        self.client.login(username='testuser', password='StrongTestPass123')
+        response = self.client.get(self.profile_url)
+        self.assertEqual(response.status_code, 200)
+    
+    def test_login_redirect_to_next_url(self):
+        """Test that after login, user is redirected to the 'next' URL"""
+        response = self.client.get(self.dashboard_url)
+        login_url = response.url  # This will be '/users/login/?next=/dashboard/'
+        
+        # Now login with this URL
+        response = self.client.post(
+            login_url, 
+            {'username': 'testuser', 'password': 'StrongTestPass123'},
+            follow=True
+        )
+        
+        # The first redirected URL should be to the dashboard
+        self.assertEqual(response.redirect_chain[0][0], '/dashboard/')
+        self.assertEqual(response.status_code, 200)

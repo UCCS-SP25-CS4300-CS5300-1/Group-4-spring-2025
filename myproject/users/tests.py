@@ -182,7 +182,7 @@ class UserViewsTest(TestCase):
         """Test that unauthenticated users are redirected from the profile view"""
         response = self.client.get(self.profile_url)
         self.assertEqual(response.status_code, 302)
-        self.assertTrue(response.url.startswith('/accounts/login/'))
+        self.assertTrue(response.url.startswith('/users/login/'))
 
     def test_edit_profile_GET(self):
         """Test that the edit profile view works for authenticated users"""
@@ -218,7 +218,7 @@ class UserViewsTest(TestCase):
         """Test that unauthenticated users cannot edit profiles"""
         response = self.client.get(self.edit_profile_url)
         self.assertEqual(response.status_code, 302)
-        self.assertTrue(response.url.startswith('/accounts/login/'))
+        self.assertTrue(response.url.startswith('/users/login/'))
 
     def test_profile_view_shows_ai_status(self):
         """Test that the profile view shows AI whitelist status"""
