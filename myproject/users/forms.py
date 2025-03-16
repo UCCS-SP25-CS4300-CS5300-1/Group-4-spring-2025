@@ -35,6 +35,13 @@ class EditProfileForm(forms.ModelForm):
         fields = ('linkedIn_username', 'linkedIn_password')
 
     linkedIn_password = forms.CharField(max_length=32, widget=forms.PasswordInput)
+    
+class EditPreferenceForm(forms.ModelForm):
+
+    class Meta:
+        model = Profile
+        fields = ('industry_preference', 'location_preference', 'remote_preference', 'salary_min_preference')
+
 
 class ResumeUploadForm(forms.ModelForm):
     class Meta:

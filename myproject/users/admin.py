@@ -9,7 +9,7 @@ class ProfileInline(admin.StackedInline):
     model = Profile
     can_delete = False
     verbose_name_plural = 'Profile'
-    fields = ['linkedIn_username', 'linkedIn_password', 'avatar', 'whitelisted_for_ai']
+    fields = ['linkedIn_username', 'linkedIn_password', 'avatar', 'whitelisted_for_ai', 'industry_preference', 'location_preference', 'remote_preference', 'salary_min_preference']
 
 # Extend User Model
 class CustomUserAdmin(BaseUserAdmin):

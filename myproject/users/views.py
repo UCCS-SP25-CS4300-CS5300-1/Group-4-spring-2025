@@ -7,7 +7,7 @@ from django.views import generic
 from pypdf import PdfReader
 
 from jobs.models import Job
-from .forms import UserRegistrationForm, UserLoginForm, EditProfileForm, ResumeUploadForm
+from .forms import UserRegistrationForm, UserLoginForm, EditProfileForm, ResumeUploadForm, EditPreferenceForm
 from .models import Profile, Resume
 
 
@@ -96,3 +96,20 @@ def profile_view(request):
     }
     
     return render(request, 'users/profile.html', context)
+
+@login_required
+def edit_preferences(request):
+    """
+    Display the user's preference selections
+    """
+    if request.method == 'POST':
+        profile_form = EditPreferenceForm(request.POST, request.FILES, instance=request.user.profile)
+
+        if profile_form.is_valid():
+            profile_form.save()
+            messages.success(request, f"Your account has been updated.")
+            return redirect('index')
+    else:
+        profile_form = EditProfileForm(instance=request.user.profile)
+
+    return render(request, 'users/edit_profile.html', {'form': EditPreferenceForm})
