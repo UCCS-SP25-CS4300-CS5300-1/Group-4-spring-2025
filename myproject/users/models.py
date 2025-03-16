@@ -9,7 +9,6 @@ class Profile(models.Model):
     linkedIn_username = models.CharField(max_length=100)
     linkedIn_password = models.CharField(max_length=100)
 
-
     def __str__(self):
         return self.user.username
 

@@ -28,27 +28,32 @@ Dashboard
 
     <br/>
     <br/>
-    <div class="">
-        <table style="width:100%;">
+    <table class="table table-cover">
+        <thead>
             <tr>
-                <td>Search Term</td>
-                <td>Job Title</td>
-                <td>Link</td>
-                <td>Progress</td>
+                <!-- <th scope="col">#</th> -->
+                <th scope="col">Search Word</th>
+                <th scope="col">Job Title</th>
+                <th scope="col">Company</th>
+                <th scope="col">Link</th>
+                <th scope="col">Type</th>
+                <th scope="col">Progress</th>
             </tr>
-            <tr>
-                <td>&nbsp</td>
-                <td>&nbsp</td>
-                <td>&nbsp</td>
-                <td>&nbsp</td>
-            </tr>
-            <tr>
-                <td>&nbsp</td>
-                <td>&nbsp</td>
-                <td>&nbsp</td>
-                <td>&nbsp</td>
-            </tr>
-        </table>
-    </div>
+        </thead>
+        <tbody>
+       
+    {% for app in applications %}
+        <tr>
+            <!-- <th scope="row">{{ count }}</th> -->
+            <th scope="row">{{ app.search_word }}</th>
+            <th scope="row">{{ app.job_title }}</th>
+            <th scope="row">{{ app.company }}</th>
+            <th scope="row"><a href="{{ app.link }}">{{ app.link }}</a></th>
+            <th scope="row">{{ app.type }}</th>
+            <th scope="row">{{ app.progress }}</th>
+        </tr>
+    {% endfor %}
+        </tbody>
+    </table>
 </div>
 {% endblock %}
