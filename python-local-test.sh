@@ -34,6 +34,11 @@ if (! try_python_command "init_db.py"); then
 fi
 
 echo -e "${BLUE}========== Running database migrations ==========${NC}"
+if ( ! try_python_command "manage.py" "makemigrations"); then
+    echo -e "${RED}Error: Could not run migrations. Please check your Python installation.${NC}"
+    exit 1
+fi
+
 if (! try_python_command "manage.py" "migrate"); then
     echo -e "${RED}Error: Could not run migrations. Please check your Python installation.${NC}"
     exit 1
