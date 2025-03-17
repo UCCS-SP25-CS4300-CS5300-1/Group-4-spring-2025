@@ -98,7 +98,7 @@ def profile_view(request):
     return render(request, 'users/profile.html', context)
 
 @login_required
-def edit_preferences(request):
+def update_preferences(request):
     """
     Display the user's preference selections
     """
