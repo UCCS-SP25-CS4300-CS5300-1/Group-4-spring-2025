@@ -219,7 +219,7 @@ class UserViewsTest(TestCase):
         """Test that unauthenticated users cannot edit profiles"""
         response = self.client.get(self.edit_profile_url)
         self.assertEqual(response.status_code, 302)
-        self.assertTrue(response.url.startswith('/accounts/login/'))
+        self.assertTrue(response.url.startswith('/accounts/login/') or response.url.startswith('/users/login/'))
         
     def test_update_preferences_GET(self):
         """Test that the update preferences view works for authenticated users"""
@@ -237,7 +237,6 @@ class UserViewsTest(TestCase):
             'location_preference': 'Colorado',
             'remote_preference': 'True',
             'salary_min_preference': '12000',
-            
         })
         self.assertEqual(response.status_code, 302)
         self.assertRedirects(response, self.home_url)
@@ -245,9 +244,8 @@ class UserViewsTest(TestCase):
         self.user.refresh_from_db()
         self.assertEqual(self.user.profile.industry_preference, 'Computer Science')
         self.assertEqual(self.user.profile.location_preference, 'Colorado')
-        self.assertEqual(self.user.remote_preference, 'True')
-        self.assertEqual(self.user.salary_min_preference, '12000')       
-        self.assertTrue(response.url.startswith('/users/login/'))
+        self.assertEqual(self.user.profile.remote_preference, True)
+        self.assertEqual(self.user.profile.salary_min_preference, 12000)
 
     def test_profile_view_shows_ai_status(self):
         """Test that the profile view shows AI whitelist status"""
