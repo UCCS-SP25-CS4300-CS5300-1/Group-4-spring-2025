@@ -2,7 +2,8 @@
 
 ## Live Site
 
-live site (prod): [https://applierpilot.ai/](https://applierpilot.ai/)
+live site (prod): [https://applierpilot.com/](https://applierpilot.com/)
+
 live site (dev): [https://group-4-spring-2025.fly.dev/](https://group-4-spring-2025.fly.dev/)
 
 ## Getting the code
@@ -32,7 +33,7 @@ The site will be available at [http://localhost:8000/](http://localhost:8000/)
 ./docker-local-test.sh
 ```
 
-The site will be available at [http://localhost:8000/](http://localhost:8000/)
+The site will be available at [https://localhost:8000/](https://localhost:8000/)
 
 
 ### Running Tests
