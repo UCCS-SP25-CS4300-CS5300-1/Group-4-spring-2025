@@ -18,6 +18,9 @@ try_python_command() {
     elif (command -v python &> /dev/null); then
         python $cmd "$@"
         return $?
+    else
+        python $cmd "$@"
+        return $?
     fi
     return 1
 }
