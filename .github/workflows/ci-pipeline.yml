@@ -71,7 +71,7 @@ jobs:
             exit 0
           fi
 
-          cat > review.py << 'EOF'
+          cat > review.py << EOF
           import os
           import json
           import requests
@@ -101,10 +101,10 @@ jobs:
 
                   try:
                       response = openai.chat.completions.create(
-                          model="gpt-o3-mini",
+                          model="gpt-4o-mini",
                           messages=[
                               {"role": "system", "content": "You are a helpful code reviewer. Review the following code diff and provide constructive feedback. Focus on bugs, security issues, performance problems, and maintainability concerns."},
-                              {"role": "user", "content": f"Please review this code diff:\n\n{diff}"}
+                              {"role": "user", "content": f"Please review this code diff:\\n\\n{diff}"}
                           ],
                       )
                       review_comment = response.choices[0].message.content
@@ -117,7 +117,7 @@ jobs:
                       "Accept": "application/vnd.github.v3+json"
                   }
                   data = {
-                      "body": f"## AI Code Review\n\n{review_comment}"
+                      "body": f"## AI Code Review\\n\\n{review_comment}"
                   }
 
                   try:

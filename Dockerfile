@@ -23,6 +23,10 @@ RUN python manage.py collectstatic --noinput
 RUN echo '#!/bin/bash\n\
     set -e\n\
     \n\
+    ## Make migrations\n\
+    echo "Making migrations..."\n\
+    python manage.py makemigrations\n\
+    \n\
     ## Run migrations at container startup\n\
     echo "Running database migrations..."\n\
     python manage.py migrate\n\
