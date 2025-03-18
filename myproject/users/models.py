@@ -10,6 +10,13 @@ class Profile(models.Model):
     linkedIn_password = models.CharField(max_length=100)
     whitelisted_for_ai = models.BooleanField(default=False)
 
+    industry_preference = models.CharField(max_length=100, blank=True, default='')
+    location_preference = models.CharField(max_length=100, blank=True, default='')
+    remote_preference = models.BooleanField(default=False)
+    salary_min_preference = models.IntegerField(null=True, blank=True, default=0)
+
+    #ai_recommendation = models.BooleanField(default=False)
+
     def __str__(self):
         return self.user.username
 

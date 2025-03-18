@@ -45,6 +45,22 @@
             <p><strong>LinkedIn Password:</strong> ••••••••</p>
         </div>
     </div>
+
+    <div class="profile-section">
+        <div class="profile-header">
+            <h3>Job Search Preferences</h3>
+            <a href="{% url 'update_preferences' %}" class="btn-sm btn-outline-primary">
+                <i class="fas fa-edit"></i> Edit
+            </a>
+        </div>
+        <div class="profile-info">
+            <p><strong>Industry:</strong> {{ profile.industry_preference|default:"None" }}</p>
+            <p><strong>Location:</strong> {{ profile.location_preference|default:"None" }}</p>
+            <p><strong>Remote Work:</strong> {{ profile.remote_preference}}</p>
+            <p><strong>Salary Min:</strong> {{ profile.salary_min_preference}}</p>
+        </div>
+    </div>
+
     
     <div class="profile-section">
         <div class="profile-header">

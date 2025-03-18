@@ -7,7 +7,7 @@ from django.views import generic
 from pypdf import PdfReader
 
 from jobs.models import Job
-from .forms import UserRegistrationForm, UserLoginForm, EditProfileForm, ResumeUploadForm
+from .forms import UserRegistrationForm, UserLoginForm, EditProfileForm, ResumeUploadForm, EditPreferenceForm
 from .models import Profile, Resume
 
 
@@ -99,3 +99,31 @@ def profile_view(request):
     }
     
     return render(request, 'users/profile.html', context)
+
+@login_required
+def update_preferences(request):
+    """
+    Display the user's preference selections
+    """
+    if request.method == 'POST':
+        profile_form = EditPreferenceForm(request.POST, instance=request.user.profile)
+
+        if profile_form.is_valid():
+            # Convert remote_preference to boolean if it's a string
+            if 'remote_preference' in request.POST and request.POST['remote_preference'] == 'True':
+                profile_form.instance.remote_preference = True
+            
+            # Ensure salary_min_preference is an integer
+            if 'salary_min_preference' in request.POST and request.POST['salary_min_preference']:
+                try:
+                    profile_form.instance.salary_min_preference = int(request.POST['salary_min_preference'])
+                except ValueError:
+                    pass  # Will be caught by form validation
+                
+            profile_form.save()
+            messages.success(request, f"Your preferences have been updated.")
+            return redirect('index')
+    else:
+        profile_form = EditPreferenceForm(instance=request.user.profile)
+
+    return render(request, 'users/update_preferences.html', {'form': profile_form})

@@ -1,0 +1,15 @@
+{% extends 'base_auth.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Update Job Search Preferences{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Update Job Search Preferences</h2>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form|crispy }}
+        <button type="submit" class="btn btn-primary">Update Preferences</button>
+    </form>
+</div>
+{% endblock %} 
