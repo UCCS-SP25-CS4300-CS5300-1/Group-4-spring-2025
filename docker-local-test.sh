@@ -17,6 +17,21 @@ fi
 
 docker rm -f temp-container 2>/dev/null || true
 
+if [ -z "$OPENAI_API_KEY" ]; then
+    echo -e "${RED}OPENAI_API_KEY environment variable is not set.${NC}"
+    echo -e "${BLUE}Please enter your OpenAI API key:${NC}"
+    read -s OPENAI_API_KEY
+    export OPENAI_API_KEY
+    
+    if [ -z "$OPENAI_API_KEY" ]; then
+        echo -e "${RED}No API key provided. Features that use OpenAI may not work properly.${NC}"
+    else
+        echo -e "${GREEN}API key set for this session.${NC}"
+    fi
+else
+    echo -e "${GREEN}Using OPENAI_API_KEY from environment.${NC}"
+fi
+
 echo -e "${BLUE}========== Generating SSL certificates for local testing ==========${NC}"
 mkdir -p ./certs
 if [ ! -f ./certs/key.pem ] || [ ! -f ./certs/cert.pem ]; then
@@ -58,4 +73,5 @@ docker run -p 8000:8000 \
   -e "GUNICORN_CMD_ARGS=--timeout 120 --workers 2 --keyfile=/app/ssl/key.pem --certfile=/app/ssl/cert.pem --log-level debug" \
   -e "PRODUCTION=1" \
   -e "RUNNING_FROM_SCRIPT=1" \
+  -e "OPENAI_API_KEY=$OPENAI_API_KEY" \
   applierpilotai:latest 

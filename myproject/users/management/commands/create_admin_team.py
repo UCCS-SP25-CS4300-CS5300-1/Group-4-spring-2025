@@ -46,7 +46,14 @@ class Command(BaseCommand):
                     user.save()
                     self.stdout.write(self.style.SUCCESS(f'Made existing user {email} a superuser'))
             except User.DoesNotExist:
-                username = email.split('@')[0]
+                base_username = email.split('@')[0]
+                username = base_username
+                
+                counter = 1
+                while User.objects.filter(username=username).exists():
+                    username = f"{base_username}{counter}"
+                    counter += 1
+                
                 user = User.objects.create_superuser(
                     username=username,
                     email=email,
@@ -56,6 +63,6 @@ class Command(BaseCommand):
                     Profile.objects.create(user=user)
                 self.stdout.write(
                     self.style.SUCCESS(
-                        f'Created new superuser {email} with temporary password "ChangeMe123!"'
+                        f'Created new superuser {email} with username "{username}" and temporary password "ChangeMe123!"'
                     )
                 ) 

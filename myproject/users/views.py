@@ -1,10 +1,12 @@
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, authenticate, logout
 from django.contrib import messages
 from django.views import generic
 from pypdf import PdfReader
+from django.http import FileResponse, Http404
+import os
 
 from jobs.models import Job
 from .forms import UserRegistrationForm, UserLoginForm, EditProfileForm, ResumeUploadForm, EditPreferenceForm
@@ -35,7 +37,11 @@ def login_view(request):
             password = form.cleaned_data.get('password')
             user = authenticate(username=username, password=password)
             if(user is not None):
+                if(not hasattr(user, 'profile')):
+                    Profile.objects.create(user=user)
+                
                 login(request, user)
+                
                 messages.info(request, f"You are now logged in as {username}.")
                 next_url = request.GET.get('next')
                 if(next_url):
@@ -57,33 +63,56 @@ def logout_view(request):
 
 @login_required
 def update_user(request):
+    if(not hasattr(request.user, 'profile')):
+        profile = Profile.objects.create(user=request.user)
+    else:
+        profile = request.user.profile
+        
     if request.method == 'POST':
-        profile_form = EditProfileForm(request.POST, request.FILES, instance=request.user.profile)
+        profile_form = EditProfileForm(request.POST, request.FILES, instance=profile)
 
         if profile_form.is_valid():
             profile_form.save()
             messages.success(request, f"Your account has been updated.")
             return redirect('index')
     else:
-        profile_form = EditProfileForm(instance=request.user.profile)
+        profile_form = EditProfileForm(instance=profile)
 
     return render(request, 'users/edit_profile.html', {'form': profile_form})
 
+@login_required
 def upload_resume(request):
+    if(not hasattr(request.user, 'profile')):
+        profile = Profile.objects.create(user=request.user)
+    else:
+        profile = request.user.profile
+        
     if request.method == 'POST':
         resume_form = ResumeUploadForm(request.POST, request.FILES)
 
         if resume_form.is_valid():
-            resume_instance = resume_form.save()
+            resume_instance = resume_form.save(commit=False)
+            resume_instance.user = request.user
+            resume_instance.save()
+            
             file = resume_instance.resume
 
             reader = PdfReader(file)
             page = reader.pages[0]
             text = page.extract_text()
-            feedback = get_resume_feedback(text)
-            feedback_html = markdown.markdown(feedback)
             
-            return render(request, 'users/upload_resume.html', {'form': resume_form, 'feedback': feedback_html})
+            if request.user.is_superuser or profile.whitelisted_for_ai:
+                feedback = get_resume_feedback(text)
+                feedback_html = markdown.markdown(feedback)
+                return render(request, 'users/upload_resume.html', {
+                    'form': resume_form, 
+                    'feedback': feedback_html
+                })
+            else:
+                return render(request, 'users/upload_resume.html', {
+                    'form': resume_form,
+                    'message': 'Resume uploaded successfully. AI feedback is only available to whitelisted users.'
+                })
     else:
         resume_form = ResumeUploadForm()
 
@@ -107,11 +136,16 @@ def profile_view(request):
     """
     Display the user's profile information
     """
-    latest_resume = Resume.objects.order_by('-uploaded_at').first()
+    if(not hasattr(request.user, 'profile')):
+        profile = Profile.objects.create(user=request.user)
+    else:
+        profile = request.user.profile
+    
+    latest_resume = Resume.objects.filter(user=request.user).order_by('-uploaded_at').first()
     
     context = {
         'user': request.user,
-        'profile': request.user.profile,
+        'profile': profile,
         'latest_resume': latest_resume,
     }
     
@@ -122,25 +156,43 @@ def update_preferences(request):
     """
     Display the user's preference selections
     """
+    if(not hasattr(request.user, 'profile')):
+        profile = Profile.objects.create(user=request.user)
+    else:
+        profile = request.user.profile
+        
     if request.method == 'POST':
-        profile_form = EditPreferenceForm(request.POST, instance=request.user.profile)
+        profile_form = EditPreferenceForm(request.POST, instance=profile)
 
         if profile_form.is_valid():
-            # Convert remote_preference to boolean if it's a string
             if 'remote_preference' in request.POST and request.POST['remote_preference'] == 'True':
                 profile_form.instance.remote_preference = True
             
-            # Ensure salary_min_preference is an integer
             if 'salary_min_preference' in request.POST and request.POST['salary_min_preference']:
                 try:
                     profile_form.instance.salary_min_preference = int(request.POST['salary_min_preference'])
                 except ValueError:
-                    pass  # Will be caught by form validation
+                    pass
                 
             profile_form.save()
             messages.success(request, f"Your preferences have been updated.")
             return redirect('index')
     else:
-        profile_form = EditPreferenceForm(instance=request.user.profile)
+        profile_form = EditPreferenceForm(instance=profile)
 
     return render(request, 'users/update_preferences.html', {'form': profile_form})
+
+@login_required
+def view_resume(request, resume_id):
+    """
+    Securely serve resume files only to their owners
+    """
+    resume = get_object_or_404(Resume, id=resume_id)
+    
+    if(resume.user != request.user and not request.user.is_superuser):
+        raise Http404("Resume not found")
+    
+    try:
+        return FileResponse(open(resume.resume.path, 'rb'), content_type='application/pdf')
+    except FileNotFoundError:
+        raise Http404("Resume file not found")

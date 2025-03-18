@@ -66,7 +66,7 @@
         <div class="profile-header">
             <h3>Resume</h3>
             {% if latest_resume %}
-                <a href="{{ latest_resume.resume.url }}" class="btn-sm btn-outline-success" target="_blank">
+                <a href="{% url 'view_resume' latest_resume.id %}" class="btn-sm btn-outline-success" target="_blank">
                     <i class="fas fa-download"></i> View
                 </a>
             {% endif %}

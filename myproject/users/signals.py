@@ -14,22 +14,18 @@ def user_created_callback(user):
 @receiver(post_save, sender=User)
 def create_user_profile(sender, instance, created, **kwargs):
     """
-    Signal handler to perform actions when a user is created or updated
+    Signal handler to create a user profile when a user is created
     """
-    ## TODO: need to implement some sort of profile idfk
-
-    ## Update: Commented out user_created_callback function call
-    # replaced with Profile.objects.create function call
-    # Runs every time a user is created
-    # User is the sender and therefore sends notification
-
-    if created:
-        # user_created_callback(instance)
-        Profile.objects.create(user=instance)
-
-
+    if(created):
+        Profile.objects.get_or_create(user=instance)
 
 @receiver(post_save, sender=User)
 def save_profile(sender, instance, **kwargs):
-    instance.profile.save()
+    """
+    Signal handler to save a user profile when a user is saved
+    """
+    if(hasattr(instance, 'profile')):
+        instance.profile.save()
+    else:
+        Profile.objects.get_or_create(user=instance)
 

@@ -36,6 +36,7 @@ def get_user_by_email(email):
         return None
 
 class Resume(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='resumes', null=True)
     resume = models.FileField(upload_to='resumes/')
     uploaded_at = models.DateTimeField(auto_now_add=True)
 

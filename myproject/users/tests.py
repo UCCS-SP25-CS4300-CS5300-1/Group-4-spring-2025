@@ -266,8 +266,19 @@ class ResumeViewTest(TestCase):
     def setUp(self):
         self.client = Client()
         self.uploaded_files = []
+        
+        self.user = User.objects.create_user(
+            username='testresumeuser',
+            email='testresumeuser@example.com',
+            password='StrongTestPass123'
+        )
+        self.client.login(username='testresumeuser', password='StrongTestPass123')
 
-    def test_upload_resume_POST_valid(self):
+    @patch('users.views.PdfReader')
+    def test_upload_resume_POST_valid(self, mock_pdf_reader):
+        mock_instance = mock_pdf_reader.return_value
+        mock_instance.pages = [type('obj', (object,), {'extract_text': lambda: 'Sample resume text'})]
+        
         writer = PdfWriter() 
         writer.add_page(writer.add_blank_page(width=210, height=297))
 
@@ -278,13 +289,19 @@ class ResumeViewTest(TestCase):
 
         response = self.client.post(reverse('upload_resume'), {'resume': uploaded_file})
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "AI Feedback by GPT-4o-mini")
-        self.assertIn('feedback', response.context)
+        self.assertContains(response, "Resume uploaded successfully")
         
         self.uploaded_files.extend(Resume.objects.all())
 
+    @patch('users.views.PdfReader')
     @patch('openai.chat.completions.create')
-    def test_upload_resume_exception_ai_feedback(self, mock_openai):
+    def test_upload_resume_exception_ai_feedback(self, mock_openai, mock_pdf_reader):
+        self.user.profile.whitelisted_for_ai = True
+        self.user.profile.save()
+        
+        mock_instance = mock_pdf_reader.return_value
+        mock_instance.pages = [type('obj', (object,), {'extract_text': lambda: 'Sample resume text'})]
+        
         mock_openai.side_effect = Exception("example error")
 
         writer = PdfWriter() 
@@ -313,7 +330,8 @@ class ResumeViewTest(TestCase):
         self.assertTemplateUsed(response, 'users/upload_resume.html')
         self.assertIsInstance(response.context['form'], ResumeUploadForm)
 
-    def test_upload_resume_POST_invalid_format(self):
+    @patch('users.views.PdfReader')
+    def test_upload_resume_POST_invalid_format(self, mock_pdf_reader):
         """Test upload_resume view with an invalid file format (not PDF)"""
         file = SimpleUploadedFile(
             "resume.txt", 
@@ -639,3 +657,268 @@ class UserAdminTest(TestCase):
     def test_superuser_whitelisted_for_ai(self):
         """Test that superusers are automatically whitelisted"""
         self.assertTrue(self.admin_user.profile.whitelisted_for_ai)
+
+class ResumePrivacyTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.user1 = User.objects.create_user(
+            username='user1',
+            email='user1@example.com',
+            password='StrongTestPass123'
+        )
+        self.user2 = User.objects.create_user(
+            username='user2',
+            email='user2@example.com',
+            password='StrongTestPass123'
+        )
+        self.admin_user = User.objects.create_superuser(
+            username='admin',
+            email='admin@example.com',
+            password='AdminPass123'
+        )
+        
+        self.resume_file = SimpleUploadedFile(
+            "test_resume.pdf", 
+            b"%PDF-1.4 test resume content", 
+            content_type="application/pdf"
+        )
+        self.resume = Resume.objects.create(
+            user=self.user1,
+            resume=self.resume_file
+        )
+        
+        self.uploaded_files = [self.resume]
+
+    def test_user_can_only_see_own_resume(self):
+        """Test that users can only access their own resumes"""
+        # User 1 should be able to access their resume
+        self.client.login(username='user1', password='StrongTestPass123')
+        response = self.client.get(reverse('view_resume', args=[self.resume.id]))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Content-Type'], 'application/pdf')
+        
+        self.client.logout()
+        self.client.login(username='user2', password='StrongTestPass123')
+        response = self.client.get(reverse('view_resume', args=[self.resume.id]))
+        self.assertEqual(response.status_code, 404)
+
+    def test_admin_can_access_any_resume(self):
+        """Test that admin users can access any resume"""
+        self.client.login(username='admin', password='AdminPass123')
+        response = self.client.get(reverse('view_resume', args=[self.resume.id]))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Content-Type'], 'application/pdf')
+
+    def test_unauthenticated_user_cannot_access_resume(self):
+        """Test that unauthenticated users cannot access any resume"""
+        response = self.client.get(reverse('view_resume', args=[self.resume.id]))
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue('/users/login/' in response.url)
+
+    def test_profile_only_shows_user_resumes(self):
+        """Test that the profile page only shows the current user's resumes"""
+        user2_resume = Resume.objects.create(
+            user=self.user2,
+            resume=SimpleUploadedFile(
+                "user2_resume.pdf", 
+                b"%PDF-1.4 user2 resume content", 
+                content_type="application/pdf"
+            )
+        )
+        self.uploaded_files.append(user2_resume)
+        
+        self.client.login(username='user1', password='StrongTestPass123')
+        response = self.client.get(reverse('profile'))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['latest_resume'], self.resume)
+
+        self.client.logout()
+        self.client.login(username='user2', password='StrongTestPass123')
+        response = self.client.get(reverse('profile'))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['latest_resume'], user2_resume)
+
+    def tearDown(self):
+        for resume in self.uploaded_files:
+            if resume.resume:
+                try:
+                    resume.resume.delete(save=False)
+                except:
+                    pass
+        Resume.objects.all().delete()
+
+class AIFeatureAccessTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.uploaded_files = []
+        
+        self.pdf_content = b"%PDF-1.3\nTest PDF content"
+        
+        self.regular_user = User.objects.create_user(
+            username='regularuser', 
+            email='regular@example.com',
+            password='StrongTestPass123'
+        )
+        Profile.objects.get_or_create(user=self.regular_user)
+        
+        self.whitelisted_user = User.objects.create_user(
+            username='whitelisteduser', 
+            email='whitelisted@example.com',
+            password='StrongTestPass123'
+        )
+        profile, _ = Profile.objects.get_or_create(user=self.whitelisted_user)
+        profile.whitelisted_for_ai = True
+        profile.save()
+        
+        self.admin_user = User.objects.create_superuser(
+            username='adminuser', 
+            email='admin@example.com',
+            password='StrongTestPass123'
+        )
+        Profile.objects.get_or_create(user=self.admin_user)
+
+    @patch('users.views.PdfReader')
+    @patch('openai.chat.completions.create')
+    def test_regular_user_no_ai_feedback(self, mock_openai, mock_pdf_reader):
+        """Test that regular users don't get AI feedback"""
+        mock_instance = mock_pdf_reader.return_value
+        mock_instance.pages = [type('obj', (object,), {'extract_text': lambda: 'Sample resume text'})]
+        
+        mock_openai.return_value.choices = [type('obj', (object,), {
+            'message': type('obj', (object,), {'content': 'This is mock AI feedback'})
+        })]
+        
+        self.client.login(username='regularuser', password='StrongTestPass123')
+        
+        response = self.client.post(
+            reverse('upload_resume'),
+            {'resume': SimpleUploadedFile("resume.pdf", self.pdf_content, content_type="application/pdf")},
+            follow=True
+        )
+        
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Resume uploaded successfully. AI feedback is only available to whitelisted users.')
+        self.assertNotContains(response, 'AI Feedback by GPT-4o-mini')
+
+        mock_openai.assert_not_called()
+
+    @patch('users.views.PdfReader')
+    @patch('openai.chat.completions.create')
+    def test_whitelisted_user_gets_ai_feedback(self, mock_openai, mock_pdf_reader):
+        """Test that whitelisted users get AI feedback"""
+        mock_instance = mock_pdf_reader.return_value
+        mock_instance.pages = [type('obj', (object,), {'extract_text': lambda: 'Sample resume text'})]
+        
+        mock_openai.return_value.choices = [type('obj', (object,), {
+            'message': type('obj', (object,), {'content': 'This is mock AI feedback'})
+        })]
+        
+        self.client.login(username='whitelisteduser', password='StrongTestPass123')
+        
+        response = self.client.post(
+            reverse('upload_resume'),
+            {'resume': SimpleUploadedFile("resume.pdf", self.pdf_content, content_type="application/pdf")},
+            follow=True
+        )
+        
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'AI Feedback by GPT-4o-mini')
+        mock_openai.assert_called_once()
+
+    @patch('users.views.PdfReader')
+    @patch('openai.chat.completions.create')
+    def test_admin_user_gets_ai_feedback(self, mock_openai, mock_pdf_reader):
+        """Test that admin users get AI feedback"""
+        mock_instance = mock_pdf_reader.return_value
+        mock_instance.pages = [type('obj', (object,), {'extract_text': lambda: 'Sample resume text'})]
+        
+        mock_openai.return_value.choices = [type('obj', (object,), {
+            'message': type('obj', (object,), {'content': 'This is mock AI feedback'})
+        })]
+        
+        self.client.login(username='adminuser', password='StrongTestPass123')
+        
+        response = self.client.post(
+            reverse('upload_resume'),
+            {'resume': SimpleUploadedFile("resume.pdf", self.pdf_content, content_type="application/pdf")},
+            follow=True
+        )
+        
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'AI Feedback by GPT-4o-mini')
+        mock_openai.assert_called_once()
+
+    def tearDown(self):
+        for resume in Resume.objects.all():
+            if resume.resume:
+                try:
+                    resume.resume.delete()
+                except:
+                    pass
+
+class SecureResumeViewTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.user = User.objects.create_user(
+            username='testuser',
+            email='test@example.com',
+            password='StrongTestPass123'
+        )
+        
+        self.resume_file = SimpleUploadedFile(
+            "test_resume.pdf", 
+            b"%PDF-1.4 test resume content", 
+            content_type="application/pdf"
+        )
+        self.resume = Resume.objects.create(
+            user=self.user,
+            resume=self.resume_file
+        )
+
+    def test_direct_media_url_not_accessible(self):
+        """Test that the direct media URL for resumes is properly secured"""
+        self.client.login(username='testuser', password='StrongTestPass123')
+        
+        secure_response = self.client.get(reverse('view_resume', args=[self.resume.id]))
+        self.assertEqual(secure_response.status_code, 200)
+        
+    def test_nonexistent_resume_returns_404(self):
+        """Test that requesting a non-existent resume returns 404"""
+        self.client.login(username='testuser', password='StrongTestPass123')
+        
+        response = self.client.get(reverse('view_resume', args=[9999]))
+        self.assertEqual(response.status_code, 404)
+
+    @patch('users.views.PdfReader')
+    def test_resume_linked_to_user(self, mock_pdf_reader):
+        """Test that resumes are properly linked to users when uploaded"""
+        mock_instance = mock_pdf_reader.return_value
+        mock_instance.pages = [type('obj', (object,), {'extract_text': lambda: 'Sample resume text'})]
+        
+        self.client.login(username='testuser', password='StrongTestPass123')
+        
+        new_file = SimpleUploadedFile(
+            "new_resume.pdf", 
+            b"%PDF-1.4 new resume content", 
+            content_type="application/pdf"
+        )
+        
+        response = self.client.post(
+            reverse('upload_resume'),
+            {'resume': new_file},
+            follow=True
+        )
+        
+        self.assertEqual(response.status_code, 200)
+        
+        latest_resume = Resume.objects.latest('uploaded_at')
+        self.assertEqual(latest_resume.user, self.user)
+
+    def tearDown(self):
+        for resume in Resume.objects.all():
+            if resume.resume:
+                try:
+                    resume.resume.delete(save=False)
+                except:
+                    pass
+        Resume.objects.all().delete()

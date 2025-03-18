@@ -27,6 +27,21 @@ try_python_command() {
 
 echo -e "${BLUE}========== Setting up local Python environment ==========${NC}"
 
+if [ -z "$OPENAI_API_KEY" ]; then
+    echo -e "${RED}OPENAI_API_KEY environment variable is not set.${NC}"
+    echo -e "${BLUE}Please enter your OpenAI API key:${NC}"
+    read -s OPENAI_API_KEY
+    export OPENAI_API_KEY
+    
+    if [ -z "$OPENAI_API_KEY" ]; then
+        echo -e "${RED}No API key provided. Features that use OpenAI may not work properly.${NC}"
+    else
+        echo -e "${GREEN}API key set for this session.${NC}"
+    fi
+else
+    echo -e "${GREEN}Using OPENAI_API_KEY from environment.${NC}"
+fi
+
 echo -e "${BLUE}========== Changing directory to myproject ==========${NC}"
 cd myproject || exit 1
 
