@@ -4,6 +4,7 @@ htmlcov/
 .DS_Store
 __pycache__/
 myproject/mediafiles
+myproject/staticfiles
 venv/
 certs/
 *.pem

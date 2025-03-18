@@ -12,6 +12,7 @@ from .models import Resume, get_user_by_email, Profile
 from .signals import user_created_callback
 from .views import login_view, register_view, logout_view
 from django.utils import timezone
+from unittest.mock import patch
 
 class UserRegistrationFormTest(TestCase):
     def test_registration_form_valid_data(self):
@@ -272,14 +273,33 @@ class ResumeViewTest(TestCase):
 
         written_file = BytesIO()
         writer.write(written_file)
-        written_file.seek(0) ## zooms to start of file
+        written_file.seek(0) # zooms to start of file
         uploaded_file = SimpleUploadedFile("some_resume.pdf", written_file.read(), content_type="application/pdf")
 
         response = self.client.post(reverse('upload_resume'), {'resume': uploaded_file})
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "The first 10 characters of the text from your resume is")
+        self.assertContains(response, "AI Feedback by GPT-4o-mini")
+        self.assertIn('feedback', response.context)
         
         self.uploaded_files.extend(Resume.objects.all())
+
+    @patch('openai.chat.completions.create')
+    def test_upload_resume_exception_ai_feedback(self, mock_openai):
+        mock_openai.side_effect = Exception("example error")
+
+        writer = PdfWriter() 
+        writer.add_page(writer.add_blank_page(width=210, height=297))
+
+        written_file = BytesIO()
+        writer.write(written_file)
+        written_file.seek(0)
+        uploaded_file = SimpleUploadedFile("some_resume.pdf", written_file.read(), content_type="application/pdf")
+
+        response = self.client.post(reverse('upload_resume'), {'resume': uploaded_file})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Error generating AI feedback: example error")
+        
+        self.uploaded_files.extend(Resume.objects.all())    
 
     def test_upload_resume_GET_valid(self):
         response = self.client.get(reverse('upload_resume'))

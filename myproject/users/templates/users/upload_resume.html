@@ -9,8 +9,11 @@
     <button type="submit" class="btn">Upload</button>
 </form>
 
-{% if message %}
-    <p>{{ message }}</p>
+{% if feedback %}
+    <br>
+    <h3>AI Feedback by GPT-4o-mini:</h3>
+    <br>
+    <div>{{ feedback|safe }}</div>
 {% endif %}
 
 {% endblock %}

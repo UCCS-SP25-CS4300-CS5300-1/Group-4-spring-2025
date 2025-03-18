@@ -9,7 +9,10 @@ from pypdf import PdfReader
 from jobs.models import Job
 from .forms import UserRegistrationForm, UserLoginForm, EditProfileForm, ResumeUploadForm, EditPreferenceForm
 from .models import Profile, Resume
-
+import os
+import openai
+import markdown
+openai.api_key = os.environ.get('OPENAI_API_KEY')
 
 def register_view(request):
     if(request.method == 'POST'):
@@ -77,13 +80,27 @@ def upload_resume(request):
             reader = PdfReader(file)
             page = reader.pages[0]
             text = page.extract_text()
-            message = f"The first 10 characters of the text from your resume is {text[:10]}"
-
-            return render(request, 'users/upload_resume.html', {'form': resume_form, 'message': message})
+            feedback = get_resume_feedback(text)
+            feedback_html = markdown.markdown(feedback)
+            
+            return render(request, 'users/upload_resume.html', {'form': resume_form, 'feedback': feedback_html})
     else:
         resume_form = ResumeUploadForm()
 
     return render(request, 'users/upload_resume.html', {'form': resume_form})
+
+def get_resume_feedback(resume_text):
+    try:
+        response = openai.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": "You are a helpful resume reviewer. Review the following resume and provide constructive feedback. Focus on general advice, formatting, keyword optimization, and job relevance."},
+                {"role": "user", "content": f"Please review this resume:\\n\\n{resume_text}"}
+            ],
+        )
+        return response.choices[0].message.content
+    except Exception as ex:
+        return f"Error generating AI feedback: {ex}"
 
 @login_required
 def profile_view(request):
