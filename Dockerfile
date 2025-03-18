@@ -12,6 +12,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY myproject/ .
 
 RUN mkdir -p /app/database \
+    && mkdir -p /app/database/media \
     && mkdir -p /app/staticfiles \
     && mkdir -p /app/mediafiles \
     && mkdir -p /app/ssl \
@@ -22,6 +23,10 @@ RUN python manage.py collectstatic --noinput
 
 RUN echo '#!/bin/bash\n\
     set -e\n\
+    \n\
+    ## Ensure media directory exists\n\
+    echo "Ensuring media directory exists..."\n\
+    mkdir -p /app/database/media\n\
     \n\
     ## Make migrations\n\
     echo "Making migrations..."\n\

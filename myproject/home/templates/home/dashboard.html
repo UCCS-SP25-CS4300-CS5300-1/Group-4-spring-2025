@@ -12,6 +12,9 @@
             {% else %}
                 <span class="badge bg-warning">LinkedIn: Not Connected</span>
             {% endif %}
+            {% if user.is_superuser or user.is_staff %}
+                <a href="{% url 'admin:index' %}" class="badge bg-info">Admin Panel</a>
+            {% endif %}
         </div>
     </div>
 
@@ -113,6 +116,16 @@
     
     .user-info {
         margin-top: 10px;
+    }
+    
+    .user-info .badge {
+        margin-right: 5px;
+        font-size: 0.85rem;
+    }
+    
+    .bg-info {
+        background-color: #0dcaf0 !important;
+        color: #000 !important;
     }
     
     .dashboard-stats {
