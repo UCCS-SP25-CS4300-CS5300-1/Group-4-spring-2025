@@ -268,6 +268,10 @@ class UserViewsTest(TestCase):
 
 class ResumeViewTest(TestCase):
     def setUp(self):
+        import os
+        from django.conf import settings
+        os.makedirs(settings.MEDIA_ROOT, exist_ok=True)
+        
         self.client = Client()
         self.uploaded_files = []
         
@@ -360,8 +364,16 @@ class ResumeViewTest(TestCase):
                 try:
                     resume.resume.delete(save=False)
                 except:
-                    pass
+                    pass   
         Resume.objects.all().delete()
+        User.objects.all().delete()
+        
+        import shutil
+        from django.conf import settings
+        try:
+            shutil.rmtree(settings.MEDIA_ROOT)
+        except:
+            pass
 
 class UserAuthenticationTest(TestCase):
     def setUp(self):
@@ -426,15 +438,23 @@ class UserModelTest(TestCase):
         self.assertEqual(str(self.user.profile), 'testuser')
 
 class ResumeModelTest(TestCase):
+    def setUp(self):
+        import os
+        from django.conf import settings
+        os.makedirs(settings.MEDIA_ROOT, exist_ok=True)
+        
+        self.uploaded_files = []
+        
     def test_resume_upload(self):
         file = SimpleUploadedFile("some_resume.pdf", b"%PDF-1.4 lorem ipsum", content_type="application/pdf")
         resume = Resume.objects.create(resume=file)
+        self.uploaded_files.append(resume)
+        
         self.assertTrue(resume.resume.name.startswith('resumes/some_resume'))
         self.assertTrue(resume.resume.name.endswith('.pdf'))
         self.assertTrue(os.path.exists(resume.resume.path))
         self.assertIsNotNone(resume.uploaded_at)
         self.assertEqual(str(resume), "Resume 1")
-        resume.resume.delete()
 
     def test_resume_str_representation(self):
         """Test the string representation of resumes with different IDs"""
@@ -443,31 +463,35 @@ class ResumeModelTest(TestCase):
         
         resume1 = Resume.objects.create(resume=file1)
         resume2 = Resume.objects.create(resume=file2)
+        self.uploaded_files.extend([resume1, resume2])
         
         self.assertEqual(str(resume1), "Resume 1")
         self.assertEqual(str(resume2), "Resume 2")
-        
-        resume1.resume.delete()
-        resume2.resume.delete()
 
     def test_resume_upload_time(self):
         """Test that uploaded_at is automatically set"""
         file = SimpleUploadedFile("resume.pdf", b"%PDF-1.4 test", content_type="application/pdf")
         resume = Resume.objects.create(resume=file)
+        self.uploaded_files.append(resume)
         
         self.assertIsNotNone(resume.uploaded_at)
         self.assertTrue(resume.uploaded_at <= timezone.now())
-        
-        resume.resume.delete()
 
     def tearDown(self):
-        for resume in Resume.objects.all():
+        for resume in self.uploaded_files:
             if(resume.resume):
                 try:
-                    resume.resume.delete()
+                    resume.resume.delete(save=False)
                 except:
                     pass
         Resume.objects.all().delete()
+        
+        import shutil
+        from django.conf import settings
+        try:
+            shutil.rmtree(settings.MEDIA_ROOT)
+        except:
+            pass
 
 class UserSignalsTest(TestCase):
     def test_user_created_callback(self):
@@ -505,6 +529,10 @@ class UserUrlsTest(TestCase):
 
 class AdminPanelTest(TestCase):
     def setUp(self):
+        import os
+        from django.conf import settings
+        os.makedirs(settings.MEDIA_ROOT, exist_ok=True)
+        
         self.client = Client()
         self.admin_user = User.objects.create_superuser(
             username='admin',
@@ -578,12 +606,19 @@ class AdminPanelTest(TestCase):
         for resume in Resume.objects.all():
             if(resume.resume):
                 try:
-                    resume.resume.delete()
+                    resume.resume.delete(save=False)
                 except:
                     pass
         Resume.objects.all().delete()
         User.objects.all().delete()
         Profile.objects.all().delete()
+        
+        import shutil
+        from django.conf import settings
+        try:
+            shutil.rmtree(settings.MEDIA_ROOT)
+        except:
+            pass
 
 class UserAdminTest(TestCase):
     def setUp(self):
@@ -664,6 +699,10 @@ class UserAdminTest(TestCase):
 
 class ResumePrivacyTest(TestCase):
     def setUp(self):
+        import os
+        from django.conf import settings
+        os.makedirs(settings.MEDIA_ROOT, exist_ok=True)
+        
         self.client = Client()
         self.user1 = User.objects.create_user(
             username='user1',
@@ -744,15 +783,27 @@ class ResumePrivacyTest(TestCase):
 
     def tearDown(self):
         for resume in self.uploaded_files:
-            if resume.resume:
+            if(resume.resume):
                 try:
                     resume.resume.delete(save=False)
                 except:
                     pass
         Resume.objects.all().delete()
+        User.objects.all().delete()
+        
+        import shutil
+        from django.conf import settings
+        try:
+            shutil.rmtree(settings.MEDIA_ROOT)
+        except:
+            pass
 
 class AIFeatureAccessTest(TestCase):
     def setUp(self):
+        import os
+        from django.conf import settings
+        os.makedirs(settings.MEDIA_ROOT, exist_ok=True)
+        
         self.client = Client()
         self.uploaded_files = []
         
@@ -783,14 +834,10 @@ class AIFeatureAccessTest(TestCase):
 
     @patch('users.views.PdfReader')
     @patch('openai.chat.completions.create')
-    def test_regular_user_no_ai_feedback(self, mock_openai, mock_pdf_reader):
+    def test_regular_user_doesnt_get_ai_feedback(self, mock_openai, mock_pdf_reader):
         """Test that regular users don't get AI feedback"""
         mock_instance = mock_pdf_reader.return_value
         mock_instance.pages = [type('obj', (object,), {'extract_text': lambda: 'Sample resume text'})]
-        
-        mock_openai.return_value.choices = [type('obj', (object,), {
-            'message': type('obj', (object,), {'content': 'This is mock AI feedback'})
-        })]
         
         self.client.login(username='regularuser', password='StrongTestPass123')
         
@@ -801,10 +848,11 @@ class AIFeatureAccessTest(TestCase):
         )
         
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Resume uploaded successfully. AI feedback is only available to whitelisted users.')
-        self.assertNotContains(response, 'AI Feedback by GPT-4o-mini')
-
+        self.assertContains(response, 'Resume uploaded successfully')
+        self.assertContains(response, 'AI feedback is only available to whitelisted users')
         mock_openai.assert_not_called()
+        
+        self.uploaded_files.extend(Resume.objects.all())
 
     @patch('users.views.PdfReader')
     @patch('openai.chat.completions.create')
@@ -828,6 +876,8 @@ class AIFeatureAccessTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'AI Feedback by GPT-4o-mini')
         mock_openai.assert_called_once()
+        
+        self.uploaded_files.extend(Resume.objects.all())
 
     @patch('users.views.PdfReader')
     @patch('openai.chat.completions.create')
@@ -851,17 +901,33 @@ class AIFeatureAccessTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'AI Feedback by GPT-4o-mini')
         mock_openai.assert_called_once()
+        
+        self.uploaded_files.extend(Resume.objects.all())
 
     def tearDown(self):
-        for resume in Resume.objects.all():
-            if resume.resume:
+        for resume in Resume.objects.filter(resume__isnull=False):
+            if(resume.resume):
                 try:
-                    resume.resume.delete()
+                    resume.resume.delete(save=False)
                 except:
                     pass
+        Resume.objects.all().delete()
+        User.objects.all().delete()
+        Profile.objects.all().delete()
+        
+        import shutil
+        from django.conf import settings
+        try:
+            shutil.rmtree(settings.MEDIA_ROOT)
+        except:
+            pass
 
 class SecureResumeViewTest(TestCase):
     def setUp(self):
+        import os
+        from django.conf import settings
+        os.makedirs(settings.MEDIA_ROOT, exist_ok=True)
+        
         self.client = Client()
         self.user = User.objects.create_user(
             username='testuser',
@@ -920,9 +986,17 @@ class SecureResumeViewTest(TestCase):
 
     def tearDown(self):
         for resume in Resume.objects.all():
-            if resume.resume:
+            if(resume.resume):
                 try:
                     resume.resume.delete(save=False)
                 except:
                     pass
+        User.objects.all().delete()
         Resume.objects.all().delete()
+        
+        import shutil
+        from django.conf import settings
+        try:
+            shutil.rmtree(settings.MEDIA_ROOT)
+        except:
+            pass

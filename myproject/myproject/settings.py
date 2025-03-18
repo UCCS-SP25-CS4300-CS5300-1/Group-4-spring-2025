@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 
 from pathlib import Path
 import os
+import sys
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -131,7 +132,11 @@ STATICFILES_DIRS = [
 ]
 
 MEDIA_URL = 'media/'
-MEDIA_ROOT = Path('/app/database/media')
+# Set MEDIA_ROOT differently based on environment
+if('test' in sys.argv):
+    MEDIA_ROOT = BASE_DIR / 'test_media'
+else:
+    MEDIA_ROOT = Path('/app/database/media')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
