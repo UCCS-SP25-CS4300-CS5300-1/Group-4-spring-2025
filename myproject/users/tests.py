@@ -199,7 +199,9 @@ class UserViewsTest(TestCase):
         self.client.login(username='testuser', password='StrongTestPass123')
         response = self.client.post(self.edit_profile_url, {
             'linkedIn_username': 'new_linkedin',
-            'linkedIn_password': 'new_password'
+            'linkedIn_password': 'new_password',
+            'first_name': 'John',
+            'last_name': 'Doe'
         })
         self.assertEqual(response.status_code, 302)
         self.assertRedirects(response, self.home_url)
@@ -207,6 +209,8 @@ class UserViewsTest(TestCase):
         self.user.refresh_from_db()
         self.assertEqual(self.user.profile.linkedIn_username, 'new_linkedin')
         self.assertEqual(self.user.profile.linkedIn_password, 'new_password')
+        self.assertEqual(self.user.first_name, 'John')
+        self.assertEqual(self.user.last_name, 'Doe')
 
     def test_edit_profile_POST_invalid(self):
         """Test that invalid profile updates are handled"""

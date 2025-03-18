@@ -26,6 +26,14 @@ class HomeViewTest(TestCase):
         self.assertContains(response, 'AI-Powered Job Search Automation')
         self.assertContains(response, 'Streamline Your Job Hunt')
         self.assertContains(response, 'How ApplierPilotAI Works')
+        
+        self.assertContains(response, '<a href="#features">Features</a>')
+        self.assertContains(response, '<a href="#how-it-works">How It Works</a>')
+        self.assertContains(response, '<a href="#contact">Contact</a>')
+        self.assertNotContains(response, '<a href="#about">About</a>')
+
+        self.assertContains(response, 'contact@ApplierPilot.com')
+        self.assertNotContains(response, 'Pricing')
     
     def test_home_view_authenticated_user(self):
         self.client.login(username='testuser', password='StrongTestPass123')
@@ -33,7 +41,8 @@ class HomeViewTest(TestCase):
         
         self.assertContains(response, 'Hello, testuser')
         self.assertContains(response, 'Logout')
-        self.assertContains(response, 'View Dashboard')
+        self.assertContains(response, 'View Dashboard</a>')
+        self.assertContains(response, 'href="/dashboard/"')
         
         self.assertNotContains(response, 'class="login-btn"')
         self.assertNotContains(response, 'Get Started For Free')
@@ -201,7 +210,8 @@ class StaticContentTest(TestCase):
     
     def test_page_contains_footer(self):
         response = self.client.get(self.home_url)
-        self.assertContains(response, '<footer>')
+        self.assertContains(response, '<footer')
+        self.assertContains(response, 'id="contact"')
     
     def test_page_contains_main_content(self):
         response = self.client.get(self.home_url)

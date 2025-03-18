@@ -15,7 +15,6 @@
             <ul class="nav-links">
                 <li><a href="#features">Features</a></li>
                 <li><a href="#how-it-works">How It Works</a></li>
-                <li><a href="#about">About</a></li>
                 <li><a href="#contact">Contact</a></li>
             </ul>
             <div class="auth-buttons">
@@ -34,7 +33,7 @@
                 <h1>AI-Powered Job Search Automation</h1>
                 <p>Let artificial intelligence find and apply to the perfect jobs for you, while you focus on preparing for interviews.</p>
                 {% if user.is_authenticated %}
-                    <a href="#" class="cta-button">View Dashboard</a>
+                    <a href="{% url 'dashboard' %}" class="cta-button">View Dashboard</a>
                 {% else %}
                     <a href="{% url 'register' %}" class="cta-button">Get Started For Free</a>
                 {% endif %}
@@ -116,7 +115,7 @@
         </section>
     </main>
 
-    <footer>
+    <footer id="contact">
         <div class="footer-content">
             <div class="footer-section">
                 <h3>ApplierPilotAI</h3>
@@ -128,18 +127,11 @@
                     <li><a href="#">Home</a></li>
                     <li><a href="#features">Features</a></li>
                     <li><a href="#how-it-works">How It Works</a></li>
-                    <li><a href="#">Pricing</a></li>
                 </ul>
             </div>
             <div class="footer-section">
                 <h3>Contact Us</h3>
-                <p>Email: dummy email</p>
-                <p>Phone: dummy phone</p>
-                <div class="social-icons">
-                    <a href="#"><i class="fab fa-twitter"></i></a>
-                    <a href="#"><i class="fab fa-facebook"></i></a>
-                    <a href="#"><i class="fab fa-linkedin"></i></a>
-                </div>
+                <p>Email: contact@ApplierPilot.com</p>
             </div>
         </div>
         <div class="copyright">
