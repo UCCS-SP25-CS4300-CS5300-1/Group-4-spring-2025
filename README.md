@@ -74,4 +74,4 @@ The project uses GitHub Actions for CI with the following features:
 
 ### Production Deployment
 
-Ask Kaden.
+Assuming all tests pass and coverage is above 85%, the CI pipeline will deploy the changes to Fly.io automatically upon pushing to the main branch. (commits or pull requests).
