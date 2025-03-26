@@ -321,9 +321,3 @@ while True:
                     # Break out of while loop
                     break
             page_tracker += 1
-
-
-
-    if current_page == num_pages:
-        break
-
