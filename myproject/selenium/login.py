@@ -7,6 +7,7 @@ from selenium.webdriver.common import keys
 from selenium.webdriver.common.actions.wheel_input import ScrollOrigin
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support.select import Select
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
@@ -169,79 +170,160 @@ job_list = []
 job_company = []
 company_list = []
 
-try:
 
-    unordered_list = driver.find_element(By.XPATH, "//div[@class='scaffold-layout__list ']/div/ul")
-    jobs = unordered_list.find_elements(By.XPATH, ".//li/div/div/div/div/div/div/a")
-    jobs2 = unordered_list.find_element(By.XPATH, ".//li")
-    for job in jobs:
+mydict = {}
+current_page = 1
+next_page = current_page + 1
 
-        job_title = job.get_attribute("aria-label")
-        link = job.get_attribute("href")
-        company = job.find_element(By.XPATH, "./../../div[2]/span").text
-        location = job.find_element(By.XPATH, "(./../../div)[3]/ul/li/span").text
-        job_list.append(job_title)
-        job_company.append(company)
-        company_list.append(location)
+num_pages = 0
 
-        mydict = { 'job_title': job_title, 'link': link, 'company': company, 'location': location }
-        #job_list.append(mydict)
-
-
-    for i in job_list:
-        print(i)
-    print("--------------\n")
-
-
-
-except NoSuchElementException:
-    print("No elements found")
-
-else:
-    print("length of jobs: ", len(job_list))
 
 # Scroll down
-
-iframe = driver.find_element(By.XPATH, "//div[@class='scaffold-layout__list ']")
-scroll_origin = ScrollOrigin.from_element(iframe)
-time.sleep(5)
-ActionChains(driver)\
-    .scroll_from_origin(scroll_origin, 0, 12000)\
-    .perform()
-
-
-
-
-try:
-
-    unordered_list = driver.find_element(By.XPATH, "//div[@class='scaffold-layout__list ']/div/ul")
-    jobs = unordered_list.find_elements(By.XPATH, ".//li/div/div/div/div/div/div/a")
-    for job in jobs:
-
-        job_title = job.get_attribute("aria-label")
-        link = job.get_attribute("href")
-        company = job.find_element(By.XPATH, "./../../div[2]/span").text
-        location = job.find_element(By.XPATH, "(./../../div)[3]/ul/li/span").text
-        job_list.append(job_title)
-        job_company.append(company)
-        company_list.append(location)
-
-        mydict = { 'job_title': job_title, 'link': link, 'company': company, 'location': location }
-        #job_list.append(mydict)
-
-
-    for i in job_list:
-        print(i)
-
-    print("--------------\n")
+iteration1 = True
+iteration2 = False
+while True:
+    iframe = driver.find_element(By.XPATH, "//div[@class='scaffold-layout__list ']")
+    scroll_origin = ScrollOrigin.from_element(iframe)
+    time.sleep(1)
+    ActionChains(driver)\
+        .scroll_from_origin(scroll_origin, 0, 12000)\
+        .perform()
+    time.sleep(1)
+    ActionChains(driver)\
+        .scroll_from_origin(scroll_origin, 0, 12000)\
+        .perform()
+    time.sleep(1)
+    ActionChains(driver)\
+        .scroll_from_origin(scroll_origin, 0, 12000)\
+        .perform()
+    time.sleep(1)
+    ActionChains(driver)\
+        .scroll_from_origin(scroll_origin, 0, 12000)\
+        .perform()
+    time.sleep(1)
+    ActionChains(driver)\
+        .scroll_from_origin(scroll_origin, 0, 12000)\
+        .perform()
+    time.sleep(1)
+    ActionChains(driver)\
+        .scroll_from_origin(scroll_origin, 0, 12000)\
+        .perform()
 
 
+    try:
 
-except NoSuchElementException:
-    print("No elements found")
+        unordered_list = driver.find_element(By.XPATH, "//div[@class='scaffold-layout__list ']/div/ul")
 
-else:
-    print("length of jobs: ", len(job_list))
+        jobs = unordered_list.find_elements(By.XPATH, ".//div/div/div/div/div/div/a")
+
+        for job in jobs:
+            job_title = job.get_attribute("aria-label")
+            link = job.get_attribute("href")
+            company = job.find_element(By.XPATH, "./../../div[2]/span").text
+            location = job.find_element(By.XPATH, "(./../../div)[3]/ul/li/span").text
+
+            job_list.append(job_title)
+
+            #company = job.find_element(By.XPATH, "./../../div[2]/span").text
+            #location = job.find_element(By.XPATH, "(./../../div)[3]/ul/li/span").text
+            #job_list.append(job_title)
+            #job_company.append(company)
+            #company_list.append(location)
+
+            mydict = { 'job_title': job_title, 'link': link, 'company': company, 'location': location }
+            job_list.append(mydict)
+            print("---", job_title, link, company, location)
+
+        print("--------------\n")
 
 
+
+    except NoSuchElementException:
+        print("No elements found")
+
+    else:
+        print("length of jobs: ", len(job_list))
+
+
+    ### Page Change ###
+    unordered_list_pages = driver.find_element(By.XPATH, "//ul[@class='artdeco-pagination__pages artdeco-pagination__pages--number']")
+    pages = unordered_list_pages.find_elements(By.XPATH, ".//li")
+
+    # Get next page
+    page_clicked = False
+
+    while not page_clicked:
+        page_tracker = 1
+
+        for page in pages:
+            page_number = page.find_element(By.XPATH, ".//button/span").text
+
+            if iteration1:
+
+                # For the 9th page of iteration1, we need to click on the ellipsis
+                if next_page == 9:
+                    # Clicked to next set of pages. Iteration 1 is over
+                    print("next_page", next_page)
+                    print("page number", page_number)
+                    page.find_element(By.XPATH, "./button").click()
+                    time.sleep(2)
+
+                    # Change variables
+                    current_page += 1
+                    next_page += 1
+                    page_clicked = True
+
+                    # Now, only iteration2 will be in effect
+                    iteration1 = False
+                    iteration2 = True
+                    # Exit out of page_clicked while loop
+                    break
+
+                else:
+                    if int(page_number) == next_page:
+                        page.find_element(By.XPATH, ".//button").click()
+                        time.sleep(2)
+
+                        # Change variables
+                        current_page += 1
+                        next_page += 1
+
+                        # Exit out of page_clicked while loop
+                        page_clicked = True
+                        break
+            elif iteration2:
+
+                # Skip over the first ellipsis in all subsequent iterations
+                if page_tracker <= 3:
+                    page_tracker += 1
+                    continue
+
+                # Capture second ellipsis
+                if page_tracker == 9:
+                    page.find_element(By.XPATH, "./button").click()
+                    time.sleep(2)
+
+                    # Change variables
+                    current_page += 1
+                    next_page += 1
+                    page_clicked = True
+                    # Break out of while loop
+                    break
+
+                if int(page_number) == next_page:
+                    page.find_element(By.XPATH, "./button").click()
+                    time.sleep(2)
+
+                    # Change variables
+                    current_page += 1
+                    next_page += 1
+                    page_clicked = True
+                    # Break out of while loop
+                    break
+            page_tracker += 1
+
+
+
+    if current_page == num_pages:
+        break
 
