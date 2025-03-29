@@ -1,21 +1,19 @@
+import time
+import math
 
+from selenium import webdriver
+from selenium.common import NoSuchElementException
+from selenium.webdriver import ActionChains
+from selenium.webdriver.common import keys
+from selenium.webdriver.common.actions.wheel_input import ScrollOrigin
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.select import Select
+from selenium.webdriver.support.wait import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
-def applier_pilot(amount_of_jobs, LI_username, LI_password):
+def applier_pilot(search_term, LI_username, LI_password, amount_of_jobs):
 
-
-    import time
-    import math
-
-    from selenium import webdriver
-    from selenium.common import NoSuchElementException
-    from selenium.webdriver import ActionChains
-    from selenium.webdriver.common import keys
-    from selenium.webdriver.common.actions.wheel_input import ScrollOrigin
-    from selenium.webdriver.common.keys import Keys
-    from selenium.webdriver.common.by import By
-    from selenium.webdriver.support.select import Select
-    from selenium.webdriver.support.wait import WebDriverWait
-    from selenium.webdriver.support import expected_conditions as EC
 
 
 
@@ -111,7 +109,7 @@ def applier_pilot(amount_of_jobs, LI_username, LI_password):
         driver.close()
 
     # Send keys to job search
-    search_string = 'system admin'
+    search_string = search_term
     try:
         a = driver.find_element(By.XPATH, "//input[@placeholder='Title, skill or company']")
 
