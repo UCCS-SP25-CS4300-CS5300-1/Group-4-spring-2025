@@ -1,0 +1,227 @@
+INFO 2025-03-25 02:03:08,733 autoreload 11354 140362342522944 Watching for file changes with StatReloader
+INFO 2025-03-25 02:04:37,986 autoreload 11354 140362342522944 /home/gleb/coder/uccs/cs4300/project/myproject/myproject/settings.py changed, reloading.
+INFO 2025-03-25 02:26:46,057 autoreload 15407 140446655332416 Watching for file changes with StatReloader
+INFO 2025-03-25 02:27:25,129 autoreload 15620 140457125789760 Watching for file changes with StatReloader
+INFO 2025-03-25 02:27:39,120 autoreload 15747 139704854429760 Watching for file changes with StatReloader
+INFO 2025-03-25 02:27:48,607 autoreload 15835 139804033777728 Watching for file changes with StatReloader
+INFO 2025-03-25 02:27:59,971 basehttp 15835 139803953723072 "GET / HTTP/1.1" 200 5891
+INFO 2025-03-25 02:27:59,982 basehttp 15835 139803953723072 "GET /static/styles.css HTTP/1.1" 200 8177
+ERROR 2025-03-25 02:28:03,622 log 15835 139803953723072 Internal Server Error: /dashboard/
+Traceback (most recent call last):
+  File "/home/gleb/coder/uccs/cs4300/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gleb/coder/uccs/cs4300/venv/lib/python3.11/site-packages/django/db/backends/sqlite3/base.py", line 360, in execute
+    return super().execute(query, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+sqlite3.OperationalError: no such column: users_profile.whitelisted_for_ai
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/gleb/coder/uccs/cs4300/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gleb/coder/uccs/cs4300/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gleb/coder/uccs/cs4300/venv/lib/python3.11/site-packages/django/contrib/auth/decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gleb/coder/uccs/cs4300/project/myproject/home/views.py", line 23, in dashboard
+    profile = Profile.objects.get(user=request.user)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gleb/coder/uccs/cs4300/venv/lib/python3.11/site-packages/django/db/models/manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gleb/coder/uccs/cs4300/venv/lib/python3.11/site-packages/django/db/models/query.py", line 629, in get
+    num = len(clone)
+          ^^^^^^^^^^
+  File "/home/gleb/coder/uccs/cs4300/venv/lib/python3.11/site-packages/django/db/models/query.py", line 366, in __len__
+    self._fetch_all()
+  File "/home/gleb/coder/uccs/cs4300/venv/lib/python3.11/site-packages/django/db/models/query.py", line 1930, in _fetch_all
+    self._result_cache = list(self._iterable_class(self))
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gleb/coder/uccs/cs4300/venv/lib/python3.11/site-packages/django/db/models/query.py", line 91, in __iter__
+    results = compiler.execute_sql(
+              ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gleb/coder/uccs/cs4300/venv/lib/python3.11/site-packages/django/db/models/sql/compiler.py", line 1623, in execute_sql
+    cursor.execute(sql, params)
+  File "/home/gleb/coder/uccs/cs4300/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 122, in execute
+    return super().execute(sql, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gleb/coder/uccs/cs4300/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gleb/coder/uccs/cs4300/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gleb/coder/uccs/cs4300/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+  File "/home/gleb/coder/uccs/cs4300/venv/lib/python3.11/site-packages/django/db/utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "/home/gleb/coder/uccs/cs4300/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gleb/coder/uccs/cs4300/venv/lib/python3.11/site-packages/django/db/backends/sqlite3/base.py", line 360, in execute
+    return super().execute(query, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+django.db.utils.OperationalError: no such column: users_profile.whitelisted_for_ai
+ERROR 2025-03-25 02:28:03,623 basehttp 15835 139803953723072 "GET /dashboard/ HTTP/1.1" 500 149517
+ERROR 2025-03-25 02:28:23,449 log 15835 139803953723072 Internal Server Error: /users/profile/
+Traceback (most recent call last):
+  File "/home/gleb/coder/uccs/cs4300/venv/lib/python3.11/site-packages/django/db/models/fields/related_descriptors.py", line 512, in __get__
+    rel_obj = self.related.get_cached_value(instance)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gleb/coder/uccs/cs4300/venv/lib/python3.11/site-packages/django/db/models/fields/mixins.py", line 37, in get_cached_value
+    return instance._state.fields_cache[self.cache_name]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+KeyError: 'profile'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/gleb/coder/uccs/cs4300/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gleb/coder/uccs/cs4300/venv/lib/python3.11/site-packages/django/db/backends/sqlite3/base.py", line 360, in execute
+    return super().execute(query, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+sqlite3.OperationalError: no such column: users_profile.whitelisted_for_ai
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/gleb/coder/uccs/cs4300/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gleb/coder/uccs/cs4300/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gleb/coder/uccs/cs4300/venv/lib/python3.11/site-packages/django/contrib/auth/decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gleb/coder/uccs/cs4300/project/myproject/users/views.py", line 139, in profile_view
+    if(not hasattr(request.user, 'profile')):
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gleb/coder/uccs/cs4300/venv/lib/python3.11/site-packages/django/utils/functional.py", line 253, in inner
+    return func(_wrapped, *args)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gleb/coder/uccs/cs4300/venv/lib/python3.11/site-packages/django/db/models/fields/related_descriptors.py", line 519, in __get__
+    rel_obj = self.get_queryset(instance=instance).get(**filter_args)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gleb/coder/uccs/cs4300/venv/lib/python3.11/site-packages/django/db/models/query.py", line 629, in get
+    num = len(clone)
+          ^^^^^^^^^^
+  File "/home/gleb/coder/uccs/cs4300/venv/lib/python3.11/site-packages/django/db/models/query.py", line 366, in __len__
+    self._fetch_all()
+  File "/home/gleb/coder/uccs/cs4300/venv/lib/python3.11/site-packages/django/db/models/query.py", line 1930, in _fetch_all
+    self._result_cache = list(self._iterable_class(self))
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gleb/coder/uccs/cs4300/venv/lib/python3.11/site-packages/django/db/models/query.py", line 91, in __iter__
+    results = compiler.execute_sql(
+              ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gleb/coder/uccs/cs4300/venv/lib/python3.11/site-packages/django/db/models/sql/compiler.py", line 1623, in execute_sql
+    cursor.execute(sql, params)
+  File "/home/gleb/coder/uccs/cs4300/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 122, in execute
+    return super().execute(sql, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gleb/coder/uccs/cs4300/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gleb/coder/uccs/cs4300/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gleb/coder/uccs/cs4300/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+  File "/home/gleb/coder/uccs/cs4300/venv/lib/python3.11/site-packages/django/db/utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "/home/gleb/coder/uccs/cs4300/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gleb/coder/uccs/cs4300/venv/lib/python3.11/site-packages/django/db/backends/sqlite3/base.py", line 360, in execute
+    return super().execute(query, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+django.db.utils.OperationalError: no such column: users_profile.whitelisted_for_ai
+ERROR 2025-03-25 02:28:23,451 basehttp 15835 139803953723072 "GET /users/profile/ HTTP/1.1" 500 162629
+ERROR 2025-03-25 02:29:09,271 log 15835 139803953723072 Internal Server Error: /users/profile/
+Traceback (most recent call last):
+  File "/home/gleb/coder/uccs/cs4300/venv/lib/python3.11/site-packages/django/db/models/fields/related_descriptors.py", line 512, in __get__
+    rel_obj = self.related.get_cached_value(instance)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gleb/coder/uccs/cs4300/venv/lib/python3.11/site-packages/django/db/models/fields/mixins.py", line 37, in get_cached_value
+    return instance._state.fields_cache[self.cache_name]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+KeyError: 'profile'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/gleb/coder/uccs/cs4300/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gleb/coder/uccs/cs4300/venv/lib/python3.11/site-packages/django/db/backends/sqlite3/base.py", line 360, in execute
+    return super().execute(query, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+sqlite3.OperationalError: no such column: users_profile.whitelisted_for_ai
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/gleb/coder/uccs/cs4300/venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gleb/coder/uccs/cs4300/venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gleb/coder/uccs/cs4300/venv/lib/python3.11/site-packages/django/contrib/auth/decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gleb/coder/uccs/cs4300/project/myproject/users/views.py", line 139, in profile_view
+    if(not hasattr(request.user, 'profile')):
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gleb/coder/uccs/cs4300/venv/lib/python3.11/site-packages/django/utils/functional.py", line 253, in inner
+    return func(_wrapped, *args)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gleb/coder/uccs/cs4300/venv/lib/python3.11/site-packages/django/db/models/fields/related_descriptors.py", line 519, in __get__
+    rel_obj = self.get_queryset(instance=instance).get(**filter_args)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gleb/coder/uccs/cs4300/venv/lib/python3.11/site-packages/django/db/models/query.py", line 629, in get
+    num = len(clone)
+          ^^^^^^^^^^
+  File "/home/gleb/coder/uccs/cs4300/venv/lib/python3.11/site-packages/django/db/models/query.py", line 366, in __len__
+    self._fetch_all()
+  File "/home/gleb/coder/uccs/cs4300/venv/lib/python3.11/site-packages/django/db/models/query.py", line 1930, in _fetch_all
+    self._result_cache = list(self._iterable_class(self))
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gleb/coder/uccs/cs4300/venv/lib/python3.11/site-packages/django/db/models/query.py", line 91, in __iter__
+    results = compiler.execute_sql(
+              ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gleb/coder/uccs/cs4300/venv/lib/python3.11/site-packages/django/db/models/sql/compiler.py", line 1623, in execute_sql
+    cursor.execute(sql, params)
+  File "/home/gleb/coder/uccs/cs4300/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 122, in execute
+    return super().execute(sql, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gleb/coder/uccs/cs4300/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gleb/coder/uccs/cs4300/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gleb/coder/uccs/cs4300/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+  File "/home/gleb/coder/uccs/cs4300/venv/lib/python3.11/site-packages/django/db/utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "/home/gleb/coder/uccs/cs4300/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gleb/coder/uccs/cs4300/venv/lib/python3.11/site-packages/django/db/backends/sqlite3/base.py", line 360, in execute
+    return super().execute(query, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+django.db.utils.OperationalError: no such column: users_profile.whitelisted_for_ai
+ERROR 2025-03-25 02:29:09,272 basehttp 15835 139803953723072 "GET /users/profile/ HTTP/1.1" 500 162629
+INFO 2025-03-25 02:29:40,416 autoreload 16115 139903348297792 Watching for file changes with StatReloader
+INFO 2025-03-25 02:29:44,765 basehttp 16115 139903268550336 "GET /users/profile/ HTTP/1.1" 200 7258
+INFO 2025-03-25 02:29:44,785 basehttp 16115 139903268550336 "GET /static/styles.css HTTP/1.1" 304 0
+INFO 2025-03-25 02:29:49,831 basehttp 16115 139903268550336 "GET / HTTP/1.1" 200 5891
+INFO 2025-03-25 02:29:51,828 basehttp 16115 139903268550336 "GET /dashboard/ HTTP/1.1" 200 8081

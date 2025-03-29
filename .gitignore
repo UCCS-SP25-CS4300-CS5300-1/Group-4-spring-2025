@@ -2,3 +2,5 @@ db.sqlite3
 .coverage
 htmlcov/
 .DS_Store
+*.pyc
+

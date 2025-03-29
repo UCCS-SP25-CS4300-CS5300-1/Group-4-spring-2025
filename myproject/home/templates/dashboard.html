@@ -8,8 +8,8 @@ Dashboard
 <div class="container">
 
     <div class="d-flex justify-content-end" style="padding-top: 20px;">
-        {% if linkedIn_username %}
-            <p>LinkedIn Username: {{ linkedIn_username }}</p>
+        {% if LI_username %}
+            <p>LinkedIn Username: {{ LI_username }}</p>
         {% else %}
             <p> LinkedIn Username: None Given</p>
         {% endif %}
@@ -42,16 +42,18 @@ Dashboard
         </thead>
         <tbody>
        
-    {% for app in applications %}
-        <tr>
-            <!-- <th scope="row">{{ count }}</th> -->
-            <th scope="row">{{ app.search_word }}</th>
-            <th scope="row">{{ app.job_title }}</th>
-            <th scope="row">{{ app.company }}</th>
-            <th scope="row"><a href="{{ app.link }}">{{ app.link }}</a></th>
-            <th scope="row">{{ app.type }}</th>
-            <th scope="row">{{ app.progress }}</th>
-        </tr>
+    {% for job_dict in job_list %}
+        {% for k,v in job_dict.items %}
+            <tr>
+                <!-- <th scope="row">{{ count }}</th> -->
+                <th scope="col">--</th>
+                <th scope="col">{{ v }}</th>
+                <th scope="col">{{ v }}</th>
+                <th scope="col">{{ v }}</th>
+                <th scope="col"><a href="{{ v }}">{{ v }}</a></th>
+                <th scope="col">--</th>
+            </tr>
+        {% endfor %}
     {% endfor %}
         </tbody>
     </table>

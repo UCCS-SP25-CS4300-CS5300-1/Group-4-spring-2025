@@ -16,7 +16,6 @@ def applier_pilot(search_term, LI_username, LI_password, amount_of_jobs):
 
 
 
-
     # username = 'glebberkez@gmail.com'
     # password = 'russian333'
     fname = 'Gleb'
@@ -194,15 +193,10 @@ def applier_pilot(search_term, LI_username, LI_password, amount_of_jobs):
     # Get info, save to database
     # Get list of jobs
     job_list = []
-    job_company = []
-    company_list = []
-
-
-    mydict = {}
     current_page = 1
     next_page = current_page + 1
 
-    num_pages = 0
+
     ellipsis = "…"
 
 
@@ -246,9 +240,6 @@ def applier_pilot(search_term, LI_username, LI_password, amount_of_jobs):
 
         ### Page Change ###
 
-        unordered_list_pages = driver.find_element(By.XPATH, "//ul[@class='artdeco-pagination__pages artdeco-pagination__pages--number']")
-        pages = unordered_list_pages.find_elements(By.XPATH, ".//li")
-        print("Pages", pages)
 
 
         # Get next page
@@ -257,8 +248,15 @@ def applier_pilot(search_term, LI_username, LI_password, amount_of_jobs):
         # If there are more than 25 job findings, then yes.
         if num_jobs_found > 25:
             page_clicked = False
+            unordered_list_pages = driver.find_element(By.XPATH,                                           "//ul[@class='artdeco-pagination__pages artdeco-pagination__pages--number']")
+            pages = unordered_list_pages.find_elements(By.XPATH, ".//li")
+            print("Pages", pages)
+
         else:
-            page_clicked = False
+            # Now that available jobs have been collected, exit loops
+            # and return joblist
+            page_clicked = True
+            run_program = False
 
         # If the number of jobs found are at least how many we're looking for,
         # return the job_list

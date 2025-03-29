@@ -5,9 +5,12 @@ from users.models import Profile
 from home.models import Application
 from .forms import SearchJobForm
 
-# Selenium related
-from selenium import webdriver
-from selenium.webdriver.common.by import By
+# applier pilot
+from applier_pilot.login import applier_pilot
+
+
+
+
 
 
 def index(request):
@@ -21,25 +24,26 @@ def index(request):
 def dashboard(request):
     form = SearchJobForm()
     profile = Profile.objects.get(user=request.user)
-    applications = Application.objects.filter(user=request.user)
-    linkedIn_username = profile.linkedIn_username
-    count = Application.objects.filter(user=request.user).count()
+    # applications = Application.objects.filter(user=request.user)
+    LI_username = profile.linkedIn_username
+    LI_password = profile.linkedIn_password
+    # count = Application.objects.filter(user=request.user).count()
+    job_list = []
+    amount_of_jobs = 50
     if request.method == "POST":
         form = SearchJobForm(request.POST)
         if form.is_valid():
             search_term = form.cleaned_data['search_term']
+            job_list = applier_pilot(search_term, LI_username, LI_password, amount_of_jobs)
+    return render(request, 'dashboard.html', {'form': form, 'LI_username': LI_username, 'job_list': job_list })
 
-    return render(request, 'dashboard.html', {'form': form, 'linkedIn_username': linkedIn_username, 'applications': applications, 'count': count })
 
-
-def search_jobs():
-    pass
 
 def login_linkedin(request):
     profile = Profile.objects.get(user=request.user)
     linkedIn_username = profile.linkedIn_username
     linkedIn_password = profile.linkedIn_password
 
-    driver = webdriver.Firefox()
-    driver.get("https://linkedin.com")
+    #driver = webdriver.Firefox()
+    #driver.get("https://linkedin.com")
 
