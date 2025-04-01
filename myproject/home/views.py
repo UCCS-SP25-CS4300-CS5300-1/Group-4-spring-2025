@@ -25,7 +25,7 @@ def dashboard(request):
     form = SearchJobForm()
     profile = Profile.objects.get(user=request.user)
     job_list = []
-    #applications = Application.objects.filter(user=request.user)
+    applications = Application.objects.filter(user=request.user)
     linkedIn_username = profile.linkedIn_username
     search_term = ''
     count = Application.objects.filter(user=request.user).count()
@@ -34,9 +34,11 @@ def dashboard(request):
         if form.is_valid():
             search_term = form.cleaned_data['search_term']
             job_list = applier_pilot(search_term, profile.linkedIn_username, profile.linkedIn_password, 25)
+            for job in job_list:
+                a = Application.objects.create(user=request.user, search_word = search_term, job_title = job['job_title'], company=job['company'], link=['link'], location=job['location'])
+                a.save()
 
-
-    return render(request, 'home/dashboard.html', {'form': form, 'linkedIn_username': linkedIn_username, 'job_list': job_list, 'search_term': search_term })
+    return render(request, 'home/dashboard.html', {'form': form, 'linkedIn_username': linkedIn_username, 'applications': applications })
 
 
 def search_jobs():

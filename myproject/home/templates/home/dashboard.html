@@ -60,22 +60,15 @@
                         </tr>
                     </thead>
                     <tbody>
-                    {% for job in job_list %}
-                        
+                    {% if applications %}
+                        {% for app in applications %}
                         <tr>
-                            <td>{{ search_term }}</td>
-                            {% for k,v in job.items %}
-                                
-                                
-                                {% if k == 'link' %}
-                                    <td><a href="{{ v }}" class="btn-sm btn-outline-primary" target="_blank">View <i class="fas fa-external-link-alt"></i></a></td>
-                                {% else %}
-                                    <td>{{ v }}</td>
-                                {% endif %}
-                            {% endfor %}
-                            <td></td>
-                            <td></td>
-                        <!-- 
+                            <td>{{ app.search_word }}</td>
+                            <td>{{ app.job_title }}</td>
+                            <td><a href="{{ app.link }}" class="btn-sm btn-outline-primary" target="_blank">View <i class="fas fa-external-link-alt"></i></a></td>
+                            <td>{{ app.company }}</td>
+                            <td>{{ app.location }}</td>
+                         
                             <td>
                                 {% if app.progress == 'Applied' %}
                                     <span class="badge bg-info">{{ app.progress }}</span>
@@ -89,9 +82,9 @@
                                     <span class="badge bg-secondary">{{ app.progress }}</span>
                                 {% endif %}
                             </td>
-                        -->
                         </tr>
-                    {% endfor %}
+                        {% endfor %}
+                    {% endif %}
                     </tbody>
                 </table>
             </div>
