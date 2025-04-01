@@ -5,13 +5,7 @@ from users.models import Profile
 from home.models import Application
 from .forms import SearchJobForm
 
-# applier pilot
 from applier_pilot.login import applier_pilot
-
-
-
-
-
 
 def index(request):
     context = {}
@@ -38,12 +32,9 @@ def dashboard(request):
     return render(request, 'dashboard.html', {'form': form, 'LI_username': LI_username, 'job_list': job_list })
 
 
-
 def login_linkedin(request):
     profile = Profile.objects.get(user=request.user)
     linkedIn_username = profile.linkedIn_username
     linkedIn_password = profile.linkedIn_password
-
     #driver = webdriver.Firefox()
     #driver.get("https://linkedin.com")
-

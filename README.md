@@ -1,11 +1,12 @@
 # ApplierPilotAI - Group-4-spring-2025
 
-
 ## Live Site
 
-live site: [https://group-4-spring-2025.fly.dev/](https://group-4-spring-2025.fly.dev/)
+live site (prod): [https://applierpilot.com/](https://applierpilot.com/)
 
-### Local Development Setup
+live site (dev): [https://group-4-spring-2025.fly.dev/](https://group-4-spring-2025.fly.dev/)
+
+## Getting the code
 
 1. Clone the repository:
 
@@ -14,21 +15,26 @@ git clone https://github.com/UCCS-SP25-CS4300-CS5300-1/Group-4-spring-2025
 cd Group-4-spring-2025
 ```
 
-2. Set up the database:
+### Local Development Setup (For just testing stuff locally without worrying about prod or pushing yet)
 
 ```bash
-cd myproject
-python3 init_db.py
-python3 manage.py migrate
+## sets up database, runs migrations, admin team, and starts the server
+./python-local-test.sh
 ```
 
-4. Run the development server:
+The site will be available at [http://localhost:8000/](http://localhost:8000/)
+
+### Docker Local Testing (do this when you're ready to push to prod)
+
+#### If your code doesn't work in this docker file, it will not work in prod either. GET IT TO WORK HERE FIRST.
 
 ```bash
-python3 manage.py runserver
+## sets up ssl, builds docker image, and runs the container (plus all the stuff from python-local-test.sh)
+./docker-local-test.sh
 ```
 
-The site will be available at [http://127.0.0.1:8000/](http://127.0.0.1:8000/)
+The site will be available at [https://localhost:8000/](https://localhost:8000/)
+
 
 ### Running Tests
 
@@ -52,28 +58,20 @@ This will generate a coverage report showing what percentage of the code is cove
 
 The report will be available in HTML format at `myproject/htmlcov/index.html`.
 
-### Docker Local Testing
+#### Minimum Requirements
 
-1. Build the Docker image:
+- All tests must pass (your commit will fail on actions if they don't)
+- All new features must have tests
+- Minimum 85% test coverage
 
-```bash
-docker build -t applierpilotai .
-```
+### CI Pipeline
 
-2. Run the container locally:
+The project uses GitHub Actions for CI with the following features:
 
-```bash
-docker run -p 8000:8000 applierpilotai
-```
-
-The site will be available at [http://localhost:8000/](http://localhost:8000/)
-
-For a simplified Docker test, you can use the provided script:
-
-```bash
-./docker-local-test.sh
-```
+1. **Automated Testing**: Tests run on every commit and pull request
+2. **Coverage Reporting**: Test coverage metrics are reported in the console
+3. **AI Code Review**: Pull requests are automatically reviewed using OpenAI's GPT-o3-mini for code quality and style
 
 ### Production Deployment
 
-Ask Kaden.
+Assuming all tests pass and coverage is above 85%, the CI pipeline will deploy the changes to Fly.io automatically upon pushing to the main branch. (commits or pull requests).

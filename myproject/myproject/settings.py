@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 
 from pathlib import Path
 import os
+import sys
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -24,9 +25,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure--*9gky9w%c4c%zw@q90zx-_yiex1@oqy^$!l(m7r9$%x5e5e^z'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True if not 'PRODUCTION' in os.environ else False
+DEBUG = True if not 'PRODUCTION' in os.environ or 'DJANGO_DEBUG' in os.environ else False
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '.fly.dev', 'group-4-spring-2025.fly.dev']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '.fly.dev', 'group-4-spring-2025.fly.dev', 'applierpilot.com', 'www.applierpilot.com', 'editor-aziz-5.devedu.io']
 
 
 # Application definition
@@ -39,9 +40,11 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'home',
+    'jobs',
     'users',
     'crispy_forms',
     'crispy_bootstrap5',
+    'pypdf'
 ]
 
 MIDDLEWARE = [
@@ -60,7 +63,7 @@ ROOT_URLCONF = 'myproject.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -81,8 +84,8 @@ WSGI_APPLICATION = 'myproject.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join('/app/database', 'db.sqlite3') if 'PRODUCTION' in os.environ else BASE_DIR / 'db.sqlite3',
+        'ENGINE': os.environ.get('DJANGO_DB_ENGINE', 'django.db.backends.sqlite3'),
+        'NAME': os.environ.get('DJANGO_DB_NAME', os.path.join('/app/database', 'db.sqlite3') if 'PRODUCTION' in os.environ else BASE_DIR / 'db.sqlite3'),
     }
 }
 
@@ -124,18 +127,101 @@ USE_TZ = True
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
+STATICFILES_DIRS = [
+    BASE_DIR / 'home' / 'static',
+]
+
 MEDIA_URL = 'media/'
-MEDIA_ROOT = BASE_DIR / 'mediafiles'
+# Set MEDIA_ROOT differently based on environment
+if('test' in sys.argv):
+    MEDIA_ROOT = BASE_DIR / 'test_media'
+else:
+    MEDIA_ROOT = Path('/app/database/media')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+# Change from CompressedManifestStaticFilesStorage to StaticFilesStorage for development
+STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
+# STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 CRISPY_TEMPLATE_PACK = "bootstrap5"
 
+LOGIN_URL = '/users/login/'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
+
+if(not DEBUG):
+    CSRF_COOKIE_SECURE = True
+    SESSION_COOKIE_SECURE = True
+    
+    CSRF_USE_SESSIONS = False
+    
+    CSRF_COOKIE_HTTPONLY = False
+    
+    CSRF_COOKIE_SAMESITE = 'Lax'
+    
+    CSRF_TRUSTED_ORIGINS = [
+        'https://group-4-spring-2025.fly.dev',
+        'https://applierpilot.com', 
+        'https://www.applierpilot.com',
+        'https://localhost:8000'
+    ]
+
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    
+    if(not os.environ.get('DOCKER_TEST')):
+        SECURE_SSL_REDIRECT = True
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+        'file': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': '/app/debug.log' if 'PRODUCTION' in os.environ else 'debug.log',
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console', 'file'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+        'django.request': {
+            'handlers': ['console', 'file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'django.security': {
+            'handlers': ['console', 'file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'users': {  # Your app's logger
+            'handlers': ['console', 'file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    },
+}

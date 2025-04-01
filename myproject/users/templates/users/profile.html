@@ -1,0 +1,175 @@
+{% extends 'base_auth.html' %}
+{% load static %}
+
+{% block title %}My Profile - ApplierPilotAI{% endblock %}
+
+{% block content %}
+<div class="profile-container">
+    <h2 class="text-center mb-4">My Profile</h2>
+    
+    <div class="profile-section">
+        <div class="profile-header">
+            <h3>Basic Information</h3>
+            <a href="{% url 'edit_profile' %}" class="btn-sm btn-outline-primary">
+                <i class="fas fa-edit"></i> Edit
+            </a>
+        </div>
+        <div class="profile-info">
+            <p><strong>Username:</strong> {{ user.username }}</p>
+            <p><strong>Full Name:</strong> {{ user.first_name }} {{ user.last_name }}</p>
+            <p><strong>Email:</strong> {{ user.email }}</p>
+            <p><strong>AI Access Status:</strong> 
+                {% if profile.whitelisted_for_ai %}
+                    <span class="badge bg-success">Whitelisted</span>
+                {% else %}
+                    <span class="badge bg-secondary">Not Whitelisted</span>
+                {% endif %}
+            </p>
+            <p class="mt-3">
+                <a href="{% url 'password_change' %}" class="btn-sm btn-outline-warning">
+                    <i class="fas fa-key"></i> Change Password
+                </a>
+            </p>
+        </div>
+    </div>
+    
+    <div class="profile-section">
+        <div class="profile-header">
+            <h3>LinkedIn Information</h3>
+            <a href="{% url 'edit_profile' %}" class="btn-sm btn-outline-primary">
+                <i class="fas fa-edit"></i> Edit
+            </a>
+        </div>
+        <div class="profile-info">
+            <p><strong>LinkedIn Username:</strong> {{ profile.linkedIn_username|default:"Not set" }}</p>
+            <p><strong>LinkedIn Password:</strong> ••••••••</p>
+        </div>
+    </div>
+
+    <div class="profile-section">
+        <div class="profile-header">
+            <h3>Job Search Preferences</h3>
+            <a href="{% url 'update_preferences' %}" class="btn-sm btn-outline-primary">
+                <i class="fas fa-edit"></i> Edit
+            </a>
+        </div>
+        <div class="profile-info">
+            <p><strong>Industry:</strong> {{ profile.industry_preference|default:"None" }}</p>
+            <p><strong>Location:</strong> {{ profile.location_preference|default:"None" }}</p>
+            <p><strong>Remote Work:</strong> {{ profile.remote_preference}}</p>
+            <p><strong>Salary Min:</strong> {{ profile.salary_min_preference}}</p>
+        </div>
+    </div>
+
+    
+    <div class="profile-section">
+        <div class="profile-header">
+            <h3>Resume</h3>
+            {% if latest_resume %}
+                <a href="{% url 'view_resume' latest_resume.id %}" class="btn-sm btn-outline-success" target="_blank">
+                    <i class="fas fa-download"></i> View
+                </a>
+            {% endif %}
+            <a href="{% url 'upload_resume' %}" class="btn-sm btn-outline-primary">
+                <i class="fas fa-upload"></i> {% if latest_resume %}Update{% else %}Upload{% endif %}
+            </a>
+        </div>
+        <div class="profile-info">
+            {% if latest_resume %}
+                <p><strong>Last Updated:</strong> {{ latest_resume.uploaded_at|date:"F j, Y, g:i a" }}</p>
+            {% else %}
+                <p>No resume uploaded yet.</p>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="navigation-options mt-4">
+        <a href="/" class="btn btn-secondary"><i class="fas fa-home"></i> Home</a>
+        <a href="{% url 'dashboard' %}" class="btn btn-primary"><i class="fas fa-briefcase"></i> Job Dashboard</a>
+        <a href="#" class="btn btn-info"><i class="fas fa-lightbulb"></i> Recommendations</a>
+        <a href="#" class="btn btn-warning"><i class="fas fa-clipboard-list"></i> Applications</a>
+    </div>
+</div>
+
+<style>
+    .profile-container {
+        padding: 0 15px;
+    }
+    
+    .profile-section {
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+    
+    .profile-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid #dee2e6;
+        padding-bottom: 10px;
+        margin-bottom: 15px;
+    }
+    
+    .profile-header h3 {
+        margin: 0;
+        font-size: 18px;
+        color: #2563eb;
+    }
+    
+    .profile-info p {
+        margin-bottom: 8px;
+    }
+    
+    .btn-sm {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+        text-decoration: none;
+        border-radius: 0.2rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+    
+    .btn-outline-primary {
+        color: #2563eb;
+        border: 1px solid #2563eb;
+    }
+    
+    .btn-outline-primary:hover {
+        background-color: #2563eb;
+        color: white;
+    }
+    
+    .btn-outline-success {
+        color: #10b981;
+        border: 1px solid #10b981;
+    }
+    
+    .btn-outline-success:hover {
+        background-color: #10b981;
+        color: white;
+    }
+    
+    .navigation-options {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        justify-content: center;
+    }
+    
+    .navigation-options .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 8px 15px;
+        font-size: 14px;
+    }
+    
+    .auth-container {
+        max-width: 650px !important;
+    }
+</style>
+{% endblock %} 

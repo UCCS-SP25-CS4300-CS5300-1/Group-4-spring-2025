@@ -1,8 +1,9 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm, UserChangeForm
 from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
 
-from users.models import Profile
+from users.models import Profile, Resume
 
 
 class UserRegistrationForm(UserCreationForm):
@@ -20,7 +21,7 @@ class UserRegistrationForm(UserCreationForm):
         return user
 
 class UserLoginForm(AuthenticationForm):
-    username = forms.CharField(label='Email / Username')
+    username = forms.CharField(label='Username')
     
     class Meta:
         model = User
@@ -28,17 +29,46 @@ class UserLoginForm(AuthenticationForm):
 
 
 class EditProfileForm(forms.ModelForm):
+    first_name = forms.CharField(max_length=30, required=False)
+    last_name = forms.CharField(max_length=30, required=False)
 
     class Meta:
         model = Profile
         fields = ('linkedIn_username', 'linkedIn_password')
 
     linkedIn_password = forms.CharField(max_length=32, widget=forms.PasswordInput)
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if(self.instance and self.instance.user):
+            self.fields['first_name'].initial = self.instance.user.first_name
+            self.fields['last_name'].initial = self.instance.user.last_name
+            
+    def save(self, commit=True):
+        profile = super().save(commit=False)
+        if(commit):
+            profile.user.first_name = self.cleaned_data.get('first_name', '')
+            profile.user.last_name = self.cleaned_data.get('last_name', '')
+            profile.user.save()
+            profile.save()
+        return profile
 
-"""
-class UpdateProfileForm(forms.ModelForm):
-    avatar = forms.ImageField(widget=forms.FileInput(attrs={'class': 'form-control-file'}))
-    linkedIn_username = forms.CharField(label='LinkedIn username')
-    linkedIn_password = forms.CharField(max_length=32, widget=forms.PasswordInput)
-"""
+class EditPreferenceForm(forms.ModelForm):
 
+    class Meta:
+        model = Profile
+        fields = ('industry_preference', 'location_preference', 'remote_preference', 'salary_min_preference')
+
+
+class ResumeUploadForm(forms.ModelForm):
+    class Meta:
+        model = Resume
+        fields = ['resume']
+            
+    def clean_resume(self):
+        resume = self.cleaned_data.get('resume')
+        if resume:          
+            if resume.content_type != 'application/pdf':
+                raise ValidationError("The file must be in PDF format.")
+            
+        return resume

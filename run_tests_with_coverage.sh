@@ -6,12 +6,30 @@ BLUE='\033[0;34m'
 RED='\033[0;31m'
 NC='\033[0m'
 
+try_python_command() {
+    local cmd=$1
+    shift
+    if (command -v py &> /dev/null); then
+        py $cmd "$@"
+        return $?
+    elif (command -v python3 &> /dev/null); then
+        python3 $cmd "$@"
+        return $?
+    elif (command -v python &> /dev/null); then
+        python $cmd "$@"
+        return $?
+    else
+        python $cmd "$@"
+        return $?
+    fi
+    return 1
+}
+
 echo -e "${BLUE}=========== Installing coverage package ===========${NC}"
-## other pips cause fucking issues
-if(command -v pip3 &> /dev/null); then
-    pip3 install coverage
-elif(command -v pip &> /dev/null); then
-    pip install coverage
+if (command -v pip3 &> /dev/null); then
+    pip3 install -r requirements.txt
+elif (command -v pip &> /dev/null); then
+    pip install -r requirements.txt
 else
     echo -e "${RED}Error: Could not find pip or pip3. Please install pip first.${NC}"
     exit 1
@@ -20,29 +38,37 @@ fi
 echo -e "${BLUE}=========== Running tests with coverage ===========${NC}"
 cd myproject
 
-## Try different ways of running coverage
-if(command -v python3 &> /dev/null); then
-    python3 -m coverage run --source='.' manage.py test
-elif(command -v python &> /dev/null); then
-    python -m coverage run --source='.' manage.py test
+if [ -z "$OPENAI_API_KEY" ]; then
+    echo -e "${RED}OPENAI_API_KEY environment variable is not set.${NC}"
+    echo -e "${BLUE}Please enter your OpenAI API key:${NC}"
+    read -s OPENAI_API_KEY
+    export OPENAI_API_KEY
+    
+    if [ -z "$OPENAI_API_KEY" ]; then
+        echo -e "${RED}No API key provided. Tests that use OpenAI may fail.${NC}"
+    else
+        echo -e "${GREEN}API key set for this session.${NC}"
+    fi
 else
-    echo -e "${RED}Error: Could not find python or python3. Please check your Python installation.${NC}"
+    echo -e "${GREEN}Using OPENAI_API_KEY from environment.${NC}"
+fi
+
+if (! try_python_command "-m" "coverage" "run" "--source=." "manage.py" "test"); then
+    echo -e "${RED}Error: Could not find Python. Please check your Python installation.${NC}"
     exit 1
 fi
 
 echo -e "${BLUE}=========== Coverage Report ===========${NC}"
-if(command -v python3 &> /dev/null); then
-    python3 -m coverage report
-else
-    python -m coverage report
+if (! try_python_command "-m" "coverage" "report"); then
+    echo -e "${RED}Error: Failed to generate coverage report.${NC}"
+    exit 1
 fi
 
 echo -e "${BLUE}=========== Generating HTML Coverage Report ===========${NC}"
-if(command -v python3 &> /dev/null); then
-    python3 -m coverage html
-else
-    python -m coverage html
+if (! try_python_command "-m" "coverage" "html"); then
+    echo -e "${RED}Error: Failed to generate HTML coverage report.${NC}"
+    exit 1
 fi
 
 echo -e "${GREEN}Done! HTML coverage report available in htmlcov/index.html${NC}"
-echo -e "${BLUE}Open it with your browser to see detailed coverage information${NC}" 
+echo -e "${BLUE}Open it with your browser to see detailed coverage information${NC}"

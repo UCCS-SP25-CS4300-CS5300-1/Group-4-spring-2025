@@ -1,0 +1,161 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{% static 'styles.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <title>ApplierPilotAI - Automate Your Job Search</title>
+    <style>
+        .admin-btn {
+            padding: 8px 16px;
+            background-color: #fff;
+            color: #2563eb;
+            border-radius: 5px;
+            text-decoration: none;
+            margin-right: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .admin-btn:hover {
+            background-color: #e9ecef;
+            color: #1d4ed8;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav class="navbar">
+            <div class="logo">ApplierPilotAI</div>
+            <ul class="nav-links">
+                <li><a href="#features">Features</a></li>
+                <li><a href="#how-it-works">How It Works</a></li>
+                <li><a href="#contact">Contact</a></li>
+            </ul>
+            <div class="auth-buttons">
+                {% if user.is_authenticated %}
+                    <span class="user-greeting">Hello, {{ user.username }}</span>
+                    {% if user.is_superuser or user.is_staff %}
+                        <a href="{% url 'admin:index' %}" class="admin-btn">Admin Panel</a>
+                    {% endif %}
+                    <a href="{% url 'profile' %}" class="profile-btn">My Profile</a>
+                    <a href="{% url 'logout' %}" class="logout-btn">Logout</a>
+                {% else %}
+                    <a href="{% url 'login' %}" class="login-btn">Login</a>
+                    <a href="{% url 'register' %}" class="signup-btn">Sign Up</a>
+                {% endif %}
+            </div>
+        </nav>
+        <div class="hero">
+            <div class="hero-content">
+                <h1>AI-Powered Job Search Automation</h1>
+                <p>Let artificial intelligence find and apply to the perfect jobs for you, while you focus on preparing for interviews.</p>
+                {% if user.is_authenticated %}
+                    <a href="{% url 'dashboard' %}" class="cta-button">View Dashboard</a>
+                {% else %}
+                    <a href="{% url 'register' %}" class="cta-button">Get Started For Free</a>
+                {% endif %}
+            </div>
+            <div class="hero-image">
+                <img src="{% static 'images/job-search.jpg' %}" alt="Job search illustration">
+            </div>
+        </div>
+    </header>
+    
+    {% if messages %}
+    <div class="messages-container">
+        {% for message in messages %}
+            <div class="message {{ message.tags }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+    <main>
+        <section id="features" class="features">
+            <h2>Streamline Your Job Hunt</h2>
+            <div class="feature-cards">
+                <div class="feature-card">
+                    <i class="fas fa-robot"></i>
+                    <h3>AI Job Matching</h3>
+                    <p>Our intelligent algorithm matches your skills and preferences with the most suitable job openings.</p>
+                </div>
+                <div class="feature-card">
+                    <i class="fas fa-file-alt"></i>
+                    <h3>Resume & Cover Letter Parsing</h3>
+                    <p>Automatically extract information from your documents and optimize them for each application.</p>
+                </div>
+                <div class="feature-card">
+                    <i class="fas fa-paper-plane"></i>
+                    <h3>Auto-Apply Feature</h3>
+                    <p>Apply to multiple jobs with a single click, saving you hours of repetitive form-filling.</p>
+                </div>
+                <div class="feature-card">
+                    <i class="fas fa-chart-line"></i>
+                    <h3>Application Tracking</h3>
+                    <p>Monitor your job applications, interview schedules, and follow-ups all in one dashboard.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="how-it-works" class="how-it-works">
+            <h2>How ApplierPilotAI Works</h2>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <h3>Create Your Profile</h3>
+                    <p>Upload your resume and set your job preferences, skills, and career goals.</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <h3>AI Job Matching</h3>
+                    <p>Our algorithm scans thousands of job listings to find the best matches for you.</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <h3>Review Recommendations</h3>
+                    <p>Check the suggested jobs and select which ones you'd like to apply to.</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <h3>Automated Applications</h3>
+                    <p>Let our system submit applications on your behalf and track their status.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="testimonial">
+            <div class="testimonial-content">
+                <p class="quote">"ApplierPilotAI changed my job search completely. I landed interviews at top companies within weeks instead of months!"</p>
+                <p class="author">— John Doe, Software Engineer</p>
+            </div>
+        </section>
+    </main>
+
+    <footer id="contact">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>ApplierPilotAI</h3>
+                <p>Automate your job search and find your dream career faster.</p>
+            </div>
+            <div class="footer-section">
+                <h3>Quick Links</h3>
+                <ul>
+                    <li><a href="#">Home</a></li>
+                    <li><a href="#features">Features</a></li>
+                    <li><a href="#how-it-works">How It Works</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h3>Contact Us</h3>
+                <p>Email: contact@ApplierPilot.com</p>
+            </div>
+        </div>
+        <div class="copyright">
+            <p>© 2025 ApplierPilotAI. All rights reserved. | Created by Group-4-Spring-2025</p>
+        </div>
+    </footer>
+</body>
+</html>
