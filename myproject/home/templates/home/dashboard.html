@@ -24,7 +24,7 @@
                 <i class="fas fa-briefcase"></i>
             </div>
             <div class="stat-info">
-                <span class="stat-value">{{ count }}</span>
+                <!-- <span class="stat-value">{{ count }}</span> -->
                 <span class="stat-label">Applications</span>
             </div>
         </div>
@@ -46,27 +46,36 @@
 
     <div class="applications-container">
         <h3><i class="fas fa-list"></i> Your Applications</h3>
-        {% if applications %}
+        
             <div class="table-responsive">
                 <table class="table table-hover">
                     <thead class="table-primary">
                         <tr>
                             <th scope="col">Search Term</th>
                             <th scope="col">Job Title</th>
-                            <th scope="col">Company</th>
                             <th scope="col">Link</th>
-                            <th scope="col">Type</th>
+                            <th scope="col">Company</th>
+                            <th scope="col">Location</th>
                             <th scope="col">Progress</th>
                         </tr>
                     </thead>
                     <tbody>
-                    {% for app in applications %}
+                    {% for job in job_list %}
+                        
                         <tr>
-                            <td>{{ app.search_word }}</td>
-                            <td>{{ app.job_title }}</td>
-                            <td>{{ app.company }}</td>
-                            <td><a href="{{ app.link }}" class="btn-sm btn-outline-primary" target="_blank">View <i class="fas fa-external-link-alt"></i></a></td>
-                            <td>{{ app.type }}</td>
+                            <td>{{ search_term }}</td>
+                            {% for k,v in job.items %}
+                                
+                                
+                                {% if k == 'link' %}
+                                    <td><a href="{{ v }}" class="btn-sm btn-outline-primary" target="_blank">View <i class="fas fa-external-link-alt"></i></a></td>
+                                {% else %}
+                                    <td>{{ v }}</td>
+                                {% endif %}
+                            {% endfor %}
+                            <td></td>
+                            <td></td>
+                        <!-- 
                             <td>
                                 {% if app.progress == 'Applied' %}
                                     <span class="badge bg-info">{{ app.progress }}</span>
@@ -80,17 +89,18 @@
                                     <span class="badge bg-secondary">{{ app.progress }}</span>
                                 {% endif %}
                             </td>
+                        -->
                         </tr>
                     {% endfor %}
                     </tbody>
                 </table>
             </div>
-        {% else %}
+        
             <div class="empty-state">
                 <p>You haven't applied to any jobs yet.</p>
                 <p>Use the search function above to find and apply to jobs!</p>
             </div>
-        {% endif %}
+        
     </div>
 </div>
 
