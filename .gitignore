@@ -10,3 +10,4 @@ certs/
 *.pem
 debug.log
 *.*********s
+*.pyc
