@@ -38,7 +38,7 @@ def dashboard(request):
                 a = Application.objects.create(user=request.user, search_word = search_term, job_title = job['job_title'], company=job['company'], link=['link'], location=job['location'])
                 a.save()
 
-    return render(request, 'home/dashboard.html', {'form': form, 'linkedIn_username': linkedIn_username, 'applications': applications })
+    return render(request, 'home/dashboard.html', {'form': form, 'linkedIn_username': linkedIn_username, 'applications': applications, 'count': count })
 
 
 def search_jobs():
