@@ -38,8 +38,8 @@ jobs:
       - name: Run tests with coverage
         id: run_tests
         run: |
-          cd myproject
-          python -m coverage run --source='.' manage.py test
+          chmod +x run_tests_with_coverage.sh
+          ./run_tests_with_coverage.sh
         env:
           DJANGO_DB_ENGINE: django.db.backends.sqlite3
           DJANGO_DB_NAME: ":memory:"
