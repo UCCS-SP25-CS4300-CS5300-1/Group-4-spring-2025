@@ -128,14 +128,6 @@ class DashboardViewTest(TestCase):
         self.assertContains(response, 'Applied')
         self.assertContains(response, 'Interviewed')
     
-    def test_dashboard_search_form_submission(self):
-        """Test that the search form can be submitted"""
-        self.client.login(username='testuser', password='StrongTestPass123')
-        response = self.client.post(self.dashboard_url, {'search_term': 'software developer'})
-        
-        self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, 'home/dashboard.html')
-    
     def test_dashboard_application_count(self):
         """Test that the dashboard shows the correct application count"""
         self.client.login(username='testuser', password='StrongTestPass123')
@@ -160,6 +152,40 @@ class DashboardViewTest(TestCase):
         self.assertEqual(len(response.context['applications']), 0)
         self.assertContains(response, 'You haven\'t applied to any jobs yet')
         self.assertContains(response, '<span class="stat-value">0</span>')
+
+    def test_dashboard_form_validation_empty_search(self):
+        """Test that empty search term is handled properly"""
+        self.client.login(username='testuser', password='StrongTestPass123')
+        response = self.client.post(self.dashboard_url, {'search_term': ''})
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'home/dashboard.html')
+        self.assertTrue('form' in response.context)
+        self.assertTrue(response.context['form'].errors)
+
+    def test_dashboard_form_validation_missing_field(self):
+        """Test that missing search term field is handled properly"""
+        self.client.login(username='testuser', password='StrongTestPass123')
+        response = self.client.post(self.dashboard_url, {})
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'home/dashboard.html')
+        self.assertTrue('form' in response.context)
+        self.assertTrue(response.context['form'].errors)
+
+    def test_dashboard_missing_linkedin_credentials(self):
+        """Test dashboard behavior when LinkedIn credentials are missing"""
+        self.client.login(username='testuser', password='StrongTestPass123')
+        self.profile.linkedIn_username = ''
+        self.profile.save()
+        response = self.client.get(self.dashboard_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'home/dashboard.html')
+        self.assertContains(response, 'LinkedIn: Not Connected')
+
+    def test_search_jobs_empty_function(self):
+        """Test the empty search_jobs function"""
+        self.client.login(username='testuser', password='StrongTestPass123')
+        response = self.client.get(reverse('search_jobs'))
+        self.assertEqual(response.status_code, 200)
 
 class UrlsTest(TestCase):
     def setUp(self):

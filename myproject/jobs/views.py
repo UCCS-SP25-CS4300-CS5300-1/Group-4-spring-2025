@@ -26,30 +26,30 @@ def search_jobs(request):
         elif remote.lower() == 'no':
             jobs = jobs.filter(is_remote=False)
     
-    if(salary_min and salary_max):
+    if salary_min or salary_max:
         try:
-            min_val = int(salary_min)
-            max_val = int(salary_max)
-            jobs = jobs.filter(
-                salary_min__gte=min_val,  ## Min salary must be at least the requested min
-                salary_min__lte=max_val   ## But not higher than the requested max
-            )
+            min_val = int(salary_min) if salary_min else None
+            max_val = int(salary_max) if salary_max else None
+            
+            if min_val is not None and min_val < 0:
+                min_val = None
+            if max_val is not None and max_val < 0:
+                max_val = None
+            if min_val is not None and max_val is not None and min_val > max_val:
+                min_val = None
+                max_val = None
+            
+            if min_val is not None and max_val is not None:
+                jobs = jobs.filter(
+                    salary_min__gte=min_val,
+                    salary_min__lte=max_val
+                )
+            elif min_val is not None:
+                jobs = jobs.filter(salary_min__gte=min_val)
+            elif max_val is not None:
+                jobs = jobs.filter(salary_max__lte=max_val)
+                
         except ValueError:
-            ## Ignore invalid salary values
-            pass
-    elif(salary_min):
-        try:
-            min_val = int(salary_min)
-            jobs = jobs.filter(salary_min__gte=min_val)
-        except ValueError:
-            ## Ignore invalid salary values
-            pass
-    elif(salary_max):
-        try:
-            max_val = int(salary_max)
-            jobs = jobs.filter(salary_max__lte=max_val)
-        except ValueError:
-            ##  Ignore invalid salary values
             pass
     
     context = {'jobs': jobs}
