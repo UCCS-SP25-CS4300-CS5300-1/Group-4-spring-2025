@@ -1,4 +1,5 @@
 import os
+import unittest
 from django.test import TestCase, Client, tag
 from django.urls import reverse
 from django.contrib.auth.models import User
@@ -11,9 +12,9 @@ class LinkedInIntegrationTest(TestCase):
     
     @classmethod
     def setUpClass(cls):
-
-        if(not os.environ.get('LINKEDIN_TEST_USERNAME') or not os.environ.get('LINKEDIN_TEST_PASSWORD')):
-            raise Exception(
+        super().setUpClass()
+        if not os.environ.get('LINKEDIN_TEST_USERNAME') or not os.environ.get('LINKEDIN_TEST_PASSWORD'):
+            raise unittest.SkipTest(
                 "LinkedIn test credentials not found in environment variables. "
                 "Please set LINKEDIN_TEST_USERNAME and LINKEDIN_TEST_PASSWORD"
             )

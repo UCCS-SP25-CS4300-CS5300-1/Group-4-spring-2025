@@ -1,0 +1,39 @@
+[run]
+source = 
+    myproject
+    integration_tests
+
+omit = 
+    */init_db.py
+    */create_admin_team.py
+    */migrations/*
+    */tests.py
+    */test_*.py
+    manage.py
+    */__init__.py
+
+[paths]
+source =
+    myproject/
+    */site-packages/myproject/
+
+[report]
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    if self.debug:
+    raise NotImplementedError
+    if __name__ == .__main__.:
+    pass
+    raise ImportError
+
+ignore_errors = True
+skip_empty = True
+skip_covered = True
+
+[html]
+directory = htmlcov
+show_contexts = True
+
+[xml]
+output = coverage.xml 

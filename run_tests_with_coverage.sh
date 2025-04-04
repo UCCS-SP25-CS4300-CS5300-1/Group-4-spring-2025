@@ -53,7 +53,8 @@ else
     echo -e "${GREEN}Using OPENAI_API_KEY from environment.${NC}"
 fi
 
-if (! try_python_command "-m" "coverage" "run" "--source=." "manage.py" "test"); then
+## utility scripts and migrations that aren't releveant to testing
+if (! try_python_command "-m" "coverage" "run" "--source=." "--omit=init_db.py,users/management/commands/create_admin_team.py,*/migrations/*,*/tests/*,*/test_*.py,manage.py" "manage.py" "test"); then
     echo -e "${RED}Error: Could not find Python. Please check your Python installation.${NC}"
     exit 1
 fi
