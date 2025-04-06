@@ -11,3 +11,5 @@ certs/
 debug.log
 *.*********s
 *.pyc
+config.yaml
+*.log
