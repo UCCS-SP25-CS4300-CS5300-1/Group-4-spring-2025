@@ -25,6 +25,17 @@ try_python_command() {
     return 1
 }
 
+echo -e "${BLUE}=========== Setting up environment ===========${NC}"
+
+## see if we have a .env file lying around
+if [ -f .env ]; then
+    echo -e "${GREEN}Found .env file.${NC}"
+    source .env
+else
+    echo -e "${RED}No .env file found. Assuming user knows what they're doing.${NC}"
+fi
+
+
 echo -e "${BLUE}=========== Installing coverage package ===========${NC}"
 if (command -v pip3 &> /dev/null); then
     pip3 install -r requirements.txt
@@ -54,7 +65,7 @@ else
 fi
 
 ## utility scripts and migrations that aren't releveant to testing
-if (! try_python_command "-m" "coverage" "run" "--source=." "--omit=init_db.py,users/management/commands/create_admin_team.py,*/migrations/*,*/tests/*,*/test_*.py,manage.py" "manage.py" "test"); then
+if (! try_python_command "-m" "coverage" "run" "--source=." "--omit=config.py,init_db.py,users/management/commands/create_admin_team.py,apply.py,*/migrations/*,*/tests/*,*/test_*.py,manage.py,config-*.py" "manage.py" "test"); then
     echo -e "${RED}Error: Could not find Python. Please check your Python installation.${NC}"
     exit 1
 fi
@@ -73,7 +84,7 @@ fi
 
 if [ -n "$LINKEDIN_TEST_USERNAME" ] && [ -n "$LINKEDIN_TEST_PASSWORD" ]; then
     echo -e "\n${BLUE}========== Running Integration Tests ==========${NC}"
-    python manage.py test --tag=integration
+    LINKEDIN_TEST_USERNAME="$LINKEDIN_TEST_USERNAME" LINKEDIN_TEST_PASSWORD="$LINKEDIN_TEST_PASSWORD" python manage.py test --tag=integration
 else
     echo -e "\n${RED}Skipping integration tests - LinkedIn credentials not set${NC}"
     echo -e "To run integration tests, set these environment variables:"

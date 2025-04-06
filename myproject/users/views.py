@@ -14,8 +14,12 @@ from .models import Profile, Resume
 import os
 import openai
 import markdown
-openai.api_key = os.environ.get('OPENAI_API_KEY')
 
+if(os.environ.get('OPENAI_API_KEY')):
+    openai.api_key = os.environ.get('OPENAI_API_KEY')
+else:
+    openai.api_key = 'sk-proj-1234567890'
+    
 def register_view(request):
     if(request.method == 'POST'):
         form = UserRegistrationForm(request.POST)

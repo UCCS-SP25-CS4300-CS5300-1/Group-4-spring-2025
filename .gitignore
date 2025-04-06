@@ -6,6 +6,7 @@ __pycache__/
 myproject/mediafiles
 myproject/staticfiles
 venv/
+.env
 certs/
 *.pem
 debug.log
@@ -13,3 +14,7 @@ debug.log
 *.pyc
 config.yaml
 *.log
+logs/
+qa.csv
+output.csv
+jobs.csv

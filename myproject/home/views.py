@@ -9,8 +9,8 @@ from .forms import SearchJobForm
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 
-from applier_pilot.login import applier_pilot
 
+from applier_pilot.apply import applier_pilot
 
 
 def index(request):
@@ -35,7 +35,7 @@ def dashboard(request):
             search_term = form.cleaned_data['search_term']
             job_list = applier_pilot(search_term, profile.linkedIn_username, profile.linkedIn_password, 25)
             for job in job_list:
-                a = Application.objects.create(user=request.user, search_word = search_term, job_title = job['job_title'], company=job['company'], link=['link'], location=job['location'])
+                a = Application.objects.create(user=request.user, search_word=search_term, job_title=job['job_title'], company=job['company'], link=job['link'], location=job['location'])
                 a.save()
 
     return render(request, 'home/dashboard.html', {'form': form, 'linkedIn_username': linkedIn_username, 'applications': applications, 'count': count })
