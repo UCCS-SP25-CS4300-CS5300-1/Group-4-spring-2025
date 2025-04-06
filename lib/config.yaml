@@ -1,0 +1,32 @@
+username: adwawdawd
+password: dwada
+phone_number: 1231231313
+
+profile_path: "" ## leave empty for now
+
+openai_api_key: "sk-proj-x"
+
+positions:
+  - Software Engineer
+
+locations:
+  - Remote
+
+salary: 60,000
+rate: 25
+uploads:
+  Resume: C:/Users
+  Cover Letter: C:/Users
+## need both
+resume_path: C:/Users/
+
+output_filename:
+  - C:/Users/
+
+experience_level:
+  ## - 1 ## Entry level
+  ## - 2 ## Associate
+  ## - 3 ## Mid-Senior level
+  ## - 4 ## Director
+  ## - 5 ## Executive
+  ## - 6 ## Internship
