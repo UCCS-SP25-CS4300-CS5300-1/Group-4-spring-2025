@@ -2,8 +2,10 @@ from django.test import TestCase, Client
 from django.urls import reverse
 from django.contrib.auth.models import User
 from users.models import Profile
-from home.models import Application
+from home.models import Application, JobListing
 from .forms import SearchJobForm
+from django.utils import timezone
+from unittest.mock import patch
 
 class HomeViewTest(TestCase):
     def setUp(self):
@@ -69,27 +71,31 @@ class DashboardViewTest(TestCase):
         )
         
         self.profile = Profile.objects.get(user=self.user)
-        self.profile.linkedIn_username = 'test_linkedin'
         self.profile.save()
         
-        self.app1 = Application.objects.create(
-            user=self.user,
-            search_word='python developer',
-            job_title='Senior Python Developer',
+        # Create some job listings for testing
+        self.job1 = JobListing.objects.create(
+            job_id='test-job-1',
+            title='Senior Python Developer',
             company='Test Company',
-            link='https://example.com/job1',
-            type='Full-time',
-            progress='Applied'
+            location='Remote',
+            description='Test job description',
+            url='https://example.com/job1',
+            job_type='Full-time',
+            published_at=timezone.now(),
+            search_key='python'
         )
         
-        self.app2 = Application.objects.create(
-            user=self.user,
-            search_word='data scientist',
-            job_title='Data Scientist',
+        self.job2 = JobListing.objects.create(
+            job_id='test-job-2',
+            title='Data Scientist',
             company='Another Company',
-            link='https://example.com/job2',
-            type='Remote',
-            progress='Interviewed'
+            location='New York',
+            description='Another test job description',
+            url='https://example.com/job2',
+            job_type='Remote',
+            published_at=timezone.now(),
+            search_key='data-science'
         )
     
     def test_dashboard_login_required(self):
@@ -111,48 +117,31 @@ class DashboardViewTest(TestCase):
         self.client.login(username='testuser', password='StrongTestPass123')
         response = self.client.get(self.dashboard_url)
         
-        self.assertEqual(response.context['linkedIn_username'], 'test_linkedin')
-        self.assertEqual(response.context['count'], 2)
-        self.assertEqual(len(response.context['applications']), 2)
         self.assertIsInstance(response.context['form'], SearchJobForm)
+        self.assertIn('job_list', response.context)
+        self.assertEqual(len(response.context['job_list']), 0)  # Empty by default
     
-    def test_dashboard_displays_applications(self):
-        """Test that the dashboard displays the user's applications"""
+    def test_dashboard_search_results(self):
+        """Test that the dashboard displays search results"""
         self.client.login(username='testuser', password='StrongTestPass123')
-        response = self.client.get(self.dashboard_url)
         
-        self.assertContains(response, 'Senior Python Developer')
-        self.assertContains(response, 'Test Company')
-        self.assertContains(response, 'Data Scientist')
-        self.assertContains(response, 'Another Company')
-        self.assertContains(response, 'Applied')
-        self.assertContains(response, 'Interviewed')
+        # Mock the JobicyService.search_jobs method
+        with patch('home.services.JobicyService.search_jobs') as mock_search:
+            mock_search.return_value = [self.job1]
+            
+            response = self.client.post(self.dashboard_url, {'search_term': 'python'})
+            
+            self.assertEqual(response.status_code, 200)
+            self.assertTemplateUsed(response, 'home/dashboard.html')
+            self.assertIsInstance(response.context['form'], SearchJobForm)
+            self.assertIn('job_list', response.context)
+            self.assertEqual(len(response.context['job_list']), 1)
+            
+            # Verify the job details are displayed
+            self.assertContains(response, 'Senior Python Developer')
+            self.assertContains(response, 'Test Company')
+            self.assertContains(response, 'Remote')
     
-    def test_dashboard_application_count(self):
-        """Test that the dashboard shows the correct application count"""
-        self.client.login(username='testuser', password='StrongTestPass123')
-        response = self.client.get(self.dashboard_url)
-        
-        self.assertContains(response, '<span class="stat-value">2</span>')
-        self.assertContains(response, '<span class="stat-label">Applications</span>')
-    
-    def test_dashboard_with_no_applications(self):
-        """Test dashboard display when user has no applications"""
-        new_user = User.objects.create_user(
-            username='newuser',
-            email='new@example.com',
-            password='NewUserPass123'
-        )
-        
-        self.client.login(username='newuser', password='NewUserPass123')
-        response = self.client.get(self.dashboard_url)
-        
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context['count'], 0)
-        self.assertEqual(len(response.context['applications']), 0)
-        self.assertContains(response, 'You haven\'t applied to any jobs yet')
-        self.assertContains(response, '<span class="stat-value">0</span>')
-
     def test_dashboard_form_validation_empty_search(self):
         """Test that empty search term is handled properly"""
         self.client.login(username='testuser', password='StrongTestPass123')
@@ -170,16 +159,6 @@ class DashboardViewTest(TestCase):
         self.assertTemplateUsed(response, 'home/dashboard.html')
         self.assertTrue('form' in response.context)
         self.assertTrue(response.context['form'].errors)
-
-    def test_dashboard_missing_linkedin_credentials(self):
-        """Test dashboard behavior when LinkedIn credentials are missing"""
-        self.client.login(username='testuser', password='StrongTestPass123')
-        self.profile.linkedIn_username = ''
-        self.profile.save()
-        response = self.client.get(self.dashboard_url)
-        self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, 'home/dashboard.html')
-        self.assertContains(response, 'LinkedIn: Not Connected')
 
     def test_search_jobs_empty_function(self):
         """Test the empty search_jobs function"""
