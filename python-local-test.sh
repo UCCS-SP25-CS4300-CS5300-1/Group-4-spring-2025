@@ -25,6 +25,16 @@ try_python_command() {
     return 1
 }
 
+echo -e "${BLUE}=========== Setting up environment ===========${NC}"
+
+## see if we have a .env file lying around
+if [ -f .env ]; then
+    echo -e "${GREEN}Found .env file.${NC}"
+    source .env
+else
+    echo -e "${RED}No .env file found. Assuming user knows what they're doing.${NC}"
+fi
+
 echo -e "${BLUE}========== Setting up local Python environment ==========${NC}"
 
 if [ -z "$OPENAI_API_KEY" ]; then

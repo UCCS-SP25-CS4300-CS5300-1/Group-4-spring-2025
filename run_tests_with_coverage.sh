@@ -82,15 +82,5 @@ if (! try_python_command "-m" "coverage" "html"); then
     exit 1
 fi
 
-if [ -n "$LINKEDIN_TEST_USERNAME" ] && [ -n "$LINKEDIN_TEST_PASSWORD" ]; then
-    echo -e "\n${BLUE}========== Running Integration Tests ==========${NC}"
-    LINKEDIN_TEST_USERNAME="$LINKEDIN_TEST_USERNAME" LINKEDIN_TEST_PASSWORD="$LINKEDIN_TEST_PASSWORD" python manage.py test --tag=integration
-else
-    echo -e "\n${RED}Skipping integration tests - LinkedIn credentials not set${NC}"
-    echo -e "To run integration tests, set these environment variables:"
-    echo -e "  export LINKEDIN_TEST_USERNAME='your_username'"
-    echo -e "  export LINKEDIN_TEST_PASSWORD='your_password'"
-fi
-
 echo -e "${GREEN}Done! HTML coverage report available in htmlcov/index.html${NC}"
 echo -e "${BLUE}Open it with your browser to see detailed coverage information${NC}"

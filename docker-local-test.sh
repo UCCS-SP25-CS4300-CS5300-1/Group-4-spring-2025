@@ -6,6 +6,13 @@ BLUE='\033[0;34m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
 
+echo -e "${BLUE}========== Check if docker is running ==========${NC}"
+docker ps > /dev/null 2>&1
+if [ $? -ne 0 ]; then
+    echo -e "${RED}Docker is not running. Please start docker and try again.${NC}"
+    exit 1
+fi
+
 echo -e "${BLUE}========== Stopping any running containers on port 8000 ==========${NC}"
 CONTAINER_ID=$(docker ps | grep 8000 | awk '{print $1}')
 if [ ! -z "$CONTAINER_ID" ]; then
@@ -16,6 +23,16 @@ else
 fi
 
 docker rm -f temp-container 2>/dev/null || true
+
+echo -e "${BLUE}=========== Setting up environment ===========${NC}"
+
+## see if we have a .env file lying around
+if [ -f .env ]; then
+    echo -e "${GREEN}Found .env file.${NC}"
+    source .env
+else
+    echo -e "${RED}No .env file found. Assuming user knows what they're doing.${NC}"
+fi
 
 if [ -z "$OPENAI_API_KEY" ]; then
     echo -e "${RED}OPENAI_API_KEY environment variable is not set.${NC}"
@@ -68,6 +85,8 @@ docker cp "${CERT_PATH}/cert.pem" temp-container:/app/ssl/cert.pem
 docker cp "${CERT_PATH}/key.pem" temp-container:/app/ssl/key.pem
 docker commit temp-container applierpilotai:latest
 docker rm temp-container
+
+echo -e "${BLUE}========== Running ApplierPilotAI Container ==========${NC}"
 
 docker run -p 8000:8000 \
   -e "GUNICORN_CMD_ARGS=--timeout 120 --workers 2 --keyfile=/app/ssl/key.pem --certfile=/app/ssl/cert.pem --log-level debug" \
