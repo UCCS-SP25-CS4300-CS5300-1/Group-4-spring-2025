@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="{% static 'styles.css' %}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <title>ApplierPilotAI - Automate Your Job Search</title>
+    <title>ApplierPilotAI - Your AI Job Application Assistant</title>
     <style>
         .admin-btn {
             padding: 8px 16px;
@@ -49,16 +49,16 @@
         </nav>
         <div class="hero">
             <div class="hero-content">
-                <h1>AI-Powered Job Search Automation</h1>
-                <p>Let artificial intelligence find and apply to the perfect jobs for you, while you focus on preparing for interviews.</p>
+                <h1>Supercharge Your Job Applications with AI</h1>
+                <p>Use cutting-edge AI tools to craft perfect resumes, compelling cover letters, and prepare for interviews like a pro.</p>
                 {% if user.is_authenticated %}
-                    <a href="{% url 'dashboard' %}" class="cta-button">View Dashboard</a>
+                    <a href="{% url 'dashboard' %}" class="cta-button">Access AI Tools</a>
                 {% else %}
-                    <a href="{% url 'register' %}" class="cta-button">Get Started For Free</a>
+                    <a href="{% url 'register' %}" class="cta-button">Start Using AI Tools</a>
                 {% endif %}
             </div>
             <div class="hero-image">
-                <img src="{% static 'images/job-search.jpg' %}" alt="Job search illustration">
+                <img src="{% static 'images/job-search.jpg' %}" alt="AI job tools illustration">
             </div>
         </div>
     </header>
@@ -75,61 +75,61 @@
     
     <main>
         <section id="features" class="features">
-            <h2>Streamline Your Job Hunt</h2>
+            <h2>AI-Powered Application Tools</h2>
             <div class="feature-cards">
                 <div class="feature-card">
-                    <i class="fas fa-robot"></i>
-                    <h3>AI Job Matching</h3>
-                    <p>Our intelligent algorithm matches your skills and preferences with the most suitable job openings.</p>
+                    <i class="fas fa-magic"></i>
+                    <h3>Resume Optimizer</h3>
+                    <p>AI-powered analysis to optimize your resume for ATS systems and highlight your key achievements.</p>
                 </div>
                 <div class="feature-card">
-                    <i class="fas fa-file-alt"></i>
-                    <h3>Resume & Cover Letter Parsing</h3>
-                    <p>Automatically extract information from your documents and optimize them for each application.</p>
+                    <i class="fas fa-pen-fancy"></i>
+                    <h3>Cover Letter Generator</h3>
+                    <p>Generate tailored cover letters that showcase your experience and match job requirements.</p>
                 </div>
                 <div class="feature-card">
-                    <i class="fas fa-paper-plane"></i>
-                    <h3>Auto-Apply Feature</h3>
-                    <p>Apply to multiple jobs with a single click, saving you hours of repetitive form-filling.</p>
+                    <i class="fas fa-comments"></i>
+                    <h3>Interview Coach</h3>
+                    <p>Practice with our AI interview simulator and get feedback to improve your responses.</p>
                 </div>
                 <div class="feature-card">
-                    <i class="fas fa-chart-line"></i>
-                    <h3>Application Tracking</h3>
-                    <p>Monitor your job applications, interview schedules, and follow-ups all in one dashboard.</p>
+                    <i class="fas fa-bullseye"></i>
+                    <h3>Job Description Analyzer</h3>
+                    <p>AI analysis of job postings to identify key requirements and tailor your applications.</p>
                 </div>
             </div>
         </section>
 
         <section id="how-it-works" class="how-it-works">
-            <h2>How ApplierPilotAI Works</h2>
+            <h2>How Our AI Tools Help You</h2>
             <div class="steps">
                 <div class="step">
                     <div class="step-number">1</div>
-                    <h3>Create Your Profile</h3>
-                    <p>Upload your resume and set your job preferences, skills, and career goals.</p>
+                    <h3>Upload Your Materials</h3>
+                    <p>Share your current resume and career goals with our AI system.</p>
                 </div>
                 <div class="step">
                     <div class="step-number">2</div>
-                    <h3>AI Job Matching</h3>
-                    <p>Our algorithm scans thousands of job listings to find the best matches for you.</p>
+                    <h3>Get AI Analysis</h3>
+                    <p>Receive detailed feedback and suggestions for improvement from our AI tools.</p>
                 </div>
                 <div class="step">
                     <div class="step-number">3</div>
-                    <h3>Review Recommendations</h3>
-                    <p>Check the suggested jobs and select which ones you'd like to apply to.</p>
+                    <h3>Optimize Content</h3>
+                    <p>Use AI suggestions to enhance your resume and create compelling cover letters.</p>
                 </div>
                 <div class="step">
                     <div class="step-number">4</div>
-                    <h3>Automated Applications</h3>
-                    <p>Let our system submit applications on your behalf and track their status.</p>
+                    <h3>Practice & Perfect</h3>
+                    <p>Prepare for interviews with our AI coach and track your improvement.</p>
                 </div>
             </div>
         </section>
 
         <section class="testimonial">
             <div class="testimonial-content">
-                <p class="quote">"ApplierPilotAI changed my job search completely. I landed interviews at top companies within weeks instead of months!"</p>
-                <p class="author">— John Doe, Software Engineer</p>
+                <p class="quote">"The AI tools helped me create a much stronger resume and prepare for interviews effectively. I felt so much more confident in my applications!"</p>
+                <p class="author">— Sarah Chen, Data Analyst</p>
             </div>
         </section>
     </main>
@@ -138,7 +138,7 @@
         <div class="footer-content">
             <div class="footer-section">
                 <h3>ApplierPilotAI</h3>
-                <p>Automate your job search and find your dream career faster.</p>
+                <p>Enhance your job applications with AI-powered tools for better results.</p>
             </div>
             <div class="footer-section">
                 <h3>Quick Links</h3>
