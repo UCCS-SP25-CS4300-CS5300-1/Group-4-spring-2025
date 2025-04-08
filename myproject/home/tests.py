@@ -24,10 +24,10 @@ class HomeViewTest(TestCase):
     
     def test_home_view_contains_expected_content(self):
         response = self.client.get(self.home_url)
-        self.assertContains(response, '<title>ApplierPilotAI - Automate Your Job Search</title>')
-        self.assertContains(response, 'AI-Powered Job Search Automation')
-        self.assertContains(response, 'Streamline Your Job Hunt')
-        self.assertContains(response, 'How ApplierPilotAI Works')
+        self.assertContains(response, '<title>ApplierPilotAI - Your AI Job Application Assistant</title>')
+        self.assertContains(response, 'Supercharge Your Job Applications with AI')
+        self.assertContains(response, 'AI-Powered Application Tools')
+        self.assertContains(response, 'How Our AI Tools Help You')
         
         self.assertContains(response, '<a href="#features">Features</a>')
         self.assertContains(response, '<a href="#how-it-works">How It Works</a>')
@@ -43,21 +43,21 @@ class HomeViewTest(TestCase):
         
         self.assertContains(response, 'Hello, testuser')
         self.assertContains(response, 'Logout')
-        self.assertContains(response, 'View Dashboard</a>')
+        self.assertContains(response, 'Access AI Tools')
         self.assertContains(response, 'href="/dashboard/"')
         
         self.assertNotContains(response, 'class="login-btn"')
-        self.assertNotContains(response, 'Get Started For Free')
+        self.assertNotContains(response, 'Start Using AI Tools')
     
     def test_home_view_unauthenticated_user(self):
         response = self.client.get(self.home_url)
         
         self.assertContains(response, 'Login')
         self.assertContains(response, 'Sign Up')
-        self.assertContains(response, 'Get Started For Free')
+        self.assertContains(response, 'Start Using AI Tools')
         
         self.assertNotContains(response, 'Hello, testuser')
-        self.assertNotContains(response, 'View Dashboard')
+        self.assertNotContains(response, 'Access AI Tools')
 
 class DashboardViewTest(TestCase):
     def setUp(self):

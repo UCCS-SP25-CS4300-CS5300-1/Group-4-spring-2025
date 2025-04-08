@@ -8,15 +8,7 @@
 
 <form method="post" class="auth-form">
     {% csrf_token %}
-    
-    {% if form.errors %}
-    <div class="form-errors">
-        <p>Your username and password didn't match. Please try again.</p>
-    </div>
-    {% endif %}
-    
     {{ form|crispy }}
-    
     <button type="submit" class="btn">Log In</button>
 </form>
 

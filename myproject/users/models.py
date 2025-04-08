@@ -6,8 +6,6 @@ from django.contrib.auth.models import User
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     avatar = models.ImageField(default='default.jpg', upload_to='avatars', null=True, blank=True)
-    linkedIn_username = models.CharField(max_length=100)
-    linkedIn_password = models.CharField(max_length=100)
     whitelisted_for_ai = models.BooleanField(default=False)
 
     industry_preference = models.CharField(max_length=100, blank=True, default='')
