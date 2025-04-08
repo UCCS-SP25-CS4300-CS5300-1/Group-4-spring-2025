@@ -7,6 +7,7 @@ from django.views import generic
 from pypdf import PdfReader
 from django.http import FileResponse, Http404
 import os
+from django.utils.http import url_has_allowed_host_and_scheme
 
 from jobs.models import Job
 from .forms import UserRegistrationForm, UserLoginForm, EditProfileForm, ResumeUploadForm, EditPreferenceForm
@@ -48,7 +49,7 @@ def login_view(request):
                 
                 messages.info(request, f"You are now logged in as {username}.")
                 next_url = request.GET.get('next')
-                if(next_url):
+                if next_url and url_has_allowed_host_and_scheme(next_url, allowed_hosts=None):
                     return redirect(next_url)
                 return redirect('profile')
     else:
