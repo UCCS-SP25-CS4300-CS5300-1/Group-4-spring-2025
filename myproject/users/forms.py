@@ -26,6 +26,11 @@ class UserLoginForm(AuthenticationForm):
     class Meta:
         model = User
         fields = ('username', 'password')
+        
+    error_messages = {
+        'invalid_login': 'Invalid username or password.',
+        'inactive': 'This account is inactive.',
+    }
 
 
 class EditProfileForm(forms.ModelForm):
@@ -34,9 +39,7 @@ class EditProfileForm(forms.ModelForm):
 
     class Meta:
         model = Profile
-        fields = ('linkedIn_username', 'linkedIn_password')
-
-    linkedIn_password = forms.CharField(max_length=32, widget=forms.PasswordInput)
+        fields = ()
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

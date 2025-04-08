@@ -51,10 +51,6 @@ def login_view(request):
                 if(next_url):
                     return redirect(next_url)
                 return redirect('profile')
-            else:
-                messages.error(request, "Invalid username or password.")
-        else:
-            messages.error(request, "Invalid username or password.")
     else:
         form = UserLoginForm()
     
