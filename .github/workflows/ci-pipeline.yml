@@ -166,7 +166,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Setup Flyctl
-        uses: superfly/flyctl-actions/setup-flyctl@fc53c09
+        uses: superfly/flyctl-actions/setup-flyctl@master
 
       - name: Deploy to Fly.io
         run: flyctl deploy --remote-only
