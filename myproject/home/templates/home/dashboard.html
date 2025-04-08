@@ -278,6 +278,10 @@
     </style>
 </head>
 <body>
+    <div id="mobile-warning" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.9); z-index: 9999; color: white; text-align: center; padding-top: 20%;">
+        <h2>Mobile Access Not Supported</h2>
+        <p>This application is not optimized for mobile devices. Please use a desktop or laptop computer for the best experience.</p>
+    </div>
     <nav class="navbar">
         <a href="/" class="back-button">
             <i class="fas fa-arrow-left"></i>
@@ -370,6 +374,19 @@
     
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        function checkScreenSize() {
+            const mobileWarning = document.getElementById('mobile-warning');
+            if (window.innerWidth < 768) {
+                mobileWarning.style.display = 'block';
+            } else {
+                mobileWarning.style.display = 'none';
+            }
+        }
+        
+        // Check on load and on resize
+        window.addEventListener('load', checkScreenSize);
+        window.addEventListener('resize', checkScreenSize);
+
         document.addEventListener('DOMContentLoaded', function() {
             document.querySelectorAll('img.company-logo').forEach(function(img) {
                 img.addEventListener('error', function() {
