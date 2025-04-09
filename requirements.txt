@@ -51,3 +51,4 @@ packaging
 pandas
 PyPDF2
 webdriver-manager
+docx2pdf==0.1.8

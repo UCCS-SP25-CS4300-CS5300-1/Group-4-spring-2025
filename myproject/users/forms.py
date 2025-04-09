@@ -68,7 +68,7 @@ class ResumeUploadForm(forms.ModelForm):
     def clean_resume(self):
         resume = self.cleaned_data.get('resume')
         if resume:          
-            if resume.content_type != 'application/pdf':
-                raise ValidationError("The file must be in PDF format.")
+            if resume.content_type not in  ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/msword']:
+                raise ValidationError("The file must be in PDF or docx format.")
             
         return resume
