@@ -20,3 +20,6 @@ output.csv
 jobs.csv
 test_media/
 linting_reports/
+env/
+venv/
+.venv/
