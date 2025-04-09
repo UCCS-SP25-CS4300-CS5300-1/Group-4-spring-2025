@@ -5,6 +5,8 @@ from django.contrib.auth import login, authenticate, logout
 from django.contrib import messages
 from django.views import generic
 from pypdf import PdfReader
+from docx2pdf import convert
+from docx import Document
 from django.http import FileResponse, Http404
 import os
 
@@ -100,11 +102,20 @@ def upload_resume(request):
             resume_instance.save()
             
             file = resume_instance.resume
+            filename = file.name.lower()
+            file_path = file.path
 
-            reader = PdfReader(file)
-            page = reader.pages[0]
-            text = page.extract_text()
-            
+            if filename.endswith(".pdf"):
+                reader = PdfReader(file)
+                page = reader.pages[0]
+                text = page.extract_text()
+            elif filename.endswith(".docx"):
+                doc = Document(file_path)
+                text = "\n".join([p.text for p in doc.paragraphs])
+            else:
+                text = "Unsupported file type"
+                
+                
             if request.user.is_superuser or profile.whitelisted_for_ai:
                 feedback = get_resume_feedback(text)
                 feedback_html = markdown.markdown(feedback)
