@@ -35,8 +35,8 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y bc
 
-      - name: Run tests with coverage
-        id: run_tests
+      - name: Run tests, linting, and coverage
+        id: tests_and_linting
         run: |
           chmod +x run_tests_with_coverage.sh
           ./run_tests_with_coverage.sh
@@ -44,6 +44,14 @@ jobs:
           DJANGO_DB_ENGINE: django.db.backends.sqlite3
           DJANGO_DB_NAME: ":memory:"
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+
+      - name: Upload Reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-reports
+          path: |
+            linting_reports/
+            myproject/htmlcov/
 
       - name: Report coverage and check threshold
         id: coverage_check
@@ -63,12 +71,6 @@ jobs:
           else
             echo "Coverage is above the required threshold of 85%. Current coverage: $COVERAGE_PERCENT%"
           fi
-
-      - name: Archive code coverage results
-        uses: actions/upload-artifact@v4
-        with:
-          name: code-coverage-report
-          path: myproject/htmlcov/
 
       - name: Custom AI Code Review
         if: github.event_name == 'pull_request'
@@ -117,7 +119,7 @@ jobs:
 
                   try:
                       response = openai.chat.completions.create(
-                          model="gpt-4o-mini",
+                          model="o3-mini",
                           messages=[
                               {"role": "system", "content": "You are a helpful code reviewer. Review the following code diff and provide constructive feedback. Focus on bugs, security issues, performance problems, and maintainability concerns."},
                               {"role": "user", "content": f"Please review this code diff:\\n\\n{diff}"}

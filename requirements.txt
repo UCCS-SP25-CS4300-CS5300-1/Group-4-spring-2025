@@ -50,3 +50,6 @@ packaging
 pandas
 PyPDF2
 webdriver-manager
+pylint==3.1.0
+flake8==7.0.0
+flake8-html==0.4.3
