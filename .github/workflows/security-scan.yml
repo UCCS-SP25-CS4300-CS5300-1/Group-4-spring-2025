@@ -29,23 +29,47 @@ jobs:
         run: |
           mkdir -p security_reports
           safety check -r requirements.txt --output text > security_reports/safety_report.txt || true
-          echo "Safety check completed. Check the report for any issues."
+          echo "Safety check completed. Results:"
+          echo "----------------------------------------"
+          cat security_reports/safety_report.txt
+          echo "----------------------------------------"
 
       - name: Run bandit
         run: |
           bandit -r . -f html -o security_reports/bandit_report.html || true
           bandit -r . -f txt -o security_reports/bandit_report.txt || true
-          echo "Bandit security scan completed. Check the report for any issues."
+          echo "Bandit security scan completed. Results:"
+          echo "----------------------------------------"
+          cat security_reports/bandit_report.txt
+          echo "----------------------------------------"
 
       - name: Check for critical vulnerabilities
         run: |
+          FOUND_ISSUES=false
+
           if grep -i "critical" security_reports/safety_report.txt > /dev/null; then
-            echo "::warning::Critical vulnerabilities found in dependencies! Please review security_reports/safety_report.txt for details."
+            echo "::warning::Critical vulnerabilities found in dependencies!"
+            echo "Critical Security Issues in Dependencies:"
+            echo "----------------------------------------"
+            grep -i -A 2 -B 2 "critical" security_reports/safety_report.txt
+            echo "----------------------------------------"
+            FOUND_ISSUES=true
           fi
+
           if grep -i "high" security_reports/bandit_report.txt > /dev/null; then
-            echo "::warning::High severity security issues found in code! Please review security_reports/bandit_report.txt for details."
+            echo "::warning::High severity security issues found in code!"
+            echo "High Severity Issues in Code:"
+            echo "----------------------------------------"
+            grep -i -A 2 -B 2 "high" security_reports/bandit_report.txt
+            echo "----------------------------------------"
+            FOUND_ISSUES=true
           fi
-          echo "Security scan completed - check warnings for any issues found."
+
+          if [ "$FOUND_ISSUES" = false ]; then
+            echo "No critical or high severity issues found."
+          fi
+
+          echo "Security scan completed - check above for any issues found."
 
       - name: Upload security reports
         uses: actions/upload-artifact@v4
