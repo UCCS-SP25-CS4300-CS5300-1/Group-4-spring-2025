@@ -87,7 +87,7 @@ class ResumeUploadFormTest(TestCase):
         form = ResumeUploadForm(data={})
         form.files['resume'] = SimpleUploadedFile("resume.txt", b"lorem ipsum", content_type="text/plain")
         self.assertFalse(form.is_valid())   
-        self.assertEqual(form.errors['resume'], ['The file must be in PDF format.'])
+        self.assertEqual(form.errors['resume'], ['The file must be in PDF or docx format.'])
 
     def test_resume_upload_no_file(self):
         form = ResumeUploadForm(data={})
