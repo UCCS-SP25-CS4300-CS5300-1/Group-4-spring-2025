@@ -191,6 +191,11 @@
             color: white;
             text-decoration: none;
         }
+
+        .job-filter-dropdown-button {
+            min-width: 10rem; 
+            text-align: left;
+        }
     </style>
 </head>    
 <body>
@@ -209,10 +214,15 @@
                 <h3 id="job-filter-header">Jobs Applied</h3>
             </div>
             <div class="profile-info">
-                <select id="job-filter" class="form-control" onchange="toggleJobList(this)">
-                    <option value="applied">Applied</option>
-                    <option value="viewed">Viewed</option>
-                </select>
+                <div class="dropdown">
+                    <button class="btn btn-outline-primary dropdown-toggle job-filter-dropdown-button" type="button" id="jobFilterDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        Applied
+                    </button>
+                    <ul class="dropdown-menu" aria-labelledby="jobFilterDropdown">
+                        <li><a class="dropdown-item filter-option" href="#" data-value="applied">Applied</a></li>
+                        <li><a class="dropdown-item filter-option" href="#" data-value="viewed">Viewed</a></li>
+                    </ul>
+                </div>
             </div>
             
             <div id="applied-jobs-section">
@@ -296,25 +306,47 @@
                 img.addEventListener('error', function() {
                     if (this.dataset.fallback) {
                         this.src = this.dataset.fallback;
-                        this.dataset.fallback = '';  // Prevent infinite loop if fallback also fails
+                        this.dataset.fallback = '';
                     }
                 });
             });
+
+            const dropdownButton = document.getElementById('jobFilterDropdown');
+            const filterOptions = document.querySelectorAll('.filter-option');
+
+            filterOptions.forEach(option => {
+                option.addEventListener('click', function(event) {
+                    event.preventDefault();
+                    const selectedValue = this.dataset.value;
+                    const selectedText = this.textContent;
+
+                    if (dropdownButton) {
+                        dropdownButton.textContent = selectedText;
+                    }
+
+                    updateJobList(selectedValue);
+                });
+            });
+
+            const initialFilterValue = dropdownButton ? dropdownButton.textContent.trim().toLowerCase() : 'applied';
+            const validInitialValues = ['applied', 'viewed'];
+            const finalInitialValue = validInitialValues.includes(initialFilterValue) ? initialFilterValue : 'applied';
+            updateJobList(finalInitialValue);
         });
 
-        function toggleJobList(select) {
+        function updateJobList(selectedValue) {
             const appliedJobsSection = document.getElementById('applied-jobs-section');
             const viewedJobsSection = document.getElementById('viewed-jobs-section');
             const jobFilterHeader = document.getElementById('job-filter-header');
-            
-            if (select.value === 'applied') {
+
+            if (selectedValue === 'applied') {
                 appliedJobsSection.style.display = 'block';
                 viewedJobsSection.style.display = 'none';
-                jobFilterHeader.innerHTML = 'Jobs Applied';
-            } else if (select.value === 'viewed') {
+                jobFilterHeader.textContent = 'Jobs Applied';
+            } else if (selectedValue === 'viewed') {
                 appliedJobsSection.style.display = 'none';
                 viewedJobsSection.style.display = 'block';
-                jobFilterHeader.innerHTML = 'Jobs Viewed';
+                jobFilterHeader.textContent = 'Jobs Viewed';
             }
         }
     </script>
