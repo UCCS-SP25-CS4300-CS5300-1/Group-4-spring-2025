@@ -333,7 +333,7 @@ class InterviewCoachViewTest(TestCase):
 
         with patch('home.interview_service.InterviewService.generate_interview_questions') as mock_generate:
             mock_generate.return_value = ["Generic Q1", "Generic Q2"]
-            response = self.client.get(generate_url, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+            response = self.client.post(generate_url, {}, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
             
             self.assertEqual(response.status_code, 200)
             self.assertEqual(response.json(), {'questions': ["Generic Q1", "Generic Q2"]})
@@ -341,7 +341,7 @@ class InterviewCoachViewTest(TestCase):
 
         with patch('home.interview_service.InterviewService.generate_interview_questions') as mock_generate:
             mock_generate.return_value = ["Job Q1", "Job Q2"]
-            response = self.client.get(generate_url, {'job_description': self.job.description}, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+            response = self.client.post(generate_url, {'job_description': self.job.description}, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
             
             self.assertEqual(response.status_code, 200)
             self.assertEqual(response.json(), {'questions': ["Job Q1", "Job Q2"]})
@@ -354,7 +354,7 @@ class InterviewCoachViewTest(TestCase):
 
         with patch('home.interview_service.InterviewService.generate_interview_questions') as mock_generate:
             mock_generate.side_effect = Exception("AI Service Down") # Simulate an error
-            response = self.client.get(generate_url, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+            response = self.client.post(generate_url, {}, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
             
             self.assertEqual(response.status_code, 500)
             self.assertEqual(response.json(), {'error': 'Failed to generate questions. Please try again.'})
