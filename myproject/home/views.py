@@ -381,8 +381,8 @@ def interview_coach(request, job_id=None):
 @login_required
 def ajax_generate_questions(request):
     """API endpoint to generate interview questions asynchronously."""
-    if(request.method == "GET"):
-        job_description = request.GET.get('job_description', '')
+    if(request.method == "POST" and request.headers.get('X-Requested-With') == 'XMLHttpRequest'):
+        job_description = request.POST.get('job_description', '')
         
         try:
             questions = InterviewService.generate_interview_questions(job_description)
@@ -390,7 +390,7 @@ def ajax_generate_questions(request):
         except Exception as e:
             return JsonResponse({'error': 'Failed to generate questions. Please try again.'}, status=500)
             
-    return JsonResponse({'error': 'Invalid request method'}, status=400)
+    return JsonResponse({'error': 'Invalid request method'}, status=405)
 
 
 @login_required

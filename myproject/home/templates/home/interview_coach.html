@@ -362,10 +362,14 @@
 
             $.ajax({
                 url: questionsUrl,
-                type: "GET",
-                data: { 'job_description': jobDescription },
+                type: "POST",
+                data: { 
+                    'job_description': jobDescription,
+                    'csrfmiddlewaretoken': csrfToken
+                 }, 
                 headers: {
-                    "X-Requested-With": "XMLHttpRequest"
+                    "X-Requested-With": "XMLHttpRequest",
+                    "X-CSRFToken": csrfToken
                 },
                 success: function(response) {
                     accordion.empty();
