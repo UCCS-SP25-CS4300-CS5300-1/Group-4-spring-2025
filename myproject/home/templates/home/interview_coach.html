@@ -59,6 +59,185 @@
             padding: 2rem;
             width: 100%;
         }
+
+        .interview-card {
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .interview-card .card-header {
+            background-color: #2563eb;
+            color: white;
+            padding: 1rem 1.5rem;
+        }
+
+        .interview-card .card-header h2 i {
+            margin-right: 0.75rem;
+        }
+
+        .interview-card .card-body {
+            background-color: #fdfdff;
+            padding: 2rem;
+        }
+
+        .job-info-header, .alert-secondary {
+            background-color: #eef2ff;
+            border: 1px solid #dbeafe;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+        }
+        
+        .job-info-header h5, .alert-secondary h5 {
+            color: #4338ca;
+            margin-bottom: 0.25rem;
+        }
+
+        #interview-simulation h4 {
+            color: #1d4ed8;
+            border-bottom: 2px solid #dbeafe;
+            padding-bottom: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .accordion .card {
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            box-shadow: none;
+            overflow: hidden;
+        }
+
+        .question-btn {
+            background-color: #f9fafb;
+            border: none;
+            padding: 1rem 1.5rem;
+            width: 100%;
+            text-align: left;
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: #1f2937;
+            transition: background-color 0.2s ease-in-out;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .question-btn:not(.collapsed) {
+             background-color: #eef2ff;
+             color: #1d4ed8;
+             border-bottom: none;
+        }
+
+        .question-btn:hover {
+            background-color: #f3f4f6;
+        }
+
+        .accordion .card-body {
+            padding: 1.5rem;
+            background-color: white;
+        }
+
+        .interviewer-question {
+            font-style: italic;
+            color: #4b5563;
+            margin-bottom: 1.5rem;
+            padding-left: 1rem;
+            border-left: 3px solid #9ca3af;
+        }
+
+        .response-form textarea {
+            border-radius: 8px;
+            border: 1px solid #d1d5db;
+        }
+        
+        .response-form textarea:focus {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .submit-response {
+            background-color: #10b981;
+            border-color: #059669;
+            color: white;
+            transition: background-color 0.2s;
+        }
+
+        .submit-response:hover {
+            background-color: #059669;
+            color: white;
+        }
+        
+        .feedback-section {
+            background-color: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-top: 2rem !important;
+        }
+
+        .feedback-section h5 {
+            color: #1d4ed8;
+        }
+
+        .feedback-score {
+            background: linear-gradient(to right, #ef4444, #f59e0b, #10b981);
+            font-weight: bold;
+            color: white;
+            text-shadow: 1px 1px 1px rgba(0,0,0,0.3);
+        }
+        
+        .progress {
+            background-color: #e5e7eb;
+            border-radius: 6px;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .strengths-list, .improvements-list {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .strengths-list li::before {
+            content: '\f058';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            color: #10b981;
+            margin-right: 0.75rem;
+        }
+        
+        .improvements-list li::before {
+            content: '\f06a';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            color: #f59e0b;
+            margin-right: 0.75rem;
+        }
+
+        .strengths-list li,
+        .improvements-list li {
+            margin-bottom: 0.5rem;
+            color: #374151;
+        }
+        
+        .suggestions-section {
+            background-color: #eef2ff;
+            padding: 1rem;
+            border-radius: 6px;
+            border: 1px solid #dbeafe;
+        }
+
+        .suggestions-section h6 {
+            color: #4338ca;
+        }
+        
+        .suggestions-text {
+            color: #4b5563;
+            font-size: 0.95rem;
+        }
+        
+        .card-footer {
+            border-top: 1px solid #e5e7eb;
+        }
+
     </style>
 </head>
 <body>
@@ -111,85 +290,35 @@
 
                             <div id="interview-simulation">
                                 <div id="question-section" class="mb-4">
-                                    <h4 class="mb-3">Interview Questions</h4>
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <h4 class="mb-0">Interview Questions</h4>
+                                        <button id="regenerate-questions" class="btn btn-sm btn-outline-secondary">
+                                            <i class="fas fa-sync-alt me-1"></i> Regenerate Questions
+                                        </button>
+                                    </div>
 
-                                    <div class="accordion" id="interviewQuestions">
-                                        {% for question in questions %}
-                                            <div class="card mb-3 border">
-                                                <div class="card-header bg-white p-0" id="heading{{ forloop.counter }}">
-                                                    <h5 class="mb-0">
-                                                        <button class="question-btn" type="button" data-bs-toggle="collapse"
-                                                                data-bs-target="#collapse{{ forloop.counter }}" aria-expanded="{% if forloop.first %}true{% else %}false{% endif %}"
-                                                                aria-controls="collapse{{ forloop.counter }}">
-                                                            Question {{ forloop.counter }}: {{ question|truncatechars:50 }}
-                                                        </button>
-                                                    </h5>
-                                                </div>
+                                    <div id="loading-questions" class="text-center py-5">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="visually-hidden">Loading...</span>
+                                        </div>
+                                        <p class="mt-2">Generating interview questions...</p>
+                                    </div>
 
-                                                <div id="collapse{{ forloop.counter }}" class="collapse {% if forloop.first %}show{% endif %}"
-                                                     aria-labelledby="heading{{ forloop.counter }}" data-bs-parent="#interviewQuestions">
-                                                    <div class="card-body">
-                                                        <p class="interviewer-question">{{ question }}</p>
-
-                                                        <form class="response-form mt-3" action="{% url 'interview_coach' %}" method="post">
-                                                            {% csrf_token %}
-                                                            <input type="hidden" name="question" value="{{ question }}">
-                                                            {% if job %}
-                                                                <input type="hidden" name="job_description" value="{{ job.description }}">
-                                                            {% endif %}
-
-                                                            <div class="form-group">
-                                                                <label for="response{{ forloop.counter }}">Your Response:</label>
-                                                                <textarea id="response{{ forloop.counter }}" name="response" class="form-control" rows="5" required placeholder="Type your response here..."></textarea>
-                                                            </div>
-
-                                                            <div class="mt-3">
-                                                                <button type="submit" class="btn submit-response">Submit Response</button>
-                                                            </div>
-                                                        </form>
-
-                                                        <div class="feedback-section mt-4" style="display: none;">
-                                                            <hr>
-                                                            <h5 class="text-primary mb-3">AI Feedback</h5>
-                                                            <div class="card">
-                                                                <div class="card-body">
-                                                                    <div class="d-flex align-items-center mb-3">
-                                                                        <h6 class="me-3 mb-0">Overall Score:</h6>
-                                                                        <div class="progress flex-grow-1" style="height: 15px;">
-                                                                            <div class="progress-bar feedback-score" role="progressbar" style="width: 0%;"
-                                                                                 aria-valuenow="0" aria-valuemin="0" aria-valuemax="10">0/10</div>
-                                                                        </div>
-                                                                    </div>
-
-                                                                    <div class="strengths-section mb-3">
-                                                                        <h6 class="text-success"><i class="fas fa-check-circle me-1"></i> Strengths:</h6>
-                                                                        <ul class="strengths-list ps-4"></ul>
-                                                                    </div>
-
-                                                                    <div class="improvements-section mb-3">
-                                                                        <h6 class="text-warning"><i class="fas fa-exclamation-triangle me-1"></i> Areas to Improve:</h6>
-                                                                        <ul class="improvements-list ps-4"></ul>
-                                                                    </div>
-
-                                                                    <div class="suggestions-section mt-3">
-                                                                        <h6 class="text-info"><i class="fas fa-lightbulb me-1"></i> Suggestions:</h6>
-                                                                        <p class="suggestions-text mt-2"></p>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        {% endfor %}
+                                    <div class="accordion" id="interviewQuestions" style="display: none;">
                                     </div>
                                 </div>
                             </div>
                         </div>
                         <div class="card-footer bg-white text-center p-3">
-                            <a href="{% url 'dashboard' %}" class="btn btn-secondary me-2">
-                                <i class="fas fa-arrow-left me-1"></i> Back to Dashboard
-                            </a>
+                            {% if job %}
+                                <a href="{% url 'dashboard' %}" class="btn btn-secondary me-2">
+                                    <i class="fas fa-arrow-left me-1"></i> Back to Dashboard
+                                </a>
+                            {% else %}
+                                <a href="{% url 'profile' %}" class="btn btn-secondary me-2">
+                                    <i class="fas fa-arrow-left me-1"></i> Back to Profile
+                                </a>
+                            {% endif %}
                             <button id="start-over" class="btn btn-primary">
                                 <i class="fas fa-redo me-1"></i> Start Over
                             </button>
@@ -212,122 +341,212 @@
             }
         }
 
-        // Check on load and on resize
         window.addEventListener('load', checkScreenSize);
         window.addEventListener('resize', checkScreenSize);
 
-        document.addEventListener('DOMContentLoaded', function() {
-            // Handle form submission with AJAX
-            $('.response-form').on('submit', function(e) {
+        const jobDescription = "{{ job_description|escapejs }}";
+        const questionsUrl = "{% url 'generate_questions' %}";
+        const evaluateUrl = "{% url 'evaluate_response' %}";
+        const csrfToken = "{{ csrf_token }}";
+
+        function fetchAndDisplayQuestions(showLoading = true) {
+            const accordion = $('#interviewQuestions');
+            const loadingIndicator = $('#loading-questions');
+            const regenerateBtn = $('#regenerate-questions');
+
+            accordion.empty().hide();
+            if (showLoading) {
+                 loadingIndicator.show();
+            }
+            regenerateBtn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Regenerating...');
+
+            $.ajax({
+                url: questionsUrl,
+                type: "GET",
+                data: { 'job_description': jobDescription },
+                headers: {
+                    "X-Requested-With": "XMLHttpRequest"
+                },
+                success: function(response) {
+                    accordion.empty();
+                    if (response.questions && response.questions.length > 0) {
+                        response.questions.forEach(function(question, index) {
+                            const questionHtml = `
+                                <div class="card mb-3 border">
+                                    <div class="card-header bg-white p-0" id="heading${index}">
+                                        <h5 class="mb-0">
+                                            <button class="question-btn" type="button" data-bs-toggle="collapse"
+                                                    data-bs-target="#collapse${index}" aria-expanded="${index === 0 ? 'true' : 'false'}"
+                                                    aria-controls="collapse${index}">
+                                                Question ${index + 1}
+                                            </button>
+                                        </h5>
+                                    </div>
+                                    <div id="collapse${index}" class="collapse ${index === 0 ? 'show' : ''}"
+                                         aria-labelledby="heading${index}" data-bs-parent="#interviewQuestions">
+                                        <div class="card-body">
+                                            <p class="interviewer-question">${question}</p>
+                                            <form class="response-form mt-3" method="post">
+                                                <input type="hidden" name="csrfmiddlewaretoken" value="${csrfToken}">
+                                                <input type="hidden" name="question" value="${question}">
+                                                <input type="hidden" name="job_description" value="${jobDescription}">
+                                                <div class="form-group">
+                                                    <label for="response${index}">Your Response:</label>
+                                                    <textarea id="response${index}" name="response" class="form-control" rows="5" required placeholder="Type your response here..."></textarea>
+                                                </div>
+                                                <div class="mt-3">
+                                                    <button type="submit" class="btn submit-response">Submit Response</button>
+                                                </div>
+                                            </form>
+                                            <div class="feedback-section mt-4" style="display: none;">
+                                                 <hr>
+                                                 <h5 class="text-primary mb-3">AI Feedback</h5>
+                                                 <div class="card">
+                                                     <div class="card-body">
+                                                         <div class="d-flex align-items-center mb-3">
+                                                             <h6 class="me-3 mb-0">Overall Score:</h6>
+                                                             <div class="progress flex-grow-1" style="height: 15px;">
+                                                                 <div class="progress-bar feedback-score" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="10">0/10</div>
+                                                             </div>
+                                                         </div>
+                                                         <div class="strengths-section mb-3">
+                                                             <h6 class="text-success"><i class="fas fa-check-circle me-1"></i> Strengths:</h6>
+                                                             <ul class="strengths-list ps-4"></ul>
+                                                         </div>
+                                                         <div class="improvements-section mb-3">
+                                                             <h6 class="text-warning"><i class="fas fa-exclamation-triangle me-1"></i> Areas to Improve:</h6>
+                                                             <ul class="improvements-list ps-4"></ul>
+                                                         </div>
+                                                         <div class="suggestions-section mt-3">
+                                                             <h6 class="text-info"><i class="fas fa-lightbulb me-1"></i> Suggestions:</h6>
+                                                             <p class="suggestions-text mt-2"></p>
+                                                         </div>
+                                                     </div>
+                                                 </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                            accordion.append(questionHtml);
+                        });
+                        accordion.show();
+                        attachFormSubmitListeners(); 
+                    } else {
+                        accordion.html('<p class="text-center text-muted">Could not load questions.</p>');
+                        accordion.show();
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error("Error fetching questions:", error);
+                     accordion.html(`<p class="text-center text-danger">Error loading questions: ${xhr.responseJSON ? xhr.responseJSON.error : 'Unknown error'}. Please try again.</p>`);
+                     accordion.show();
+                },
+                complete: function() {
+                    loadingIndicator.hide();
+                    regenerateBtn.prop('disabled', false).html('<i class="fas fa-sync-alt me-1"></i> Regenerate Questions');
+                }
+            });
+        }
+        
+        function attachFormSubmitListeners() {
+            $('.response-form').off('submit').on('submit', function(e) {
                 e.preventDefault();
 
-                const form = $(this);
-                const questionContainer = form.closest('.card-body');
-                const feedbackSection = questionContainer.find('.feedback-section');
+                 const form = $(this);
+                 const questionContainer = form.closest('.card-body');
+                 const feedbackSection = questionContainer.find('.feedback-section');
+                 const submitBtn = form.find('button');
+                 const originalBtnText = submitBtn.html();
+                 
+                 submitBtn.html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...');
+                 submitBtn.prop('disabled', true);
 
-                // Show loading indicator
-                const submitBtn = form.find('button');
-                const originalBtnText = submitBtn.html();
-                submitBtn.html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...');
-                submitBtn.prop('disabled', true);
+                 $.ajax({
+                     url: evaluateUrl,
+                     type: "POST",
+                     data: form.serialize(),
+                     headers: {
+                         "X-Requested-With": "XMLHttpRequest",
+                         "X-CSRFToken": csrfToken
+                     },
+                     success: function(response) {
+                         const scorePercent = (response.score / 10) * 100;
+                         feedbackSection.find('.feedback-score').css('width', scorePercent + '%');
+                         feedbackSection.find('.feedback-score').attr('aria-valuenow', response.score);
+                         feedbackSection.find('.feedback-score').text(response.score + '/10');
 
-                // Get CSRF token
-                const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                         const strengthsList = feedbackSection.find('.strengths-list');
+                         strengthsList.empty();
+                         if (response.strengths && response.strengths.length > 0) {
+                            response.strengths.forEach(function(strength) {
+                                strengthsList.append(`<li>${strength}</li>`);
+                            });
+                         } else {
+                             strengthsList.append(`<li>None identified.</li>`);
+                         }
 
-                $.ajax({
-                    url: "{% url 'evaluate_response' %}",
-                    type: "POST",
-                    data: form.serialize(),
-                    headers: {
-                        "X-Requested-With": "XMLHttpRequest",
-                        "X-CSRFToken": csrftoken
-                    },
-                    success: function(response) {
-                        // Update feedback section with response data
-                        const scorePercent = (response.score / 10) * 100;
-                        feedbackSection.find('.feedback-score').css('width', scorePercent + '%');
-                        feedbackSection.find('.feedback-score').attr('aria-valuenow', response.score);
-                        feedbackSection.find('.feedback-score').text(response.score + '/10');
+                         const improvementsList = feedbackSection.find('.improvements-list');
+                         improvementsList.empty();
+                         if (response.areas_to_improve && response.areas_to_improve.length > 0) {
+                             response.areas_to_improve.forEach(function(improvement) {
+                                 improvementsList.append(`<li>${improvement}</li>`);
+                             });
+                         } else {
+                             improvementsList.append(`<li>None identified.</li>`);
+                         }
 
-                        // Update strengths
-                        const strengthsList = feedbackSection.find('.strengths-list');
-                        strengthsList.empty();
-                        response.strengths.forEach(function(strength) {
-                            strengthsList.append(`<li>${strength}</li>`);
-                        });
+                         feedbackSection.find('.suggestions-text').text(response.suggestions || 'No specific suggestions.');
+                         feedbackSection.show();
+                         feedbackSection.addClass('visible');
+                         submitBtn.html(originalBtnText);
+                         submitBtn.prop('disabled', false);
+                         form.find('textarea').prop('readonly', true);
+                         const questionBtn = questionContainer.closest('.collapse').prev().find('.question-btn');
+                         questionBtn.find('i.fa-check-circle').remove(); 
+                         questionBtn.prepend('<i class="fas fa-check-circle text-success me-2"></i>');
 
-                        // Update areas to improve
-                        const improvementsList = feedbackSection.find('.improvements-list');
-                        improvementsList.empty();
-                        response.areas_to_improve.forEach(function(improvement) {
-                            improvementsList.append(`<li>${improvement}</li>`);
-                        });
+                         const nextCollapseEl = questionContainer.closest('.collapse').parent().next().find('.collapse')[0];
+                         if (nextCollapseEl) {
+                             setTimeout(function() {
+                                 const bsCollapse = new bootstrap.Collapse(nextCollapseEl, { toggle: true });
+                             }, 1500);
+                         }
+                     },
+                     error: function(xhr, status, error) {
+                         console.error("Error:", error);
+                         let errorMessage = "An error occurred while evaluating your response.";
+                         try {
+                             const response = JSON.parse(xhr.responseText);
+                             if (response.error) { errorMessage = response.error; }
+                         } catch (e) {} 
+                         alert(errorMessage + " Please try again.");
+                         submitBtn.html(originalBtnText);
+                         submitBtn.prop('disabled', false);
+                     }
+                 });
+            });
+        }
 
-                        // Update suggestions
-                        feedbackSection.find('.suggestions-text').text(response.suggestions);
+        document.addEventListener('DOMContentLoaded', function() {
+            fetchAndDisplayQuestions();
 
-                        // Show feedback section
-                        feedbackSection.show();
-                        feedbackSection.addClass('visible');
-
-                        // Reset button text
-                        submitBtn.html(originalBtnText);
-                        submitBtn.prop('disabled', false);
-
-                        // Make the textarea readonly
-                        form.find('textarea').prop('readonly', true);
-
-                        // Mark this question as completed
-                        const questionBtn = questionContainer.closest('.collapse').prev().find('.question-btn');
-                        questionBtn.prepend('<i class="fas fa-check-circle text-success me-2"></i>');
-
-                        // Move to next question if available
-                        const nextCollapse = questionContainer.closest('.collapse').parent().next().find('.collapse');
-                        if (nextCollapse.length) {
-                            // Wait a bit before moving to next question
-                            setTimeout(function() {
-                                // Bootstrap 5 way to show collapse
-                                const bsCollapse = new bootstrap.Collapse(nextCollapse[0], {
-                                    toggle: true
-                                });
-                            }, 1500);
-                        }
-                    },
-                    error: function(xhr, status, error) {
-                        console.error("Error:", error);
-                        let errorMessage = "An error occurred while evaluating your response.";
-
-                        try {
-                            const response = JSON.parse(xhr.responseText);
-                            if (response.error) {
-                                errorMessage = response.error;
-                            }
-                        } catch (e) {
-                            // Use default error message
-                        }
-
-                        // Show alert with error message
-                        alert(errorMessage + " Please try again.");
-
-                        // Reset button
-                        submitBtn.html(originalBtnText);
-                        submitBtn.prop('disabled', false);
-                    }
-                });
+            $('#regenerate-questions').on('click', function() {
+                if (confirm('Are you sure you want to regenerate questions? This will clear current progress.')) {
+                    fetchAndDisplayQuestions();
+                }
             });
 
-            // Start over button functionality
             $('#start-over').on('click', function() {
                 if (confirm('Are you sure you want to start over? All your responses will be cleared.')) {
                     location.reload();
                 }
             });
 
-            // Handle question button clicks to update active state
-            $('.question-btn').on('click', function() {
-                $('.question-btn').removeClass('active');
-                $(this).addClass('active');
-            });
+             $(document).on('click', '.question-btn', function() {
+                 $('.question-btn').removeClass('active');
+                 $(this).addClass('active');
+             });
         });
     </script>
 </body>

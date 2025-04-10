@@ -1,39 +1,44 @@
 {% extends 'base_auth.html' %}
 {% load crispy_forms_tags %}
 
+{% block title %}Upload Resume{% endblock %}
+
 {% block content %}
-<form method="post" class="auth-form" enctype="multipart/form-data" id="resumeForm">
-    {% csrf_token %}
-    {{ form|crispy }}
+    <h2>{% if latest_resume %}Update{% else %}Upload{% endif %} Resume</h2>
+    <a href="{% url 'profile' %}" class="btn btn-sm btn-outline-secondary mb-3"><i class="fas fa-arrow-left"></i> Back to Profile</a>
 
-    <button type="submit" class="btn">Upload</button>
-</form>
+    <form method="post" class="auth-form" enctype="multipart/form-data" id="resumeForm">
+        {% csrf_token %}
+        {{ form|crispy }}
 
-<div id="loading-indicator" style="display: none; text-align: center; margin-top: 20px;">
-    <div class="spinner-border text-primary" role="status">
-        <span class="visually-hidden">Loading...</span>
+        <button type="submit" class="btn">Upload</button>
+    </form>
+
+    <div id="loading-indicator" style="display: none; text-align: center; margin-top: 20px;">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="mt-2">Generating AI feedback... This may take a moment.</p>
     </div>
-    <p class="mt-2">Generating AI feedback... This may take a moment.</p>
-</div>
 
-{% if message %}
-    <br>
-    <div class="alert alert-info">{{ message }}</div>
-{% endif %}
+    {% if message %}
+        <br>
+        <div class="alert alert-info">{{ message }}</div>
+    {% endif %}
 
-{% if feedback %}
-    <br>
-    <h3>AI Feedback by GPT-4o-mini:</h3>
-    <br>
-    <div>{{ feedback|safe }}</div>
-{% endif %}
+    {% if feedback %}
+        <br>
+        <h3>AI Feedback by GPT-4o-mini:</h3>
+        <br>
+        <div>{{ feedback|safe }}</div>
+    {% endif %}
 
-<script>
-    document.getElementById('resumeForm').addEventListener('submit', function() {
-        // Only show loading indicator if a file is selected
-        if (document.querySelector('input[type="file"]').files.length > 0) {
-            document.getElementById('loading-indicator').style.display = 'block';
-        }
-    });
-</script>
+    <script>
+        document.getElementById('resumeForm').addEventListener('submit', function() {
+            // Only show loading indicator if a file is selected
+            if (document.querySelector('input[type="file"]').files.length > 0) {
+                document.getElementById('loading-indicator').style.display = 'block';
+            }
+        });
+    </script>
 {% endblock %}
