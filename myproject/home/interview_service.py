@@ -20,13 +20,13 @@ class InterviewService:
         if not api_key and hasattr(settings, 'OPENAI_API_KEY'):
             api_key = settings.OPENAI_API_KEY
 
-     
+
         return api_key
 
     @staticmethod
     def generate_interview_questions(job_description: str, num_questions: int = 5) -> List[str]:
         """Generate interview questions based on job description using OpenAI API"""
-        # Generic questions as fallback
+        # hardcoded questions as fallback
         generic_questions = [
             "Tell me about yourself and why you're interested in this position.",
             "What experience do you have that's relevant to this role?",
@@ -35,7 +35,7 @@ class InterviewService:
             "Do you have any questions about the company or position?"
         ]
 
-        # Try to use OpenAI to generate job-specific questions
+        # trying to use OpenAI to generate job-specific questions
         try:
             api_key = InterviewService.get_api_key()
 
@@ -43,13 +43,13 @@ class InterviewService:
                 print("OpenAI API key not found. Using generic questions.")
                 return generic_questions
 
-            # Prepare the prompt based on job description
+            # Preparing the prompt based on job description
             if job_description:
                 prompt = f"Generate {num_questions} specific interview questions for a candidate applying to the following job:\n\n{job_description}\n\nOnly include the questions, with no numbering or additional text. Format as a JSON array."
             else:
                 prompt = f"Generate {num_questions} general job interview questions. Only include the questions, with no numbering or additional text. Format as a JSON array."
 
-            # Set up the API request
+            # Setting up the API request
             headers = {
                 "Content-Type": "application/json",
                 "Authorization": f"Bearer {api_key}"
@@ -117,7 +117,7 @@ class InterviewService:
     @staticmethod
     def evaluate_response(question: str, response: str, job_description: Optional[str] = None) -> Dict[str, Any]:
         """Evaluate interview response using OpenAI API"""
-        # Generic feedback as fallback
+        # hardcoded feedback as fallback
         generic_feedback = {
             "score": 7,
             "strengths": [
@@ -138,7 +138,7 @@ class InterviewService:
                 print("OpenAI API key not found. Using generic feedback.")
                 return generic_feedback
 
-            # Prepare the prompt
+            # preparing the prompt
             context = f"Question: {question}\n\n"
             if job_description:
                 context += f"Job Description: {job_description}\n\n"
@@ -146,7 +146,7 @@ class InterviewService:
 
             prompt = context + "Evaluate this interview response. Provide: 1) a score from 1-10, 2) a list of strengths, 3) a list of areas to improve, and 4) concrete suggestions for improvement. Format your response as a JSON object with keys: 'score', 'strengths' (array), 'areas_to_improve' (array), and 'suggestions' (string)."
 
-            # Set up the API request
+            # setting up the API request
             headers = {
                 "Content-Type": "application/json",
                 "Authorization": f"Bearer {api_key}"
@@ -162,40 +162,40 @@ class InterviewService:
                 "max_tokens": 1000
             }
 
-            # Make the API call
+            # making the API call
             response = requests.post(
                 InterviewService.API_URL,
                 headers=headers,
                 json=data
             )
 
-            # Check for successful response
+            # checking for successful response
             if response.status_code == 200:
                 result = response.json()
                 content = result["choices"][0]["message"]["content"]
 
-                # Try to parse as JSON
+                # trying to parse as JSON
                 try:
-                    # Extract the JSON object if it's embedded in text
+                    # extracting the JSON object
                     if '{' in content and '}' in content:
                         start = content.find('{')
                         end = content.rfind('}') + 1
                         json_content = content[start:end]
                         feedback = json.loads(json_content)
 
-                        # Validate the required keys
+                        # validating the required keys
                         required_keys = ['score', 'strengths', 'areas_to_improve', 'suggestions']
                         for key in required_keys:
                             if key not in feedback:
                                 print(f"Missing key in response: {key}")
                                 return generic_feedback
 
-                        # Ensure score is a number between 1-10
+                        # ensuring score is a number between 1-10
                         try:
                             feedback['score'] = int(feedback['score'])
                             feedback['score'] = max(1, min(10, feedback['score']))
                         except (ValueError, TypeError):
-                            feedback['score'] = 7  # Default score
+                            feedback['score'] = 7
 
                         return feedback
                     else:
@@ -206,7 +206,7 @@ class InterviewService:
                     print(f"Error parsing JSON: {str(e)}")
                     return generic_feedback
 
-            # Log API error and return generic feedback
+            # logging API error and return generic feedback
             print(f"OpenAI API error: {response.status_code}, {response.text}")
             return generic_feedback
 
