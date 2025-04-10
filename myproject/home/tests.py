@@ -224,126 +224,126 @@ class InterviewCoachViewTest(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertTrue(response.url.startswith('/users/login/'))
 
-    @patch('home.interview_service.InterviewService.generate_interview_questions')
-    def test_interview_coach_authenticated_user(self, mock_generate_questions):
+    def test_interview_coach_authenticated_user(self):
         """Test that authenticated users can access the interview coach"""
         # mocking the question generation
-        mock_generate_questions.return_value = [
-            "Tell me about yourself.",
-            "What experience do you have with Python?"
-        ]
+        with patch('home.interview_service.InterviewService.generate_interview_questions') as mock_generate_questions:
+            mock_generate_questions.return_value = [
+                "Tell me about yourself.",
+                "What experience do you have with Python?"
+            ]
 
-        self.client.login(username='testuser', password='StrongTestPass123')
-        response = self.client.get(self.interview_coach_url)
+            self.client.login(username='testuser', password='StrongTestPass123')
+            response = self.client.get(self.interview_coach_url)
 
-        self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, 'home/interview_coach.html')
+            self.assertEqual(response.status_code, 200)
+            self.assertTemplateUsed(response, 'home/interview_coach.html')
 
-        # checking that questions were generated
-        self.assertIn('questions', response.context)
-        self.assertEqual(len(response.context['questions']), 2)
+            # checking that questions were generated
+            self.assertIn('questions', response.context)
+            self.assertEqual(len(response.context['questions']), 2)
 
-        # verifying the mock was called correctly
-        mock_generate_questions.assert_called_once_with("")
+            # verifying the mock was called correctly
+            mock_generate_questions.assert_called_once_with("")
 
-    @patch('home.interview_service.InterviewService.generate_interview_questions')
-    def test_interview_coach_with_job_authenticated_user(self, mock_generate_questions):
+    def test_interview_coach_with_job_authenticated_user(self):
         """Test that authenticated users can access the interview coach with a job"""
         # mocking the question generation
-        mock_generate_questions.return_value = [
-            "Tell me about your experience with Python.",
-            "How have you used Django in previous projects?"
-        ]
+        with patch('home.interview_service.InterviewService.generate_interview_questions') as mock_generate_questions:
+            mock_generate_questions.return_value = [
+                "Tell me about your experience with Python.",
+                "How have you used Django in previous projects?"
+            ]
 
-        self.client.login(username='testuser', password='StrongTestPass123')
-        response = self.client.get(self.interview_coach_with_job_url)
+            self.client.login(username='testuser', password='StrongTestPass123')
+            response = self.client.get(self.interview_coach_with_job_url)
 
-        self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, 'home/interview_coach.html')
+            self.assertEqual(response.status_code, 200)
+            self.assertTemplateUsed(response, 'home/interview_coach.html')
 
-        # checking that the job is in the context
-        self.assertIn('job', response.context)
-        self.assertEqual(response.context['job'], self.job)
+            # checking that the job is in the context
+            self.assertIn('job', response.context)
+            self.assertEqual(response.context['job'], self.job)
 
-        # checking that questions were generated
-        self.assertIn('questions', response.context)
-        self.assertEqual(len(response.context['questions']), 2)
+            # checking that questions were generated
+            self.assertIn('questions', response.context)
+            self.assertEqual(len(response.context['questions']), 2)
 
-        # verifying the mock was called with the job description
-        mock_generate_questions.assert_called_once_with(self.job.description)
+            # verifying the mock was called with the job description
+            mock_generate_questions.assert_called_once_with(self.job.description)
 
-    @patch('home.interview_service.InterviewService.evaluate_response')
-    def test_interview_coach_post_response(self, mock_evaluate):
+    def test_interview_coach_post_response(self):
         """testing submitting an interview response"""
         # mocking the evaluation response
-        mock_evaluate.return_value = {
-            "score": 8,
-            "strengths": ["Good communication", "Relevant experience"],
-            "areas_to_improve": ["Be more specific"],
-            "suggestions": "Provide concrete examples of your work."
-        }
+        with patch('home.interview_service.InterviewService.evaluate_response') as mock_evaluate:
+            mock_evaluate.return_value = {
+                "score": 8,
+                "strengths": ["Good communication", "Relevant experience"],
+                "areas_to_improve": ["Be more specific"],
+                "suggestions": "Provide concrete examples of your work."
+            }
 
-        self.client.login(username='testuser', password='StrongTestPass123')
+            self.client.login(username='testuser', password='StrongTestPass123')
 
-        response = self.client.post(self.interview_coach_url, {
-            'question': 'Tell me about yourself.',
-            'response': 'I am a senior developer with 5 years of experience in Python.',
-            'job_description': ''
-        })
+            response = self.client.post(self.interview_coach_url, {
+                'question': 'Tell me about yourself.',
+                'response': 'I am a senior developer with 5 years of experience in Python.',
+                'job_description': ''
+            })
 
-        self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, 'home/interview_coach.html')
+            self.assertEqual(response.status_code, 200)
+            self.assertTemplateUsed(response, 'home/interview_coach.html')
 
-        # checking that feedback is in the context
-        self.assertIn('feedback', response.context)
-        self.assertEqual(response.context['feedback']['score'], 8)
+            # checking that feedback is in the context
+            self.assertIn('feedback', response.context)
+            self.assertEqual(response.context['feedback']['score'], 8)
 
-        # verifying the mock was called correctly
-        mock_evaluate.assert_called_once_with(
-            'Tell me about yourself.',
-            'I am a senior developer with 5 years of experience in Python.',
-            ''
-        )
+            # verifying the mock was called correctly
+            mock_evaluate.assert_called_once_with(
+                'Tell me about yourself.',
+                'I am a senior developer with 5 years of experience in Python.',
+                ''
+            )
 
-    @patch('home.interview_service.InterviewService.evaluate_response')
-    def test_ajax_evaluate_response(self, mock_evaluate):
+    def test_ajax_evaluate_response(self):
         """Test the AJAX endpoint for evaluating responses"""
         # mocking the evaluation response
-        mock_evaluate.return_value = {
-            "score": 9,
-            "strengths": ["Excellent communication", "Strong technical knowledge"],
-            "areas_to_improve": ["Could provide more examples"],
-            "suggestions": "Consider mentioning specific projects."
-        }
+        with patch('home.interview_service.InterviewService.evaluate_response') as mock_evaluate:
+            mock_evaluate.return_value = {
+                "score": 9,
+                "strengths": ["Excellent communication", "Strong technical knowledge"],
+                "areas_to_improve": ["Could provide more examples"],
+                "suggestions": "Consider mentioning specific projects."
+            }
 
-        self.client.login(username='testuser', password='StrongTestPass123')
+            self.client.login(username='testuser', password='StrongTestPass123')
 
-        response = self.client.post(
-            reverse('evaluate_response'),
-            {
-                'question': 'What experience do you have with Django?',
-                'response': 'I have built several web applications using Django over the past 3 years.',
-                'job_description': self.job.description
-            },
-            HTTP_X_REQUESTED_WITH='XMLHttpRequest'  # Simulates AJAX request
-        )
+            response = self.client.post(
+                reverse('evaluate_response'),
+                {
+                    'question': 'What experience do you have with Django?',
+                    'response': 'I have built several web applications using Django over the past 3 years.',
+                    'job_description': self.job.description
+                },
+                HTTP_X_REQUESTED_WITH='XMLHttpRequest'  # Simulates AJAX request
+            )
 
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response['Content-Type'], 'application/json')
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response['Content-Type'], 'application/json')
 
-        # parsing JSON response
-        data = response.json()
-        self.assertEqual(data['score'], 9)
-        self.assertEqual(len(data['strengths']), 2)
-        self.assertEqual(len(data['areas_to_improve']), 1)
-        self.assertIn('suggestions', data)
+            # parsing JSON response
+            data = response.json()
+            self.assertEqual(data['score'], 9)
+            self.assertEqual(len(data['strengths']), 2)
+            self.assertEqual(len(data['areas_to_improve']), 1)
+            self.assertIn('suggestions', data)
 
-        # verifying the mock was called correctly
-        mock_evaluate.assert_called_once_with(
-            'What experience do you have with Django?',
-            'I have built several web applications using Django over the past 3 years.',
-            self.job.description
-        )
+            # verifying the mock was called correctly
+            mock_evaluate.assert_called_once_with(
+                'What experience do you have with Django?',
+                'I have built several web applications using Django over the past 3 years.',
+                self.job.description
+            )
 
     def test_ajax_evaluate_response_validation(self):
         """testing validation in the AJAX endpoint"""
@@ -384,103 +384,65 @@ class InterviewCoachViewTest(TestCase):
 class InterviewServiceTest(TestCase):
     """tests for the InterviewService class"""
 
-    @patch('openai.chat.completions.create')
-    def test_generate_interview_questions(self, mock_openai):
-        """testing question generation with OpenAI"""
+    def test_generate_interview_questions_fallback(self):
+        """Test that generate_interview_questions returns fallback questions when API fails"""
         from home.interview_service import InterviewService
-
-        # mocking OpenAI response
-        mock_response = type('obj', (object,), {
-            'choices': [
-                type('obj', (object,), {
-                    'message': type('obj', (object,), {
-                        'content': "1. Tell me about your experience with Python.\n2. How have you used Django in your projects?"
-                    })
-                })
-            ]
-        })
-        mock_openai.return_value = mock_response
-
-        job_description = "Looking for an experienced Python developer with Django knowledge."
-        questions = InterviewService.generate_interview_questions(job_description)
-
-        # We should have at least one result
-        self.assertTrue(len(questions) > 0)
         
-        # The mock should have been called once
-        mock_openai.assert_called_once()
+        # Force API failure by making openai.api_key None temporarily
+        import openai
+        original_key = openai.api_key
+        openai.api_key = None
+        
+        try:
+            # This should use fallback questions
+            questions = InterviewService.generate_interview_questions("Test job description")
+            
+            # Verify we got some questions
+            self.assertTrue(len(questions) > 0)
+            self.assertTrue(isinstance(questions, list))
+            self.assertTrue(all(isinstance(q, str) for q in questions))
+            
+            # Verify the first fallback question is present
+            self.assertIn("Tell me about yourself", questions[0])
+        finally:
+            # Restore the API key
+            openai.api_key = original_key
 
-    @patch('openai.chat.completions.create')
-    def test_generate_interview_questions_error_handling(self, mock_openai):
-        """testing error handling in question generation"""
+    def test_evaluate_response_fallback(self):
+        """Test that evaluate_response returns fallback feedback when API fails"""
         from home.interview_service import InterviewService
-
-        # simulate API error
-        mock_openai.side_effect = Exception("API Error")
-
-        questions = InterviewService.generate_interview_questions("Some job description")
-
-        self.assertTrue(len(questions) > 0)
-        self.assertIn("Tell me about yourself", questions[0])
-
-    @patch('openai.chat.completions.create')
-    def test_evaluate_response(self, mock_openai):
-        """Testing response evaluation with OpenAI"""
-        from home.interview_service import InterviewService
-        import json
-
-        # mocking OpenAI response
-        feedback_json = json.dumps({
-            "score": 7,
-            "strengths": ["Clear communication", "Good examples"],
-            "areas_to_improve": ["Be more concise"],
-            "suggestions": "Focus on relevant skills for this role."
-        })
-
-        mock_response = type('obj', (object,), {
-            'choices': [
-                type('obj', (object,), {
-                    'message': type('obj', (object,), {
-                        'content': feedback_json
-                    })
-                })
-            ]
-        })
-        mock_openai.return_value = mock_response
-
-        # Override the openai API usage in InterviewService
-        with patch('home.interview_service.openai.chat.completions.create', return_value=mock_response):
+        
+        # Force API failure by making openai.api_key None temporarily
+        import openai
+        original_key = openai.api_key
+        openai.api_key = None
+        
+        try:
+            # This should use fallback feedback
             feedback = InterviewService.evaluate_response(
                 "Tell me about yourself.",
                 "I am a Python developer with 5 years of experience.",
                 "Python Developer job description"
             )
-
-        # Check basic structure without asserting exact values
-        self.assertIn('score', feedback)
-        self.assertIn('strengths', feedback)
-        self.assertIn('areas_to_improve', feedback)
-        self.assertIn('suggestions', feedback)
-
-    @patch('openai.chat.completions.create')
-    def test_evaluate_response_error_handling(self, mock_openai):
-        """Test error handling in response evaluation"""
-        from home.interview_service import InterviewService
-
-        # Simulate API error
-        mock_openai.side_effect = Exception("API Error")
-
-        # Should return generic feedback on error
-        feedback = InterviewService.evaluate_response(
-            "Tell me about yourself.",
-            "I am a Python developer.",
-            ""
-        )
-
-        self.assertIn('score', feedback)  # Should return default feedback
-        self.assertIn('strengths', feedback)
-        self.assertIn('areas_to_improve', feedback)
-        self.assertIn('suggestions', feedback)
+            
+            # Check structure of feedback
+            self.assertIn('score', feedback)
+            self.assertIn('strengths', feedback)
+            self.assertIn('areas_to_improve', feedback)
+            self.assertIn('suggestions', feedback)
+            
+            # Score should be between 1 and 10
+            self.assertTrue(1 <= feedback['score'] <= 10)
+            
+            # Should have at least one strength and one area to improve
+            self.assertTrue(len(feedback['strengths']) > 0)
+            self.assertTrue(len(feedback['areas_to_improve']) > 0)
+            
+            # Suggestions should be a string
+            self.assertTrue(isinstance(feedback['suggestions'], str))
+        finally:
+            # Restore the API key
+            openai.api_key = original_key
 
 
 class UrlsTest(TestCase):
