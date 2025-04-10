@@ -525,8 +525,11 @@ class UrlsTest(TestCase):
         )
         self.client.login(username='testuser', password='StrongTestPass123')
 
-        response = self.client.get('/interview-coach/')
-        self.assertEqual(response.status_code, 200)
+        # Need to mock the interview questions generation
+        with patch('home.interview_service.InterviewService.generate_interview_questions') as mock_gen:
+            mock_gen.return_value = ["Test question 1", "Test question 2"]
+            response = self.client.get('/interview-coach/')
+            self.assertEqual(response.status_code, 200)
 
 
 class StaticContentTest(TestCase):
