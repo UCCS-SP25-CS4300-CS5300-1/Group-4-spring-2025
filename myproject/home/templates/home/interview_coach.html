@@ -1,0 +1,334 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{% static 'styles.css' %}">
+    <link rel="stylesheet" href="{% static 'interview_coach.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Interview Coach - ApplierPilotAI</title>
+    <style>
+        body {
+            background-color: #f8fafc;
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+        }
+
+        .navbar {
+            background-color: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            padding: 1rem 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .back-button {
+            color: #4b5563;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            transition: background-color 0.2s;
+        }
+
+        .back-button:hover {
+            background-color: #f3f4f6;
+            color: #2563eb;
+            text-decoration: none;
+        }
+
+        .navbar-brand {
+            color: #2563eb;
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-decoration: none;
+        }
+
+        .navbar-brand:hover {
+            color: #1d4ed8;
+        }
+
+        .main-content {
+            padding: 2rem;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div id="mobile-warning" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.9); z-index: 9999; color: white; text-align: center; padding-top: 20%;">
+        <h2>Mobile Access Not Supported</h2>
+        <p>This application is not optimized for mobile devices. Please use a desktop or laptop computer for the best experience.</p>
+    </div>
+    <nav class="navbar">
+        <a href="/dashboard/" class="back-button">
+            <i class="fas fa-arrow-left"></i>
+            Back to Dashboard
+        </a>
+        <div class="navbar-brand">
+            <a href="/" class="navbar-brand">ApplierPilotAI</a>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        {% if messages %}
+            <div class="messages mb-4">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-8 mx-auto">
+                    <div class="interview-card">
+                        <div class="card-header">
+                            <h2 class="mb-0 d-flex align-items-center">
+                                <i class="fas fa-comments me-2"></i> AI Interview Coach
+                            </h2>
+                        </div>
+                        <div class="card-body">
+                            {% if job %}
+                                <div class="job-info-header">
+                                    <h5>Practicing for: {{ job.title }} at {{ job.company }}</h5>
+                                    <p class="small mb-0">Using job description to generate relevant interview questions</p>
+                                </div>
+                            {% else %}
+                                <div class="alert alert-secondary">
+                                    <h5>General Interview Practice</h5>
+                                    <p class="small mb-0">Using generic interview questions for various positions</p>
+                                </div>
+                            {% endif %}
+
+                            <div id="interview-simulation">
+                                <div id="question-section" class="mb-4">
+                                    <h4 class="mb-3">Interview Questions</h4>
+
+                                    <div class="accordion" id="interviewQuestions">
+                                        {% for question in questions %}
+                                            <div class="card mb-3 border">
+                                                <div class="card-header bg-white p-0" id="heading{{ forloop.counter }}">
+                                                    <h5 class="mb-0">
+                                                        <button class="question-btn" type="button" data-bs-toggle="collapse"
+                                                                data-bs-target="#collapse{{ forloop.counter }}" aria-expanded="{% if forloop.first %}true{% else %}false{% endif %}"
+                                                                aria-controls="collapse{{ forloop.counter }}">
+                                                            Question {{ forloop.counter }}: {{ question|truncatechars:50 }}
+                                                        </button>
+                                                    </h5>
+                                                </div>
+
+                                                <div id="collapse{{ forloop.counter }}" class="collapse {% if forloop.first %}show{% endif %}"
+                                                     aria-labelledby="heading{{ forloop.counter }}" data-bs-parent="#interviewQuestions">
+                                                    <div class="card-body">
+                                                        <p class="interviewer-question">{{ question }}</p>
+
+                                                        <form class="response-form mt-3" action="{% url 'interview_coach' %}" method="post">
+                                                            {% csrf_token %}
+                                                            <input type="hidden" name="question" value="{{ question }}">
+                                                            {% if job %}
+                                                                <input type="hidden" name="job_description" value="{{ job.description }}">
+                                                            {% endif %}
+
+                                                            <div class="form-group">
+                                                                <label for="response{{ forloop.counter }}">Your Response:</label>
+                                                                <textarea id="response{{ forloop.counter }}" name="response" class="form-control" rows="5" required placeholder="Type your response here..."></textarea>
+                                                            </div>
+
+                                                            <div class="mt-3">
+                                                                <button type="submit" class="btn submit-response">Submit Response</button>
+                                                            </div>
+                                                        </form>
+
+                                                        <div class="feedback-section mt-4" style="display: none;">
+                                                            <hr>
+                                                            <h5 class="text-primary mb-3">AI Feedback</h5>
+                                                            <div class="card">
+                                                                <div class="card-body">
+                                                                    <div class="d-flex align-items-center mb-3">
+                                                                        <h6 class="me-3 mb-0">Overall Score:</h6>
+                                                                        <div class="progress flex-grow-1" style="height: 15px;">
+                                                                            <div class="progress-bar feedback-score" role="progressbar" style="width: 0%;"
+                                                                                 aria-valuenow="0" aria-valuemin="0" aria-valuemax="10">0/10</div>
+                                                                        </div>
+                                                                    </div>
+
+                                                                    <div class="strengths-section mb-3">
+                                                                        <h6 class="text-success"><i class="fas fa-check-circle me-1"></i> Strengths:</h6>
+                                                                        <ul class="strengths-list ps-4"></ul>
+                                                                    </div>
+
+                                                                    <div class="improvements-section mb-3">
+                                                                        <h6 class="text-warning"><i class="fas fa-exclamation-triangle me-1"></i> Areas to Improve:</h6>
+                                                                        <ul class="improvements-list ps-4"></ul>
+                                                                    </div>
+
+                                                                    <div class="suggestions-section mt-3">
+                                                                        <h6 class="text-info"><i class="fas fa-lightbulb me-1"></i> Suggestions:</h6>
+                                                                        <p class="suggestions-text mt-2"></p>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-footer bg-white text-center p-3">
+                            <a href="{% url 'dashboard' %}" class="btn btn-secondary me-2">
+                                <i class="fas fa-arrow-left me-1"></i> Back to Dashboard
+                            </a>
+                            <button id="start-over" class="btn btn-primary">
+                                <i class="fas fa-redo me-1"></i> Start Over
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function checkScreenSize() {
+            const mobileWarning = document.getElementById('mobile-warning');
+            if (window.innerWidth < 768) {
+                mobileWarning.style.display = 'block';
+            } else {
+                mobileWarning.style.display = 'none';
+            }
+        }
+
+        // Check on load and on resize
+        window.addEventListener('load', checkScreenSize);
+        window.addEventListener('resize', checkScreenSize);
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Handle form submission with AJAX
+            $('.response-form').on('submit', function(e) {
+                e.preventDefault();
+
+                const form = $(this);
+                const questionContainer = form.closest('.card-body');
+                const feedbackSection = questionContainer.find('.feedback-section');
+
+                // Show loading indicator
+                const submitBtn = form.find('button');
+                const originalBtnText = submitBtn.html();
+                submitBtn.html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...');
+                submitBtn.prop('disabled', true);
+
+                // Get CSRF token
+                const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+                $.ajax({
+                    url: "{% url 'evaluate_response' %}",
+                    type: "POST",
+                    data: form.serialize(),
+                    headers: {
+                        "X-Requested-With": "XMLHttpRequest",
+                        "X-CSRFToken": csrftoken
+                    },
+                    success: function(response) {
+                        // Update feedback section with response data
+                        const scorePercent = (response.score / 10) * 100;
+                        feedbackSection.find('.feedback-score').css('width', scorePercent + '%');
+                        feedbackSection.find('.feedback-score').attr('aria-valuenow', response.score);
+                        feedbackSection.find('.feedback-score').text(response.score + '/10');
+
+                        // Update strengths
+                        const strengthsList = feedbackSection.find('.strengths-list');
+                        strengthsList.empty();
+                        response.strengths.forEach(function(strength) {
+                            strengthsList.append(`<li>${strength}</li>`);
+                        });
+
+                        // Update areas to improve
+                        const improvementsList = feedbackSection.find('.improvements-list');
+                        improvementsList.empty();
+                        response.areas_to_improve.forEach(function(improvement) {
+                            improvementsList.append(`<li>${improvement}</li>`);
+                        });
+
+                        // Update suggestions
+                        feedbackSection.find('.suggestions-text').text(response.suggestions);
+
+                        // Show feedback section
+                        feedbackSection.show();
+                        feedbackSection.addClass('visible');
+
+                        // Reset button text
+                        submitBtn.html(originalBtnText);
+                        submitBtn.prop('disabled', false);
+
+                        // Make the textarea readonly
+                        form.find('textarea').prop('readonly', true);
+
+                        // Mark this question as completed
+                        const questionBtn = questionContainer.closest('.collapse').prev().find('.question-btn');
+                        questionBtn.prepend('<i class="fas fa-check-circle text-success me-2"></i>');
+
+                        // Move to next question if available
+                        const nextCollapse = questionContainer.closest('.collapse').parent().next().find('.collapse');
+                        if (nextCollapse.length) {
+                            // Wait a bit before moving to next question
+                            setTimeout(function() {
+                                // Bootstrap 5 way to show collapse
+                                const bsCollapse = new bootstrap.Collapse(nextCollapse[0], {
+                                    toggle: true
+                                });
+                            }, 1500);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error("Error:", error);
+                        let errorMessage = "An error occurred while evaluating your response.";
+
+                        try {
+                            const response = JSON.parse(xhr.responseText);
+                            if (response.error) {
+                                errorMessage = response.error;
+                            }
+                        } catch (e) {
+                            // Use default error message
+                        }
+
+                        // Show alert with error message
+                        alert(errorMessage + " Please try again.");
+
+                        // Reset button
+                        submitBtn.html(originalBtnText);
+                        submitBtn.prop('disabled', false);
+                    }
+                });
+            });
+
+            // Start over button functionality
+            $('#start-over').on('click', function() {
+                if (confirm('Are you sure you want to start over? All your responses will be cleared.')) {
+                    location.reload();
+                }
+            });
+
+            // Handle question button clicks to update active state
+            $('.question-btn').on('click', function() {
+                $('.question-btn').removeClass('active');
+                $(this).addClass('active');
+            });
+        });
+    </script>
+</body>
+</html>
