@@ -102,14 +102,18 @@ jobs:
                   pr_number = os.environ.get('PR_NUMBER')
                   repo = os.environ.get('REPO')
                   github_token = os.environ.get('GITHUB_TOKEN')
-                  
-                  if(not all([pr_number, repo, github_token])):
-                      raise ValueError("Missing required environment variables: PR_NUMBER, REPO, or GITHUB_TOKEN")
-                  
-                  if(not os.environ.get('OPENAI_API_KEY')):
-                      raise ValueError("Missing OpenAI API key")
-                  
-                  openai.api_key = os.environ.get('OPENAI_API_KEY')
+                  openai_api_key = os.environ.get('OPENAI_API_KEY')
+
+                  if(not pr_number):
+                      raise ValueError("Missing required environment variable: PR_NUMBER")
+                  if(not repo):
+                      raise ValueError("Missing required environment variable: REPO")
+                  if(not github_token):
+                      raise ValueError("Missing required environment variable: GITHUB_TOKEN")
+                  if(not openai_api_key):
+                      raise ValueError("Missing required environment variable: OPENAI_API_KEY")
+
+                  openai.api_key = openai_api_key
 
                   try:
                       with open('diff.txt', 'r') as f:
@@ -126,8 +130,12 @@ jobs:
                           ],
                       )
                       review_comment = response.choices[0].message.content
+                  except openai.AuthenticationError as e:
+                      raise RuntimeError(f"OpenAI API authentication failed: {str(e)}. Check your OPENAI_API_KEY.")
+                  except openai.APIError as e:
+                      raise RuntimeError(f"OpenAI API call failed: {type(e).__name__}: {str(e)}")
                   except Exception as e:
-                      raise RuntimeError(f"OpenAI API call failed: {type(e).__name__}")
+                      raise RuntimeError(f"Unexpected error during OpenAI API call: {type(e).__name__}: {str(e)}")
 
                   url = f"https://api.github.com/repos/{repo}/issues/{pr_number}/comments"
                   headers = {
@@ -142,13 +150,31 @@ jobs:
                       response = requests.post(url, headers=headers, data=json.dumps(data))
                       response.raise_for_status()
                       print("Review posted to PR")
-                  except requests.exceptions.RequestException as e:
-                      raise RuntimeError(f"Failed to post comment to GitHub: {type(e).__name__}")
-                      
-              except Exception as e:
-                  print(f"Error: {type(e).__name__}: {str(e)}")
+                  except requests.exceptions.HTTPError as e:
+                      if(e.response.status_code in [401, 403]):
+                          raise RuntimeError(f"GitHub API authentication failed (Status code: {e.response.status_code}). Check your GITHUB_TOKEN permissions.")
+                      else:
+                          raise RuntimeError(f"Failed to post comment to GitHub (Status code: {e.response.status_code}): {str(e)}")
+                  except requests.exceptions.RequestException as e: # Catch other request errors
+                      raise RuntimeError(f"Failed to connect to GitHub API: {type(e).__name__}: {str(e)}")
+                  except Exception as e: # Catch unexpected errors during GitHub post
+                      raise RuntimeError(f"Unexpected error posting comment to GitHub: {type(e).__name__}: {str(e)}")
+
+              except ValueError as e: 
+                  print(f"Configuration Error: {str(e)}")
                   return 1
-              
+              except IOError as e: 
+                  print(f"File Error: {str(e)}")
+                  return 1
+              except RuntimeError as e:
+                  print(f"Runtime Error: {str(e)}")
+                  traceback.print_exc() 
+                  return 1
+              except Exception as e: 
+                  print(f"An unexpected error occurred: {type(e).__name__}: {str(e)}")
+                  traceback.print_exc()
+                  return 1
+
               return 0
 
           if(__name__ == "__main__"):
