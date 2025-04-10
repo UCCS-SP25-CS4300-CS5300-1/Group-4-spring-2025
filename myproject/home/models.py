@@ -1,8 +1,7 @@
 from django.contrib.auth.models import User
 from django.db import models
-from django.utils import timezone
 
-
+## don't use this, needs to get removed
 class Application(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='applications')
     search_word = models.CharField(max_length=100)
@@ -17,7 +16,7 @@ class Application(models.Model):
     def __str__(self):
         return f"{self.job_title} at {self.company}"
 
-
+## use this for mocking Matt
 class JobListing(models.Model):
     job_id = models.CharField(max_length=100, unique=True)
     title = models.CharField(max_length=200)

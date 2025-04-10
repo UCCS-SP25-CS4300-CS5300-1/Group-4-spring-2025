@@ -1,7 +1,6 @@
 import requests
 from datetime import datetime
 from typing import List, Optional, Dict, Any
-from django.utils import timezone
 from .models import JobListing
 
 class JobicyService:
@@ -25,11 +24,9 @@ class JobicyService:
         """
         url = f"{JobicyService.BASE_URL}?count=50"
         
-        # Add search term as tag
         if search_term:
             url = f"{url}&tag={search_term}"
             
-        # Add additional parameters
         if params:
             for key, value in params.items():
                 url = f"{url}&{key}={value}"
@@ -47,7 +44,6 @@ class JobicyService:
             cache_key = JobicyService._build_cache_key(search_term, params)
 
             for job in data['jobs']:
-                # Try to get existing job or create new one
                 job_listing, created = JobListing.objects.get_or_create(
                     job_id=job['id'],
                     defaults={
@@ -87,11 +83,9 @@ class JobicyService:
         """
         cache_key = JobicyService._build_cache_key(search_term, params)
 
-        # Check cache first
         cached_results = JobListing.objects.filter(search_key=cache_key)
 
         if cached_results.exists():
             return list(cached_results)
 
-        # If no cached results, fetch fresh results
         return JobicyService.fetch_and_cache_jobs(search_term, params) 

@@ -67,11 +67,28 @@ class ResumeUploadForm(forms.ModelForm):
     class Meta:
         model = Resume
         fields = ['resume']
+        widgets = {
+            'resume': forms.FileInput(attrs={
+                'accept': '.pdf,.docx',
+                'class': 'form-control'
+            })
+        }
             
     def clean_resume(self):
         resume = self.cleaned_data.get('resume')
-        if resume:          
-            if resume.content_type != 'application/pdf':
-                raise ValidationError("The file must be in PDF format.")
+        if resume:
+            ext = resume.name.lower().split('.')[-1]
             
+            if ext not in ['pdf', 'docx']:
+                raise ValidationError("Only PDF and DOCX files are allowed.")
+            
+            if resume.content_type not in [
+                'application/pdf',
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+            ]:
+                raise ValidationError("Invalid file type. Only PDF and DOCX files are allowed.")
+            
+            if resume.size > 5 * 1024 * 1024:  # 5MB
+                raise ValidationError("File size cannot exceed 5MB.")
+                
         return resume

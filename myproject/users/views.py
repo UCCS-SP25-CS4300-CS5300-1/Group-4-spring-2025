@@ -5,6 +5,8 @@ from django.contrib.auth import login, authenticate, logout
 from django.contrib import messages
 from django.views import generic
 from pypdf import PdfReader
+from docx2pdf import convert
+from docx import Document
 from django.http import FileResponse, Http404
 import os
 from django.utils.http import url_has_allowed_host_and_scheme
@@ -94,25 +96,46 @@ def upload_resume(request):
         if resume_form.is_valid():
             resume_instance = resume_form.save(commit=False)
             resume_instance.user = request.user
+            
+            file = resume_instance.resume
+            filename = file.name.lower()
+            
+            ## For DOCX files, we'll just save as is for now
             resume_instance.save()
             
             file = resume_instance.resume
+            file_path = file.path
 
-            reader = PdfReader(file)
-            page = reader.pages[0]
-            text = page.extract_text()
-            
-            if request.user.is_superuser or profile.whitelisted_for_ai:
-                feedback = get_resume_feedback(text)
-                feedback_html = markdown.markdown(feedback)
-                return render(request, 'users/upload_resume.html', {
-                    'form': resume_form, 
-                    'feedback': feedback_html
-                })
-            else:
+            try:
+                if filename.endswith(".pdf"):
+                    reader = PdfReader(file)
+                    page = reader.pages[0]
+                    text = page.extract_text()
+                elif filename.endswith(".docx"):
+                    doc = Document(file_path)
+                    text = "\n".join([p.text for p in doc.paragraphs])
+                else:
+                    text = "Unsupported file type"
+                    
+                if request.user.is_superuser or profile.whitelisted_for_ai:
+                    feedback = get_resume_feedback(text)
+                    feedback_html = markdown.markdown(feedback)
+                    return render(request, 'users/upload_resume.html', {
+                        'form': resume_form, 
+                        'feedback': feedback_html
+                    })
+                else:
+                    return render(request, 'users/upload_resume.html', {
+                        'form': resume_form,
+                        'message': 'Resume uploaded successfully. AI feedback is only available to whitelisted users.'
+                    })
+            except Exception as e:
+                import logging
+                logger = logging.getLogger('users')
+                logger.error(f"Error processing resume: {str(e)}")
                 return render(request, 'users/upload_resume.html', {
                     'form': resume_form,
-                    'message': 'Resume uploaded successfully. AI feedback is only available to whitelisted users.'
+                    'message': 'Resume uploaded successfully, but there was an error processing it for feedback.'
                 })
     else:
         resume_form = ResumeUploadForm()
@@ -194,6 +217,14 @@ def view_resume(request, resume_id):
         raise Http404("Resume not found")
     
     try:
-        return FileResponse(open(resume.resume.path, 'rb'), content_type='application/pdf')
+        filename = resume.resume.name.lower()
+        content_type = 'application/pdf' if filename.endswith('.pdf') else 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        response = FileResponse(open(resume.resume.path, 'rb'), content_type=content_type)
+        
+        ## Set content-disposition to inline for PDFs (view in browser) and attachment for DOCX (download)
+        disposition = 'inline' if filename.endswith('.pdf') else 'attachment'
+        response['Content-Disposition'] = f'{disposition}; filename="{os.path.basename(resume.resume.name)}"'
+        
+        return response
     except FileNotFoundError:
         raise Http404("Resume file not found")

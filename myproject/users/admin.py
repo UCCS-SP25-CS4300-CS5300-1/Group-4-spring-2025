@@ -4,14 +4,12 @@ from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.utils.html import format_html
 from .models import Profile, Resume
 
-# Mix Profile Info Into User Info
 class ProfileInline(admin.StackedInline):
     model = Profile
     can_delete = False
     verbose_name_plural = 'Profile'
     fields = ['avatar', 'whitelisted_for_ai', 'industry_preference', 'location_preference', 'remote_preference', 'salary_min_preference']
 
-# Extend User Model
 class CustomUserAdmin(BaseUserAdmin):
     model = User
     inlines = [ProfileInline]
@@ -66,10 +64,8 @@ class ResumeAdmin(admin.ModelAdmin):
         return '-'
     get_resume_link.short_description = 'Resume'
 
-# Unregister Initial User
 admin.site.unregister(User)
 
-# Re-register User and Profile
 admin.site.register(User, CustomUserAdmin)
 admin.site.register(Resume, ResumeAdmin)
 
