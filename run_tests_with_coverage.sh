@@ -46,6 +46,51 @@ else
     exit 1
 fi
 
+echo -e "${BLUE}=========== Running Linting Checks ===========${NC}"
+mkdir -p linting_reports
+
+export PYTHONPATH=$PYTHONPATH:$(pwd)
+
+## This helps with pylint, since pylint needs a __init__.py file in the root directory, but we don't do imports in the package style
+echo -e "${BLUE}Creating temporary __init__.py for linting...${NC}"
+touch myproject/__init__.py
+
+echo -e "${BLUE}Running PyLint checks...${NC}"
+if (! try_python_command "-m" "pylint" "myproject" "--output-format=text:linting_reports/pylint_report.txt,colorized"); then
+    echo -e "${RED}Warning: PyLint found some issues.${NC}"
+fi
+
+if [ -f linting_reports/pylint_report.txt ]; then
+    PYLINT_SCORE=$(tail -n 2 linting_reports/pylint_report.txt | grep -oP "(?<=rated at )[0-9.]+")
+    if [ ! -z "$PYLINT_SCORE" ]; then
+        echo -e "${BLUE}PyLint Score: ${PYLINT_SCORE}${NC}"
+        if (( $(echo "$PYLINT_SCORE < 7.0" | bc -l) )); then
+            echo -e "${RED}Warning: PyLint score is below 7.0. Please review the code quality.${NC}"
+        fi
+    fi
+fi
+
+echo -e "${BLUE}Running Flake8 checks...${NC}"
+if (! try_python_command "-m" "flake8" "myproject" "--format=html" "--htmldir=linting_reports/flake8_report" "--statistics" "--tee" "--output-file=linting_reports/flake8_report.txt"); then
+    echo -e "${RED}Warning: Flake8 found some issues.${NC}"
+fi
+
+if [ -f linting_reports/flake8_report.txt ]; then
+    FLAKE8_ERRORS=$(cat linting_reports/flake8_report.txt | wc -l)
+    echo -e "${BLUE}Flake8 Error Count: ${FLAKE8_ERRORS}${NC}"
+    if [ "$FLAKE8_ERRORS" -gt "0" ]; then
+        echo -e "${RED}Warning: Found $FLAKE8_ERRORS Flake8 issues. Please review the code style.${NC}"
+    fi
+fi
+
+echo -e "${GREEN}Linting reports available in:${NC}"
+echo -e "${BLUE}- PyLint Report: linting_reports/pylint_report.txt${NC}"
+echo -e "${BLUE}- Flake8 Report: linting_reports/flake8_report/index.html${NC}"
+
+## Import will break if we have a __init__.py file in the root directory
+echo -e "${BLUE}Removing temporary __init__.py...${NC}"
+rm -f myproject/__init__.py
+
 echo -e "${BLUE}=========== Running tests with coverage ===========${NC}"
 cd myproject
 
@@ -80,16 +125,6 @@ echo -e "${BLUE}=========== Generating HTML Coverage Report ===========${NC}"
 if (! try_python_command "-m" "coverage" "html"); then
     echo -e "${RED}Error: Failed to generate HTML coverage report.${NC}"
     exit 1
-fi
-
-if [ -n "$LINKEDIN_TEST_USERNAME" ] && [ -n "$LINKEDIN_TEST_PASSWORD" ]; then
-    echo -e "\n${BLUE}========== Running Integration Tests ==========${NC}"
-    LINKEDIN_TEST_USERNAME="$LINKEDIN_TEST_USERNAME" LINKEDIN_TEST_PASSWORD="$LINKEDIN_TEST_PASSWORD" python manage.py test --tag=integration
-else
-    echo -e "\n${RED}Skipping integration tests - LinkedIn credentials not set${NC}"
-    echo -e "To run integration tests, set these environment variables:"
-    echo -e "  export LINKEDIN_TEST_USERNAME='your_username'"
-    echo -e "  export LINKEDIN_TEST_PASSWORD='your_password'"
 fi
 
 echo -e "${GREEN}Done! HTML coverage report available in htmlcov/index.html${NC}"

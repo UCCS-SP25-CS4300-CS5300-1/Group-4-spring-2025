@@ -198,8 +198,6 @@ class UserViewsTest(TestCase):
         """Test that users can update their profile"""
         self.client.login(username='testuser', password='StrongTestPass123')
         response = self.client.post(self.edit_profile_url, {
-            'linkedIn_username': 'new_linkedin',
-            'linkedIn_password': 'new_password',
             'first_name': 'John',
             'last_name': 'Doe'
         })
@@ -207,15 +205,16 @@ class UserViewsTest(TestCase):
         self.assertRedirects(response, self.home_url)
         
         self.user.refresh_from_db()
-        self.assertEqual(self.user.profile.linkedIn_username, 'new_linkedin')
-        self.assertEqual(self.user.profile.linkedIn_password, 'new_password')
         self.assertEqual(self.user.first_name, 'John')
         self.assertEqual(self.user.last_name, 'Doe')
 
     def test_edit_profile_POST_invalid(self):
         """Test that invalid profile updates are handled"""
         self.client.login(username='testuser', password='StrongTestPass123')
-        response = self.client.post(self.edit_profile_url, {})
+        response = self.client.post(self.edit_profile_url, {
+            'first_name': 'A' * 100,
+            'last_name': 'B' * 100  
+        })
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'users/edit_profile.html')
         self.assertTrue('form' in response.context)
@@ -366,7 +365,6 @@ class ResumeViewTest(TestCase):
                 except:
                     pass   
         Resume.objects.all().delete()
-        User.objects.all().delete()
         
         import shutil
         from django.conf import settings
@@ -544,8 +542,6 @@ class AdminPanelTest(TestCase):
             email='regular@example.com',
             password='RegularPass123'
         )
-        self.regular_user.profile.linkedIn_username = 'regular_linkedin'
-        self.regular_user.profile.save()
         
         self.client.login(username='admin', password='AdminPass123')
 
@@ -597,11 +593,6 @@ class AdminPanelTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'test_resume.pdf')
 
-    def test_linkedin_display_in_admin(self):
-        response = self.client.get('/admin/auth/user/')
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'regular_linkedin')
-
     def tearDown(self):
         for resume in Resume.objects.all():
             if(resume.resume):
@@ -622,79 +613,59 @@ class AdminPanelTest(TestCase):
 
 class UserAdminTest(TestCase):
     def setUp(self):
+        self.client = Client()
         self.admin_user = User.objects.create_superuser(
-            username='adminuser',
-            password='StrongTestPass123',
-            email='admin@test.com'
+            username='admin',
+            email='admin@example.com',
+            password='AdminPass123'
         )
-        
         self.user1 = User.objects.create_user(
             username='user1',
-            password='StrongTestPass123',
-            email='user1@test.com'
+            email='user1@example.com',
+            password='User1Pass123'
         )
         self.user2 = User.objects.create_user(
             username='user2',
-            password='StrongTestPass123',
-            email='user2@test.com'
+            email='user2@example.com',
+            password='User2Pass123'
         )
-        
-        self.client = Client()
-        self.client.login(username='adminuser', password='StrongTestPass123')
+        self.client.login(username='admin', password='AdminPass123')
 
     def test_whitelist_for_ai_action(self):
-        """Test the admin action to whitelist users for AI"""
-        url = reverse('admin:auth_user_changelist')
-        
-        data = {
+        """Test the admin action to grant AI access"""
+        self.assertFalse(self.user1.profile.whitelisted_for_ai)
+        response = self.client.post('/admin/auth/user/', {
             'action': 'whitelist_for_ai',
-            '_selected_action': [self.user1.id, self.user2.id],
-        }
-        self.client.post(url, data)
-        
-        self.user1.refresh_from_db()
-        self.user2.refresh_from_db()
-        
+            '_selected_action': [self.user1.id],
+        })
+        self.user1.profile.refresh_from_db()
         self.assertTrue(self.user1.profile.whitelisted_for_ai)
-        self.assertTrue(self.user2.profile.whitelisted_for_ai)
 
     def test_remove_ai_whitelist_action(self):
-        """Test the admin action to remove AI whitelist"""
+        """Test the admin action to remove AI access"""
+        # First, grant AI access
         self.user1.profile.whitelisted_for_ai = True
         self.user1.profile.save()
-        self.user2.profile.whitelisted_for_ai = True
-        self.user2.profile.save()
         
-        url = reverse('admin:auth_user_changelist')
-        
-        data = {
+        # Then try to remove it
+        response = self.client.post('/admin/auth/user/', {
             'action': 'remove_ai_whitelist',
-            '_selected_action': [self.user1.id, self.user2.id],
-        }
-        self.client.post(url, data)
-        
-        self.user1.refresh_from_db()
-        self.user2.refresh_from_db()
-
+            '_selected_action': [self.user1.id],
+        })
+        self.user1.profile.refresh_from_db()
         self.assertFalse(self.user1.profile.whitelisted_for_ai)
-        self.assertFalse(self.user2.profile.whitelisted_for_ai)
 
     def test_cannot_remove_superuser_whitelist(self):
-        """Test that superuser whitelist cannot be removed"""
-        url = reverse('admin:auth_user_changelist')
-        
-        data = {
+        """Test that superuser AI access cannot be removed"""
+        response = self.client.post('/admin/auth/user/', {
             'action': 'remove_ai_whitelist',
             '_selected_action': [self.admin_user.id],
-        }
-        self.client.post(url, data)
-        
-        self.admin_user.refresh_from_db()
-        
+        })
+        self.admin_user.profile.refresh_from_db()
         self.assertTrue(self.admin_user.profile.whitelisted_for_ai)
 
     def test_superuser_whitelisted_for_ai(self):
-        """Test that superusers are automatically whitelisted"""
+        """Test that superusers are automatically whitelisted for AI"""
         self.assertTrue(self.admin_user.profile.whitelisted_for_ai)
 
 class ResumePrivacyTest(TestCase):

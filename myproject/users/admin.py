@@ -9,24 +9,17 @@ class ProfileInline(admin.StackedInline):
     model = Profile
     can_delete = False
     verbose_name_plural = 'Profile'
-    fields = ['linkedIn_username', 'linkedIn_password', 'avatar', 'whitelisted_for_ai', 'industry_preference', 'location_preference', 'remote_preference', 'salary_min_preference']
+    fields = ['avatar', 'whitelisted_for_ai', 'industry_preference', 'location_preference', 'remote_preference', 'salary_min_preference']
 
 # Extend User Model
 class CustomUserAdmin(BaseUserAdmin):
     model = User
     inlines = [ProfileInline]
-    list_display = ('username', 'email', 'first_name', 'last_name', 'is_staff', 'is_active', 'date_joined', 'last_login', 'get_linkedin', 'get_ai_status')
+    list_display = ('username', 'email', 'first_name', 'last_name', 'is_staff', 'is_active', 'date_joined', 'last_login', 'get_ai_status')
     list_filter = ('is_staff', 'is_active', 'date_joined', 'last_login', 'profile__whitelisted_for_ai')
     search_fields = ('username', 'email', 'first_name', 'last_name')
     ordering = ('-date_joined',)
     actions = ['make_active', 'make_inactive', 'make_staff', 'remove_staff', 'whitelist_for_ai', 'remove_ai_whitelist']
-
-    def get_linkedin(self, obj):
-        try:
-            return obj.profile.linkedIn_username
-        except Profile.DoesNotExist:
-            return '-'
-    get_linkedin.short_description = 'LinkedIn Username'
 
     def get_ai_status(self, obj):
         try:

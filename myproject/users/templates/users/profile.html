@@ -35,19 +35,6 @@
     
     <div class="profile-section">
         <div class="profile-header">
-            <h3>LinkedIn Information</h3>
-            <a href="{% url 'edit_profile' %}" class="btn-sm btn-outline-primary">
-                <i class="fas fa-edit"></i> Edit
-            </a>
-        </div>
-        <div class="profile-info">
-            <p><strong>LinkedIn Username:</strong> {{ profile.linkedIn_username|default:"Not set" }}</p>
-            <p><strong>LinkedIn Password:</strong> ••••••••</p>
-        </div>
-    </div>
-
-    <div class="profile-section">
-        <div class="profile-header">
             <h3>Job Search Preferences</h3>
             <a href="{% url 'update_preferences' %}" class="btn-sm btn-outline-primary">
                 <i class="fas fa-edit"></i> Edit
