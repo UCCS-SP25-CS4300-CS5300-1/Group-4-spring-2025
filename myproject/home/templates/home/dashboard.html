@@ -18,7 +18,7 @@
 
         .navbar {
             background-color: white;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
             padding: 1rem 2rem;
             display: flex;
             align-items: center;
@@ -71,7 +71,7 @@
             background: white;
             padding: 2rem;
             border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
 
         .dashboard-header h2 {
@@ -145,7 +145,7 @@
             background: white;
             border-radius: 12px;
             padding: 1.5rem;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
             transition: transform 0.2s;
         }
 
@@ -259,7 +259,7 @@
             background: white;
             border-radius: 12px;
             margin-top: 2rem;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
 
         .empty-state {
@@ -278,125 +278,136 @@
     </style>
 </head>
 <body>
-    <div id="mobile-warning" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.9); z-index: 9999; color: white; text-align: center; padding-top: 20%;">
-        <h2>Mobile Access Not Supported</h2>
-        <p>This application is not optimized for mobile devices. Please use a desktop or laptop computer for the best experience.</p>
+<div id="mobile-warning"
+     style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.9); z-index: 9999; color: white; text-align: center; padding-top: 20%;">
+    <h2>Mobile access is not supported</h2>
+    <p>This app is not optimized for mobile devices. Please use a desktop or laptop computer for the best
+        experience.</p>
+</div>
+<nav class="navbar">
+    <a href="/" class="back-button">
+        <i class="fas fa-arrow-left"></i>
+        Back
+    </a>
+    <div class="navbar-brand">
+        <a href="/" class="navbar-brand">ApplierPilotAI</a>
     </div>
-    <nav class="navbar">
-        <a href="/" class="back-button">
-            <i class="fas fa-arrow-left"></i>
-            Back
-        </a>
-        <div class="navbar-brand">
-            <a href="/" class="navbar-brand">ApplierPilotAI</a>
-        </div>
-    </nav>
+</nav>
 
-    <main class="main-content">
-        {% if messages %}
-            <div class="messages">
-                {% for message in messages %}
-                    <div class="alert alert-{{ message.tags }}">
-                        {{ message }}
-                    </div>
-                {% endfor %}
-            </div>
-        {% endif %}
-        
-        <div class="dashboard-container">
-            <div class="dashboard-header">
-                <h2>Find Your Next Remote Job</h2>
-                <div class="search-container">
-                    <form method="post" class="search-form">
-                        {% csrf_token %}
-                        <div class="search-input-group">
-                            {{ form.as_p }}
-                            <button type="submit" class="btn-primary">
-                                <i class="fas fa-search"></i>
-                                Search
-                            </button>
-                        </div>
-                    </form>
+<main class="main-content">
+    {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">
+                    {{ message }}
                 </div>
-            </div>
+            {% endfor %}
+        </div>
+    {% endif %}
 
-            {% if job_list %}
+    <div class="dashboard-container">
+        <div class="dashboard-header">
+            <h2>Find Your Next Remote Job</h2>
+            <div class="search-container">
+                <form method="post" class="search-form">
+                    {% csrf_token %}
+                    <div class="search-input-group">
+                        {{ form.as_p }}
+                        <button type="submit" class="btn-primary">
+                            <i class="fas fa-search"></i>
+                            Search
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        {% if job_list %}
             <div class="jobs-container">
                 <div class="jobs-header">
                     <h3>Search Results</h3>
                 </div>
-                <div class="job-grid">
+                <div> class="job-grid">
                     {% for job in job_list %}
-                    <div class="job-card">
-                        <div class="job-header">
-                            <div class="job-header-left">
-                                {% if job.company_logo %}
-                                    <img src="{{ job.company_logo }}" alt="{{ job.company }}" class="company-logo" data-fallback="{% static 'images/company-placeholder.svg' %}">
-                                {% else %}
-                                    <div class="company-logo company-logo-placeholder">
-                                        {{ job.company|slice:":1" }}
+                        <div class="job-card">
+                            <div class="job-header">
+                                <div class="job-header-left">
+                                    {% if job.company_logo %}
+                                        <img src="{{ job.company_logo }}" alt="{{ job.company }}" class="company-logo"
+                                             data-fallback="{% static 'images/company-placeholder.svg' %}">
+                                    {% else %}
+                                        <div class="company-logo company-logo-placeholder">
+                                            {{ job.company|slice:":1" }}
+                                        </div>
+                                    {% endif %}
+                                    <div class="job-title-group">
+                                        <h4 class="job-title">{{ job.title }}</h4>
+                                        <p class="company-name">{{ job.company }}</p>
                                     </div>
-                                {% endif %}
-                                <div class="job-title-group">
-                                    <h4 class="job-title">{{ job.title }}</h4>
-                                    <p class="company-name">{{ job.company }}</p>
                                 </div>
                             </div>
-                            <a href="{{ job.url }}" target="_blank" class="btn-primary">
-                                <i class="fas fa-external-link-alt"></i>
-                                Apply
-                            </a>
+                            <div> class="job-meta">
+                                <span><i class="fas fa-map-marker-alt"></i>{{ job.location }}</span>
+                                {% if job.salary_display %}
+                                    <span><i class="fas fa-money-bill-wave"></i>{{ job.salary_display }}</span>
+                                {% endif %}
+                                {% if job.job_type %}
+                                    <span><i class="fas fa-clock"></i>{{ job.job_type }}</span>
+                                {% endif %}
+                            </div>
+                            <div class="d-flex justify-content-between mt-3">
+                                <a href="{{ job.url }}" target="_blank" class="btn-primary">
+                                    <i class="fas fa-external-link-alt"></i>
+                                    Apply
+                                </a>
+                                <a href="{% url 'interview_coach_with_job' job_id=job.job_id %}" class="btn-primary"
+                                   style="background-color: #0ea5e9;">
+                                    <i class="fas fa-comments"></i>
+                                    Interview Coach
+                                </a>
+                            </div>
                         </div>
-                        <div class="job-meta">
-                            <span><i class="fas fa-map-marker-alt"></i>{{ job.location }}</span>
-                            {% if job.salary_display %}
-                            <span><i class="fas fa-money-bill-wave"></i>{{ job.salary_display }}</span>
-                            {% endif %}
-                            {% if job.job_type %}
-                            <span><i class="fas fa-clock"></i>{{ job.job_type }}</span>
-                            {% endif %}
-                        </div>
-                    </div>
                     {% endfor %}
                 </div>
             </div>
-            {% elif request.method == "POST" %}
+        {% elif request.method == "POST" %}
             <div class="no-results">
                 <div class="empty-state">
                     <i class="fas fa-search fa-3x"></i>
-                    <h3>No jobs found</h3>
-                    <p>Try adjusting your search terms or try again later.</p>
+                    <h3>No jobs were found</h3>
+                    <p>Please try adjusting your search terms or try again later.</p>
                 </div>
             </div>
-            {% endif %}
-        </div>
-    </main>
-    
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        function checkScreenSize() {
-            const mobileWarning = document.getElementById('mobile-warning');
-            if (window.innerWidth < 768) {
-                mobileWarning.style.display = 'block';
-            } else {
-                mobileWarning.style.display = 'none';
-            }
-        }
-        
-        // Check on load and on resize
-        window.addEventListener('load', checkScreenSize);
-        window.addEventListener('resize', checkScreenSize);
+        {% endif %}
+    </div>
+</main>
 
-        document.addEventListener('DOMContentLoaded', function() {
-            document.querySelectorAll('img.company-logo').forEach(function(img) {
-                img.addEventListener('error', function() {
-                    if (this.dataset.fallback) {
-                        this.src = this.dataset.fallback;
-                        this.dataset.fallback = '';  // Prevent infinite loop if fallback also fails
-                    }
-                });
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    function checkScreenSize() {
+        const mobileWarning = document.getElementById('mobile-warning');
+        if (window.innerWidth < 768) {
+            mobileWarning.style.display = 'block';
+        } else {
+            mobileWarning.style.display = 'none';
+        }
+    }
+
+    // checking on the load and on resize
+    window.addEventListener('load', checkScreenSize);
+    window.addEventListener('resize', checkScreenSize);
+
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('img.company-logo').forEach(function (img) {
+            img.addEventListener('error', function () {
+                if (this.dataset.fallback) {
+                    this.src = this.dataset.fallback;
+                    // preventing infinite loop if fallback  fails
+                    this.dataset.fallback = '';
+                }
             });
         });
-    </script>
+    });
+</script>
 </body>
 </html>
