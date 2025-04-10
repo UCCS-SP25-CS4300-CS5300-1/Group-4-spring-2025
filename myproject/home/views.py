@@ -15,14 +15,38 @@ def index(request):
 
 @login_required
 def dashboard(request):
-    form = SearchJobForm()
-    job_list = []
+    initial_data = {}
 
-    if request.method == "POST":
-        form = SearchJobForm(request.POST)
-        if form.is_valid():
-            search_term = form.cleaned_data['search_term']
-            job_list = JobicyService.search_jobs(search_term)
+    if(hasattr(request.user, 'userprofile')):
+        initial_data['job_type'] = getattr(request.user.userprofile, 'default_job_type', '')
+        initial_data['location'] = getattr(request.user.userprofile, 'default_location', '')
+        initial_data['industry'] = getattr(request.user.userprofile, 'default_industry', '')
+        initial_data['job_level'] = getattr(request.user.userprofile, 'default_job_level', '')
+
+    form = SearchJobForm(initial=initial_data)
+    job_list = []
+    params = {}
+
+    if(request.method == "POST"):
+        form = SearchJobForm(request.POST, initial=initial_data) # Keep initial data for redisplay
+        if(form.is_valid()):
+            search_term = form.cleaned_data.get('search_term', '')
+            job_type = form.cleaned_data.get('job_type', '')
+            location = form.cleaned_data.get('location', '')
+            industry = form.cleaned_data.get('industry', '')
+            job_level = form.cleaned_data.get('job_level', '')
+
+            if(job_type):
+                params['jobType'] = job_type
+            if(location):
+                params['geo'] = location
+            if(industry):
+                params['jobIndustry'] = industry
+            if(job_level):
+                params['jobLevel'] = job_level
+
+            if(search_term or params):
+                job_list = JobicyService.search_jobs(search_term, params)
 
     context = {
         'form': form,

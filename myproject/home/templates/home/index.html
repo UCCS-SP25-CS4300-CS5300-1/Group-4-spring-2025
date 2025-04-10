@@ -56,9 +56,9 @@
                 <h1>Supercharge Your Job Applications with AI</h1>
                 <p>Use cutting-edge AI tools to craft perfect resumes, compelling cover letters, and prepare for interviews like a pro.</p>
                 {% if user.is_authenticated %}
-                    <a href="{% url 'dashboard' %}" class="cta-button">Access AI Tools</a>
+                    <a href="{% url 'dashboard' %}" class="cta-button">Search for Jobs</a>
                 {% else %}
-                    <a href="{% url 'register' %}" class="cta-button">Start Using AI Tools</a>
+                    <a href="{% url 'register' %}" class="cta-button">Sign Up</a>
                 {% endif %}
             </div>
             <div class="hero-image">

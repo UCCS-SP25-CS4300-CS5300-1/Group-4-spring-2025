@@ -285,9 +285,9 @@
         experience.</p>
 </div>
 <nav class="navbar">
-    <a href="/" class="back-button">
+    <a href="{% url 'profile' %}" class="back-button">
         <i class="fas fa-arrow-left"></i>
-        Back
+        Back to Profile
     </a>
     <div class="navbar-brand">
         <a href="/" class="navbar-brand">ApplierPilotAI</a>
@@ -311,13 +311,34 @@
             <div class="search-container">
                 <form method="post" class="search-form">
                     {% csrf_token %}
-                    <div class="search-input-group">
-                        {{ form.as_p }}
-                        <button type="submit" class="btn-primary">
-                            <i class="fas fa-search"></i>
-                            Search
-                        </button>
+                    <div class="mb-3">
+                        <label for="{{ form.search_term.id_for_label }}" class="form-label">Keywords</label>
+                        {{ form.search_term }}
                     </div>
+                    
+                    <h5>Filters</h5>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-3">
+                            <label for="{{ form.job_type.id_for_label }}" class="form-label">Job Type</label>
+                            {{ form.job_type }}
+                        </div>
+                        <div class="col-md-3">
+                            <label for="{{ form.location.id_for_label }}" class="form-label">Location</label>
+                            {{ form.location }}
+                        </div>
+                        <div class="col-md-3">
+                            <label for="{{ form.industry.id_for_label }}" class="form-label">Industry</label>
+                            {{ form.industry }}
+                        </div>
+                        <div class="col-md-3">
+                            <label for="{{ form.job_level.id_for_label }}" class="form-label">Job Level</label>
+                            {{ form.job_level }}
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-search"></i>
+                        Search Jobs
+                    </button>
                 </form>
             </div>
         </div>
@@ -327,7 +348,7 @@
                 <div class="jobs-header">
                     <h3>Search Results</h3>
                 </div>
-                <div> class="job-grid">
+                <div class="job-grid">
                     {% for job in job_list %}
                         <div class="job-card">
                             <div class="job-header">
@@ -346,15 +367,29 @@
                                     </div>
                                 </div>
                             </div>
-                            <div> class="job-meta">
-                                <span><i class="fas fa-map-marker-alt"></i>{{ job.location }}</span>
+                            <div class="job-meta">
+                                <span><i class="fas fa-map-marker-alt"></i>{{ job.location|default:'N/A' }}</span>
                                 {% if job.salary_display %}
                                     <span><i class="fas fa-money-bill-wave"></i>{{ job.salary_display }}</span>
                                 {% endif %}
                                 {% if job.job_type %}
-                                    <span><i class="fas fa-clock"></i>{{ job.job_type }}</span>
+                                    <span><i class="fas fa-clock"></i>{{ job.job_type|default:'' }}</span>
+                                {% endif %}
+                                {% if job.industry %}
+                                    <span><i class="fas fa-industry"></i>{{ job.industry }}</span>
+                                {% endif %}
+                                {% if job.job_level %}
+                                    <span><i class="fas fa-level-up-alt"></i>{{ job.job_level }}</span>
+                                {% endif %}
+                                {% if job.published_at %}
+                                    <span><i class="fas fa-calendar-alt"></i>{{ job.published_at|date:"M d, Y" }}</span>
                                 {% endif %}
                             </div>
+                            {% if job.description %}
+                            <p class="job-description-excerpt mt-2 text-muted">
+                                {{ job.description|striptags|truncatewords_html:25 }}
+                            </p>
+                            {% endif %}
                             <div class="d-flex justify-content-between mt-3">
                                 <a href="{{ job.url }}" target="_blank" class="btn-primary">
                                     <i class="fas fa-external-link-alt"></i>

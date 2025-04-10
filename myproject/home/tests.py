@@ -44,21 +44,20 @@ class HomeViewTest(TestCase):
 
         self.assertContains(response, 'Hello, testuser')
         self.assertContains(response, 'Logout')
-        self.assertContains(response, 'Access AI Tools')
+        self.assertContains(response, 'Search for Jobs')
         self.assertContains(response, 'href="/dashboard/"')
 
         self.assertNotContains(response, 'class="login-btn"')
-        self.assertNotContains(response, 'Start Using AI Tools')
 
     def test_home_view_unauthenticated_user(self):
         response = self.client.get(self.home_url)
 
         self.assertContains(response, 'Login')
         self.assertContains(response, 'Sign Up')
-        self.assertContains(response, 'Start Using AI Tools')
+        self.assertContains(response, 'Sign Up')
 
         self.assertNotContains(response, 'Hello, testuser')
-        self.assertNotContains(response, 'Access AI Tools')
+        self.assertNotContains(response, 'Search for Jobs')
 
 
 class DashboardViewTest(TestCase):

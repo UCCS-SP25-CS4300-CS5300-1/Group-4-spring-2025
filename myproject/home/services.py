@@ -47,23 +47,24 @@ class JobicyService:
                 job_listing, created = JobListing.objects.get_or_create(
                     job_id=job['id'],
                     defaults={
-                        'title': job['jobTitle'],
-                        'company': job['companyName'],
-                        'company_logo': job.get('companyLogo', ''),
-                        'job_type': job['jobType'],
-                        'location': job['jobGeo'],
-                        'description': job['jobDescription'],
-                        'url': job['url'],
+                        'title': job.get('jobTitle'),
+                        'company': job.get('companyName'),
+                        'company_logo': job.get('companyLogo'),
+                        'job_type': job.get('jobType'),
+                        'location': job.get('jobGeo'),
+                        'description': job.get('jobDescription'),
+                        'url': job.get('url'),
+                        'industry': job.get('jobIndustry'),
+                        'job_level': job.get('jobLevel'),
                         'salary_min': job.get('annualSalaryMin'),
                         'salary_max': job.get('annualSalaryMax'),
                         'salary_currency': job.get('salaryCurrency'),
-                        'published_at': datetime.strptime(job['pubDate'], "%Y-%m-%d %H:%M:%S"),
                         'search_key': cache_key,
+                        'published_at': datetime.strptime(job['pubDate'], "%Y-%m-%d %H:%M:%S") if job.get('pubDate') else None,
                     }
                 )
                 
-                # Update search key for existing entries to mark them as part of this search
-                if not created:
+                if(not created):
                     job_listing.search_key = cache_key
                     job_listing.save(update_fields=['search_key'])
                 
