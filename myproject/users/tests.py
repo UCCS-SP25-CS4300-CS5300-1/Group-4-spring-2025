@@ -3,10 +3,8 @@ from io import BytesIO
 from pypdf import PdfWriter
 from django.test import TestCase, Client
 from django.urls import reverse, resolve
-from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.core.files.storage import default_storage
 from .forms import UserRegistrationForm, UserLoginForm, ResumeUploadForm
 from .models import Resume, get_user_by_email, Profile
 from .signals import user_created_callback
@@ -713,8 +711,9 @@ class ResumePrivacyTest(TestCase):
         
         self.client.logout()
         self.client.login(username='user2', password='StrongTestPass123')
-        response = self.client.get(reverse('view_resume', args=[self.resume.id]))
-        self.assertEqual(response.status_code, 404)
+        with patch('logging.Logger.warning') as mock_log_warning:
+            response = self.client.get(reverse('view_resume', args=[self.resume.id]))
+            self.assertEqual(response.status_code, 404)
 
     def test_admin_can_access_any_resume(self):
         """Test that admin users can access any resume"""
@@ -927,8 +926,9 @@ class SecureResumeViewTest(TestCase):
         """Test that requesting a non-existent resume returns 404"""
         self.client.login(username='testuser', password='StrongTestPass123')
         
-        response = self.client.get(reverse('view_resume', args=[9999]))
-        self.assertEqual(response.status_code, 404)
+        with patch('logging.Logger.warning') as mock_log_warning:
+            response = self.client.get(reverse('view_resume', args=[9999]))
+            self.assertEqual(response.status_code, 404)
 
     @patch('users.views.PdfReader')
     def test_resume_linked_to_user(self, mock_pdf_reader):

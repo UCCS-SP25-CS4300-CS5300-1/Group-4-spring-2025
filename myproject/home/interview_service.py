@@ -40,7 +40,6 @@ class InterviewService:
             api_key = InterviewService.get_api_key()
 
             if not api_key:
-                print("OpenAI API key not found. Using generic questions.")
                 return generic_questions
 
             # Preparing the prompt based on job description
@@ -106,12 +105,10 @@ class InterviewService:
 
                     return questions[:num_questions] if questions else generic_questions
 
-            # Log API error and return generic questions
-            print(f"OpenAI API error: {response.status_code}, {response.text}")
+        
             return generic_questions
 
         except Exception as e:
-            print(f"Error generating questions: {str(e)}")
             return generic_questions
 
     @staticmethod
@@ -135,7 +132,6 @@ class InterviewService:
             api_key = InterviewService.get_api_key()
 
             if not api_key:
-                print("OpenAI API key not found. Using generic feedback.")
                 return generic_feedback
 
             # preparing the prompt
@@ -187,7 +183,6 @@ class InterviewService:
                         required_keys = ['score', 'strengths', 'areas_to_improve', 'suggestions']
                         for key in required_keys:
                             if key not in feedback:
-                                print(f"Missing key in response: {key}")
                                 return generic_feedback
 
                         # ensuring score is a number between 1-10
@@ -199,17 +194,13 @@ class InterviewService:
 
                         return feedback
                     else:
-                        print("No JSON object found in response")
                         return generic_feedback
 
                 except json.JSONDecodeError as e:
-                    print(f"Error parsing JSON: {str(e)}")
                     return generic_feedback
 
             # logging API error and return generic feedback
-            print(f"OpenAI API error: {response.status_code}, {response.text}")
             return generic_feedback
 
         except Exception as e:
-            print(f"Error evaluating response: {str(e)}")
             return generic_feedback

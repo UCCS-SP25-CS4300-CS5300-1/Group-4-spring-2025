@@ -2,8 +2,8 @@ from django.test import TestCase, Client
 from django.urls import reverse
 from django.contrib.auth.models import User
 from users.models import Profile
-from home.models import Application, JobListing
-from .forms import SearchJobForm, InterviewResponseForm
+from home.models import  JobListing
+from .forms import SearchJobForm
 from django.utils import timezone
 from unittest.mock import patch
 
@@ -349,100 +349,78 @@ class InterviewCoachViewTest(TestCase):
         """testing validation in the AJAX endpoint"""
         self.client.login(username='testuser', password='StrongTestPass123')
 
-        # testing with empty response
-        response = self.client.post(
-            reverse('evaluate_response'),
-            {
-                'question': 'What experience do you have with Django?',
-                'response': '',  # Empty response
-                'job_description': self.job.description
-            },
-            HTTP_X_REQUESTED_WITH='XMLHttpRequest'
-        )
+        with patch('logging.Logger.warning') as mock_log_warning:
+            response = self.client.post(
+                reverse('evaluate_response'),
+                {
+                    'question': 'What experience do you have with Django?',
+                    'response': '',  
+                    'job_description': self.job.description
+                },
+                HTTP_X_REQUESTED_WITH='XMLHttpRequest'
+            )
 
-        self.assertEqual(response.status_code, 400)
-        data = response.json()
-        self.assertIn('error', data)
-        self.assertEqual(data['error'], 'Response is required')
+            self.assertEqual(response.status_code, 400)
+            data = response.json()
+            self.assertIn('error', data)
+            self.assertEqual(data['error'], 'Response is required')
 
-        # testing without AJAX header
-        response = self.client.post(
-            reverse('evaluate_response'),
-            {
-                'question': 'What experience do you have with Django?',
-                'response': 'Some response',
-                'job_description': self.job.description
-            }
-        )
+            response = self.client.post(
+                reverse('evaluate_response'),
+                {
+                    'question': 'What experience do you have with Django?',
+                    'response': 'Some response',
+                    'job_description': self.job.description
+                }
+            )
 
-        self.assertEqual(response.status_code, 400)
-        data = response.json()
-        self.assertIn('error', data)
-        self.assertEqual(data['error'], 'Invalid request')
+            self.assertEqual(response.status_code, 400)
+            data = response.json()
+            self.assertIn('error', data)
+            self.assertEqual(data['error'], 'Invalid request')
 
 
 class InterviewServiceTest(TestCase):
     """tests for the InterviewService class"""
 
-    def test_generate_interview_questions_fallback(self):
-        """Test that generate_interview_questions returns fallback questions when API fails"""
+    @patch('builtins.print')
+    @patch('home.interview_service.InterviewService.get_api_key')
+    def test_generate_interview_questions_fallback(self, mock_get_api_key, mock_print):
+        """Test that generate_interview_questions returns fallback questions when API key is missing"""
+        mock_get_api_key.return_value = None 
+
         from home.interview_service import InterviewService
-        
-        # Force API failure by making openai.api_key None temporarily
-        import openai
-        original_key = openai.api_key
-        openai.api_key = None
-        
-        try:
-            # This should use fallback questions
-            questions = InterviewService.generate_interview_questions("Test job description")
-            
-            # Verify we got some questions
-            self.assertTrue(len(questions) > 0)
-            self.assertTrue(isinstance(questions, list))
-            self.assertTrue(all(isinstance(q, str) for q in questions))
-            
-            # Verify the first fallback question is present
-            self.assertIn("Tell me about yourself", questions[0])
-        finally:
-            # Restore the API key
-            openai.api_key = original_key
+        questions = InterviewService.generate_interview_questions("Test job description")
+
+        self.assertTrue(len(questions) > 0)
+        self.assertTrue(isinstance(questions, list))
+        self.assertTrue(all(isinstance(q, str) for q in questions))
+
+        self.assertIn("Tell me about yourself and why you're interested in this position.", questions[0])
 
     def test_evaluate_response_fallback(self):
         """Test that evaluate_response returns fallback feedback when API fails"""
-        from home.interview_service import InterviewService
-        
-        # Force API failure by making openai.api_key None temporarily
-        import openai
-        original_key = openai.api_key
-        openai.api_key = None
-        
-        try:
-            # This should use fallback feedback
+
+        with patch('home.interview_service.InterviewService.get_api_key', return_value=None) as mock_get_api_key, \
+             patch('builtins.print') as mock_print:
+            from home.interview_service import InterviewService
+
+
             feedback = InterviewService.evaluate_response(
                 "Tell me about yourself.",
                 "I am a Python developer with 5 years of experience.",
                 "Python Developer job description"
             )
-            
-            # Check structure of feedback
+
             self.assertIn('score', feedback)
+            self.assertEqual(feedback['score'], 7)
             self.assertIn('strengths', feedback)
+            self.assertIn('Good articulation of ideas', feedback['strengths']) # Check known fallback strength
             self.assertIn('areas_to_improve', feedback)
+            self.assertIn('Could provide more specific examples', feedback['areas_to_improve']) # Check known fallback area
             self.assertIn('suggestions', feedback)
-            
-            # Score should be between 1 and 10
-            self.assertTrue(1 <= feedback['score'] <= 10)
-            
-            # Should have at least one strength and one area to improve
-            self.assertTrue(len(feedback['strengths']) > 0)
-            self.assertTrue(len(feedback['areas_to_improve']) > 0)
-            
-            # Suggestions should be a string
             self.assertTrue(isinstance(feedback['suggestions'], str))
-        finally:
-            # Restore the API key
-            openai.api_key = original_key
+            self.assertTrue(len(feedback['suggestions']) > 0)
 
 
 class UrlsTest(TestCase):
