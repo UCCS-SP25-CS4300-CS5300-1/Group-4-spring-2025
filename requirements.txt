@@ -52,7 +52,7 @@ webdriver-manager
 docx2pdf==0.1.8
 docx==0.2.4
 python-docx==1.1.2
-pylint==3.1.0
+pylint==3.3.6
 flake8==7.0.0
 flake8-html==0.4.3
 safety==2.3.5
