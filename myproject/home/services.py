@@ -89,4 +89,20 @@ class JobicyService:
         if cached_results.exists():
             return list(cached_results)
 
-        return JobicyService.fetch_and_cache_jobs(search_term, params) 
+        return JobicyService.fetch_and_cache_jobs(search_term, params)
+
+    @staticmethod
+    def get_job_details(job_id: int) -> Optional[JobListing]:
+        """
+        Retrieve job details from the local database by job ID.
+        Returns the JobListing object or None if not found.
+        """
+        try:
+            job = JobListing.objects.get(job_id=job_id)
+            return job
+        except JobListing.DoesNotExist:
+            print(f"Job with ID {job_id} not found in local database.")
+            return None
+        except Exception as e:
+            print(f"Error retrieving job {job_id}: {e}")
+            return None 

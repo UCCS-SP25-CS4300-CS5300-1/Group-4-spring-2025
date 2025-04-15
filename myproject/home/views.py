@@ -15,38 +15,59 @@ def index(request):
 
 @login_required
 def dashboard(request):
-    initial_data = {}
-
-    if(hasattr(request.user, 'userprofile')):
+    initial_data = request.session.get('last_search_params', {})
+    if not initial_data and hasattr(request.user, 'userprofile'):
         initial_data['job_type'] = getattr(request.user.userprofile, 'default_job_type', '')
         initial_data['location'] = getattr(request.user.userprofile, 'default_location', '')
         initial_data['industry'] = getattr(request.user.userprofile, 'default_industry', '')
         initial_data['job_level'] = getattr(request.user.userprofile, 'default_job_level', '')
+        initial_data['search_term'] = initial_data.get('search_term', '') 
 
     form = SearchJobForm(initial=initial_data)
     job_list = []
     params = {}
+    search_term = initial_data.get('search_term', '')
 
-    if(request.method == "POST"):
-        form = SearchJobForm(request.POST, initial=initial_data) # Keep initial data for redisplay
-        if(form.is_valid()):
+    if request.method == "POST":
+        form = SearchJobForm(request.POST)
+        if form.is_valid():
             search_term = form.cleaned_data.get('search_term', '')
             job_type = form.cleaned_data.get('job_type', '')
             location = form.cleaned_data.get('location', '')
             industry = form.cleaned_data.get('industry', '')
             job_level = form.cleaned_data.get('job_level', '')
+            
+            request.session['last_search_params'] = {
+                'search_term': search_term,
+                'job_type': job_type,
+                'location': location,
+                'industry': industry,
+                'job_level': job_level,
+            }
 
-            if(job_type):
-                params['jobType'] = job_type
-            if(location):
-                params['geo'] = location
-            if(industry):
-                params['jobIndustry'] = industry
-            if(job_level):
-                params['jobLevel'] = job_level
+            if job_type: params['jobType'] = job_type
+            if location: params['geo'] = location
+            if industry: params['jobIndustry'] = industry
+            if job_level: params['jobLevel'] = job_level
 
-            if(search_term or params):
+            if search_term or params:
                 job_list = JobicyService.search_jobs(search_term, params)
+        else:
+            request.session.pop('last_search_params', None)
+
+    elif request.method == "GET" and initial_data:
+        job_type = initial_data.get('job_type', '')
+        location = initial_data.get('location', '')
+        industry = initial_data.get('industry', '')
+        job_level = initial_data.get('job_level', '')
+
+        if job_type: params['jobType'] = job_type
+        if location: params['geo'] = location
+        if industry: params['jobIndustry'] = industry
+        if job_level: params['jobLevel'] = job_level
+
+        if search_term or params:
+             job_list = JobicyService.search_jobs(search_term, params)
 
     context = {
         'form': form,
@@ -56,7 +77,7 @@ def dashboard(request):
 
 @login_required
 def applications(request):
-    applied_jobs = [ # mock data, replace this with logic
+    applied_jobs = [
         {
             "job_id": 1, 
             "title": "Software Engineer", 
@@ -417,3 +438,17 @@ def search_jobs():
     Placeholder function for legacy compatibility
     """
     pass
+
+@login_required
+def apply_flow(request, job_id):
+    """Handles the multi-step application flow for a specific job."""
+    job_details = JobicyService.get_job_details(job_id)
+
+    if not job_details:
+        return render(request, 'home/apply_flow_error.html', {'job_id': job_id})
+
+    context = {
+        'job': job_details
+
+    }
+    return render(request, 'home/apply_flow.html', context)

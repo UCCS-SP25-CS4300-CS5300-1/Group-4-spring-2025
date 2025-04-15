@@ -9,4 +9,5 @@ urlpatterns = [
     path('api/evaluate-response/', views.ajax_evaluate_response, name='evaluate_response'),
     path('api/generate-questions/', views.ajax_generate_questions, name='generate_questions'),
     path('applications/', views.applications, name='applications'),
+    path('apply/<str:job_id>/', views.apply_flow, name='apply_flow'),
 ] 

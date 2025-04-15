@@ -1,0 +1,238 @@
+{% load static %}
+{% load job_filters %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{% static 'styles.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Apply for {{ job.title }} - ApplierPilotAI</title>
+    <style>
+        body {
+            background-color: #f8fafc;
+        }
+        .navbar {
+            background-color: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .navbar-brand {
+            color: #2563eb;
+            font-weight: bold;
+        }
+        .back-button {
+            color: #4b5563;
+            text-decoration: none;
+            transition: background-color 0.2s;
+        }
+        .back-button:hover {
+            background-color: #f3f4f6;
+            color: #2563eb;
+        }
+        .container {
+            max-width: 960px;
+        }
+        .job-header-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            margin-bottom: 2rem;
+            border: 1px solid #e5e7eb;
+        }
+        .company-logo {
+            width: 56px; height: 56px;
+            object-fit: contain;
+            border-radius: 8px;
+            background-color: #f3f4f6;
+            flex-shrink: 0;
+        }
+        .company-logo-placeholder { 
+            display: flex; align-items: center; justify-content: center; 
+            background-color: #e5e7eb; color: #4b5563; 
+            font-size: 1.8rem; font-weight: 600; text-transform: uppercase; 
+        }
+        .job-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #111827;
+        }
+        .company-name {
+            color: #4b5563;
+            font-size: 1rem;
+        }
+        .job-meta span {
+            display: inline-flex; align-items: center; gap: 0.5rem; 
+            margin-right: 1rem; color: #4b5563; font-size: 0.9rem; 
+        }
+        .job-meta i {
+            color: #6b7280;
+        }
+        
+        .accordion-item {
+            background-color: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px !important;
+            margin-bottom: 1rem; 
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            overflow: hidden;
+        }
+        .accordion-button {
+            background-color: #f9fafb;
+            color: #1f2937;
+            font-weight: 500;
+            font-size: 1.1rem;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .accordion-button:not(.collapsed) {
+            background-color: #eef2ff;
+            color: #2563eb;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .accordion-button:focus {
+            box-shadow: none;
+            border-color: #a5b4fc;
+        }
+        .accordion-body {
+            padding: 1.5rem;
+            background-color: #fff;
+            color: #374151;
+            border-radius: 0 0 8px 8px !important;
+        }
+        .placeholder-content {
+            color: #6b7280;
+            font-size: 0.95rem;
+        }
+        .placeholder-content .btn {
+            margin-top: 1rem;
+        }
+        .step-icon {
+             width: 24px; height: 24px;
+             background-color: #dbeafe;
+             color: #2563eb;
+             border-radius: 50%;
+             display: inline-flex;
+             align-items: center;
+             justify-content: center;
+             margin-right: 0.75rem;
+             font-size: 0.9rem;
+        }
+        .accordion-button:not(.collapsed) .step-icon {
+            background-color: #2563eb;
+            color: white;
+        }
+        .final-submit-section {
+            background-color: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin-top: 2rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+             border: 1px solid #e5e7eb;
+        }
+
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-light mb-4">
+        <div class="container">
+            <a href="{% url 'dashboard' %}" class="back-button p-2 rounded">
+                <i class="fas fa-arrow-left me-1"></i> Back to Dashboard
+            </a>
+             <a href="/" class="navbar-brand">ApplierPilotAI</a>
+             <span></span>
+        </div>
+    </nav>
+
+    <div class="container mt-4 mb-5">
+        
+        <div class="job-header-card">
+            <div class="d-flex align-items-start gap-3 mb-3">
+                {% if job.company_logo %}
+                    <img src="{{ job.company_logo }}" alt="{{ job.company }}" class="company-logo">
+                {% else %}
+                    <div class="company-logo company-logo-placeholder">{{ job.company|slice:":1" }}</div>
+                {% endif %}
+                <div class="flex-grow-1">
+                    <h1 class="job-title mb-1">{{ job.title }}</h1>
+                    <p class="company-name mb-2">{{ job.company }}</p>
+                    <div class="job-meta">
+                        {% if job.location %}<span><i class="fas fa-map-marker-alt"></i>{{ job.location }}</span>{% endif %}
+                        {% if job.job_type %}<span><i class="fas fa-clock"></i>{{ job.job_type|format_field }}</span>{% endif %}
+                        {% if job.salary_display %}<span><i class="fas fa-money-bill-wave"></i>{{ job.salary_display }}</span>{% endif %}
+                     </div>
+                </div>
+                 <a href="{{ job.url }}" target="_blank" class="btn btn-outline-secondary btn-sm flex-shrink-0 align-self-start">
+                    <i class="fas fa-external-link-alt"></i> View Posting
+                </a>
+            </div>
+           
+        </div>
+
+        <h2 class="h4 mb-3 text-primary">Application Steps</h2>
+
+        <div class="accordion" id="applicationStepsAccordion">
+
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingOne">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
+                       <span class="step-icon"><i class="fas fa-file-alt"></i></span> Resume Tuning
+                    </button>
+                </h2>
+                <div id="collapseOne" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#applicationStepsAccordion">
+                    <div class="accordion-body placeholder-content">
+                        <p>Upload your resume and get AI-powered suggestions to tailor it specifically for the <strong>{{ job.title }}</strong> role at <strong>{{ job.company }}</strong>.</p>
+                        <button class="btn btn-secondary btn-sm" disabled><i class="fas fa-magic me-1"></i> Tune Resume (Coming Soon)</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingTwo">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                        <span class="step-icon"><i class="fas fa-envelope-open-text"></i></span> Cover Letter Writing
+                    </button>
+                </h2>
+                <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-bs-parent="#applicationStepsAccordion">
+                    <div class="accordion-body placeholder-content">
+                         <p>Generate a draft cover letter based on your profile and the job requirements. We'll help you make a strong first impression.</p>
+                         <button class="btn btn-secondary btn-sm" disabled><i class="fas fa-pen-fancy me-1"></i> Write Cover Letter (Coming Soon)</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingThree">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+                         <span class="step-icon"><i class="fas fa-binoculars"></i></span> Application Outlook
+                    </button>
+                </h2>
+                <div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="headingThree" data-bs-parent="#applicationStepsAccordion">
+                    <div class="accordion-body">
+                        <p>Review an AI-driven assessment of how well your profile (based on your uploaded resume and profile information) aligns with the key requirements of this job.</p>
+                        <div class="alert alert-info mt-3" role="alert">
+                            <h5 class="alert-heading"><i class="fas fa-info-circle me-1"></i>Outlook Analysis</h5> 
+                            <p class="mb-1">[Placeholder for analysis results - e.g., matching skills, potential gaps, overall fit score based on requirements extracted from the job description.]</p>
+                            <hr>
+                            <p class="mb-0 small">This feature is under development.</p>
+                        </div>
+                         <button class="btn btn-info btn-sm mt-2" disabled><i class="fas fa-chart-bar me-1"></i> View Full Outlook (Coming Soon)</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+         <div class="final-submit-section text-center mt-4">
+             <p class="text-success mb-3 fw-bold">You've reviewed the steps, now go get that job!</p>
+             <a href="{{ job.url }}" target="_blank" class="btn btn-success btn-lg">
+                 <i class="fas fa-external-link-alt me-2"></i>Now you're ready to apply!
+            </a>
+        </div>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
