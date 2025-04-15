@@ -107,15 +107,7 @@ def upload_resume(request):
             file_path = file.path
 
             try:
-                if filename.endswith(".pdf"):
-                    reader = PdfReader(file)
-                    page = reader.pages[0]
-                    text = page.extract_text()
-                elif filename.endswith(".docx"):
-                    doc = Document(file_path)
-                    text = "\n".join([p.text for p in doc.paragraphs])
-                else:
-                    text = "Unsupported file type"
+                text = parse_resume(file)
                     
                 if request.user.is_superuser or profile.whitelisted_for_ai:
                     feedback = get_resume_feedback(text)
@@ -142,12 +134,30 @@ def upload_resume(request):
 
     return render(request, 'users/upload_resume.html', {'form': resume_form})
 
+def parse_resume(file):
+    
+    file_path = file.path
+    filename = file.name.lower()
+    
+    if filename.endswith(".pdf"):
+        reader = PdfReader(file)
+        page = reader.pages[0]
+        text = page.extract_text()
+    elif filename.endswith(".docx"):
+        doc = Document(file_path)
+        text = "\n".join([p.text for p in doc.paragraphs])
+    else:
+        text = "Unsupported file type"
+    
+    return text
+
 def get_resume_feedback(resume_text):
     try:
         response = openai.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
                 {"role": "system", "content": "You are a helpful resume reviewer. Review the following resume and provide constructive feedback. Focus on general advice, formatting, keyword optimization, and job relevance."},
+                #{"role": "user", "content": f"Here are some helpful guidelines to follow when giving the feedback:\\n\\n"},
                 {"role": "user", "content": f"Please review this resume:\\n\\n{resume_text}"}
             ],
         )
