@@ -7,6 +7,7 @@ from home.models import JobListing
 from .forms import SearchJobForm
 from .services import JobicyService
 from .interview_service import InterviewService
+from .rejection_service import RejectionService
 from users.models import Profile, Resume
 import openai
 
@@ -420,26 +421,23 @@ def rejection_reason_simulator(request, job_id, resume_content=""):
     """
     View to handle the rejection reason generator functionality.
     """
-    if(not hasattr(request.user, 'profile')):
-        profile = Profile.objects.create(user=request.user)
-    else:
-        profile = request.user.profile
 
     job = get_object_or_404(JobListing, job_id=job_id)
     job_description = job.description
+    resume_content = read_resume(request.user)
 
-    if request.user.is_superuser or profile.whitelisted_for_ai:
-        return render(request, 'home/rejection_simulator.html', {
-            'job': job,
-            'job_description': job_description, 
-            'resume_content': resume_content,
-        })
+    print("ASDASDHASKD: " + resume_content)
 
-    return JsonResponse({'error': 'Not authorized for AI'}, status=401)
+    context = {
+        'job': job,
+        'job_description': job_description, 
+        'resume_content': resume_content,
+    }
+    return render(request, 'home/rejection_simulator.html', context)
 
 def read_resume(user):
     resume_text = ""
-    resume_file = user.resumes.first()
+    resume_file = user.resumes.first().resume
     filename = resume_file.name.lower()
 
     try:
@@ -457,33 +455,7 @@ def read_resume(user):
         logger = logging.getLogger('users')
         logger.error(f"Error processing resume: {str(e)}")
 
-    return resume_text
-
-def generate_rejection_reasons_with_resume(resume_text, job_description):
-    try:
-        response = openai.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": "You are a helpful assistant that evaluates job applications. When provided with a job description and a resume, analyze the two and generate potential rejection reasons based on mismatches between the job requirements and the applicant's qualifications. Consider missing qualifications, lack of relevant experience, skills mismatch, and any other relevant factors that could affect the applicant's fit for the job."},
-                {"role": "user", "content": f"Job description:\\n{job_description}\\n\\nResume:{resume_text}"}
-            ],
-        )
-        return response.choices[0].message.content
-    except Exception as ex:
-        return f"Error generating AI feedback: {ex}"
-    
-def generate_rejection_reasons_no_resume(job_description):
-    try:
-        response = openai.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": "You are a helpful assistant that evaluates job applications. When provided with a job description and a resume, analyze the two and generate potential rejection reasons based on mismatches between the job requirements and the applicant's qualifications. Consider missing qualifications, lack of relevant experience, skills mismatch, and any other relevant factors that could affect the applicant's fit for the job."},
-                {"role": "user", "content": f"Job description:\\n{job_description}\\n\\nResume: I don't have a resume. Please generate potential reasons I might not be selected for the role."}
-            ],
-        )
-        return response.choices[0].message.content
-    except Exception as ex:
-        return f"Error generating AI feedback: {ex}"    
+    return resume_text   
 
 def search_jobs():
     """
