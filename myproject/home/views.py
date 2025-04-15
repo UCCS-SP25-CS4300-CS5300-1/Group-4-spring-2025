@@ -4,6 +4,8 @@ from django.contrib import messages
 import base64
 
 from users.models import Resume
+from pypdf import PdfReader
+from docx import Document
 from home.models import JobListing, UserJobInteraction
 from .forms import SearchJobForm, CoverLetterForm
 from .services import JobicyService
@@ -11,6 +13,8 @@ from .interview_service import InterviewService
 from .cover_letter_service import CoverLetterService
 from django.contrib.auth.decorators import login_required
 
+from users.models import Profile, Resume
+import openai
 
 
 def index(request):
@@ -171,6 +175,75 @@ def ajax_evaluate_response(request):
 
     return JsonResponse({'error': 'Invalid request'}, status=400)
 
+@login_required
+def rejection_reason_simulator(request, job_id, resume_content=""):
+    """
+    View to handle the rejection reason generator functionality.
+    """
+    if(not hasattr(request.user, 'profile')):
+        profile = Profile.objects.create(user=request.user)
+    else:
+        profile = request.user.profile
+
+    job = get_object_or_404(JobListing, job_id=job_id)
+    job_description = job.description
+
+    if request.user.is_superuser or profile.whitelisted_for_ai:
+        return render(request, 'home/rejection_simulator.html', {
+            'job': job,
+            'job_description': job_description, 
+            'resume_content': resume_content,
+        })
+
+    return JsonResponse({'error': 'Not authorized for AI'}, status=401)
+
+def read_resume(user):
+    resume_text = ""
+    resume_file = user.resumes.first()
+    filename = resume_file.name.lower()
+
+    try:
+        if filename.endswith(".pdf"):
+            reader = PdfReader(resume_file)
+            page = reader.pages[0]
+            resume_text = page.extract_text()
+        elif filename.endswith(".docx"):
+            doc = Document(resume_file.path)
+            resume_text = "\n".join([p.text for p in doc.paragraphs])
+        else:
+            raise ValueError("Unsupported file type")
+    except Exception as e:
+        import logging
+        logger = logging.getLogger('users')
+        logger.error(f"Error processing resume: {str(e)}")
+
+    return resume_text
+
+def generate_rejection_reasons_with_resume(resume_text, job_description):
+    try:
+        response = openai.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": "You are a helpful assistant that evaluates job applications. When provided with a job description and a resume, analyze the two and generate potential rejection reasons based on mismatches between the job requirements and the applicant's qualifications. Consider missing qualifications, lack of relevant experience, skills mismatch, and any other relevant factors that could affect the applicant's fit for the job."},
+                {"role": "user", "content": f"Job description:\\n{job_description}\\n\\nResume:{resume_text}"}
+            ],
+        )
+        return response.choices[0].message.content
+    except Exception as ex:
+        return f"Error generating AI feedback: {ex}"
+    
+def generate_rejection_reasons_no_resume(job_description):
+    try:
+        response = openai.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": "You are a helpful assistant that evaluates job applications. When provided with a job description and a resume, analyze the two and generate potential rejection reasons based on mismatches between the job requirements and the applicant's qualifications. Consider missing qualifications, lack of relevant experience, skills mismatch, and any other relevant factors that could affect the applicant's fit for the job."},
+                {"role": "user", "content": f"Job description:\\n{job_description}\\n\\nResume: I don't have a resume. Please generate potential reasons I might not be selected for the role."}
+            ],
+        )
+        return response.choices[0].message.content
+    except Exception as ex:
+        return f"Error generating AI feedback: {ex}"    
 
 def search_jobs():
     """
