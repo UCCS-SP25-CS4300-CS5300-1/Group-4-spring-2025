@@ -657,35 +657,34 @@ class CoverLetterGeneratorViewTest(TestCase):
         self.client.login(username='testuser', password='StrongTestPass123')
 
     
-        with patch('home.cover_letter_service.CoverLetterService.create_cover_letter_pdf') as mock_create_pdf:
-        
-        mock_generate.return_value = "This is a generated cover letter content."
-        mock_create_pdf.return_value = b"%PDF-1.4 mock pdf content"
+        with patch('home.cover_letter_service.CoverLetterService.generate_cover_letter') as mock_generate:
+            mock_generate.return_value = "This is a generated cover letter content."
+            mock_create_pdf.return_value = b"%PDF-1.4 mock pdf content"
 
-        # submitting form with all required fields
-        response = self.client.post(self.cover_letter_url, {
-            'user_name': 'bob smith',
-            'user_email': 'test@example.com',
-            'user_phone': '1234567890',
-            'user_address': '123 Test Street',
-            'use_resume': False,
-            'company_name': 'Test Company',
-            'job_title': 'Python Developer',
-            'job_description': 'Django development role',
-        })
-
-        
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response['Content-Type'], 'application/pdf')
-        self.assertIn('attachment; filename=', response['Content-Disposition'])
-        self.assertTrue(response.content.startswith(b'%PDF'))
+            # submitting form with all required fields
+            response = self.client.post(self.cover_letter_url, {
+                'user_name': 'bob smith',
+                'user_email': 'test@example.com',
+                'user_phone': '1234567890',
+                'user_address': '123 Test Street',
+                'use_resume': False,
+                'company_name': 'Test Company',
+                'job_title': 'Python Developer',
+                'job_description': 'Django development role',
+            })
 
         
-        mock_generate.assert_called_once()
-        mock_create_pdf.assert_called_once_with(
-            cover_letter_text="This is a generated cover letter content.",
-            filename="cover_letter_testuser"
-        )
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response['Content-Type'], 'application/pdf')
+            self.assertIn('attachment; filename=', response['Content-Disposition'])
+            self.assertTrue(response.content.startswith(b'%PDF'))
+
+        
+            mock_generate.assert_called_once()
+            mock_create_pdf.assert_called_once_with(
+                cover_letter_text="This is a generated cover letter content.",
+                filename="cover_letter_testuser"
+            )
 
 
     def test_pdf_generation_view(self):
