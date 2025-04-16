@@ -653,39 +653,41 @@ class CoverLetterGeneratorViewTest(TestCase):
         self.assertIn('job_title', form.errors)
 
     def test_successful_cover_letter_generation(self):
-        """testing successful cover letter generating"""
-        self.client.login(username='testuser', password='StrongTestPass123')
+    """testing successful cover letter generating and PDF response"""
+    self.client.login(username='testuser', password='StrongTestPass123')
 
-        # Mock the cover letter service
-        with patch('home.cover_letter_service.CoverLetterService.generate_cover_letter') as mock_generate:
-            mock_generate.return_value = "This is a generated cover letter content."
+    
+    with patch('home.cover_letter_service.CoverLetterService.generate_cover_letter') as mock_generate, \
+         patch('home.cover_letter_service.CoverLetterService.create_cover_letter_pdf') as mock_create_pdf:
+        
+        mock_generate.return_value = "This is a generated cover letter content."
+        mock_create_pdf.return_value = b"%PDF-1.4 mock pdf content"
 
-            # submitting form with all required fields
-            response = self.client.post(self.cover_letter_url, {
-                'applicant_name': 'bob smith',
-                'company_name': 'Test Company',
-                'job_title': 'Python Developer',
-                'job_description': 'Django development role',
-                'skills': 'Python, Django, API development',
-                'experience': '5 years of web development'
-            })
+        # submitting form with all required fields
+        response = self.client.post(self.cover_letter_url, {
+            'user_name': 'bob smith',
+            'user_email': 'test@example.com',
+            'user_phone': '1234567890',
+            'user_address': '123 Test Street',
+            'use_resume': False,
+            'company_name': 'Test Company',
+            'job_title': 'Python Developer',
+            'job_description': 'Django development role',
+        })
 
-            self.assertEqual(response.status_code, 200)
-            self.assertTemplateUsed(response, 'home/cover_letter_generator.html')
+        
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Content-Type'], 'application/pdf')
+        self.assertIn('attachment; filename=', response['Content-Disposition'])
+        self.assertTrue(response.content.startswith(b'%PDF'))
 
-            # checking that the generated cover letter is in the context
-            self.assertIn('cover_letter', response.context)
-            self.assertEqual(response.context['cover_letter'], "This is a generated cover letter content.")
+        
+        mock_generate.assert_called_once()
+        mock_create_pdf.assert_called_once_with(
+            cover_letter_text="This is a generated cover letter content.",
+            filename="cover_letter_testuser"
+        )
 
-            # verifying the mock was calling with correct parameters
-            mock_generate.assert_called_once()
-            args = mock_generate.call_args[0]
-            self.assertEqual(args[0], 'bob smith')
-            self.assertEqual(args[1], 'Test Company')
-            self.assertEqual(args[2], 'Python Developer')
-            self.assertEqual(args[3], 'Django development role')
-            self.assertEqual(args[4], 'Python, Django, API development')
-            self.assertEqual(args[5], '5 years of web development')
 
     def test_pdf_generation_view(self):
         """testing the pdf generating view"""
