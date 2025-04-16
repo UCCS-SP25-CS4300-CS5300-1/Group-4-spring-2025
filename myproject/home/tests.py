@@ -648,3 +648,19 @@ class CoverLetterGeneratorViewTest(TestCase):
                 cover_letter_text="This is a generated cover letter content.",
                 filename="cover_letter_testuser"
             )
+    def test_generate_cover_letter_api_error(self):
+        from home.cover_letter_service import CoverLetterService
+
+        with patch('home.cover_letter_service.requests.post') as mock_post, \
+             patch.object(CoverLetterService, 'get_api_key', return_value='fake-key'):
+
+            mock_post.return_value.status_code = 500
+            mock_post.return_value.text = 'Internal Server Error'
+
+            result = CoverLetterService.generate_cover_letter(
+            job_description="Test job",
+            user_info={"name": "Jane Doe"}
+            )
+
+            self.assertIn("Dear Hiring Manager", result)  # fallback letter
+
