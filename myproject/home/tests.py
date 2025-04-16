@@ -3,9 +3,11 @@ from django.urls import reverse
 from django.contrib.auth.models import User
 from users.models import Profile
 from home.models import Application, JobListing
-from .forms import SearchJobForm, InterviewResponseForm
+from .forms import SearchJobForm, InterviewResponseForm, CoverLetterForm
 from django.utils import timezone
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
+import os
+import io
 
 
 class HomeViewTest(TestCase):
@@ -552,3 +554,160 @@ class AuthRedirectTest(TestCase):
         # The first redirected URL should be to the dashboard
         self.assertEqual(response.redirect_chain[0][0], '/dashboard/')
         self.assertEqual(response.status_code, 200)
+
+
+class CoverLetterGeneratorViewTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.cover_letter_url = reverse('cover_letter_generator')
+
+        # Creating a test user
+        self.user = User.objects.create_user(
+            username='testuser',
+            email='test@example.com',
+            password='StrongTestPass123'
+        )
+
+        self.profile = Profile.objects.get(user=self.user)
+        self.profile.save()
+
+        self.job = JobListing.objects.create(
+            job_id='test-job-1',
+            title='Senior Python Developer',
+            company='Test Company',
+            location='Remote',
+            description='This job requires expertise in Python, Django, and API development.',
+            url='https://example.com/job1',
+            job_type='Full-time',
+            published_at=timezone.now(),
+            search_key='python'
+        )
+
+        self.cover_letter_with_job_url = reverse('cover_letter_generator_with_job', args=[self.job.job_id])
+        self.resume_content = b"bob smith\nSenior Python Developer\n5 years experience in Django development"
+
+    def test_cover_letter_login_required(self):
+        response = self.client.get(self.cover_letter_url)
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(response.url.startswith('/users/login/'))
+
+    def test_cover_letter_with_job_login_required(self):
+        response = self.client.get(self.cover_letter_with_job_url)
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(response.url.startswith('/users/login/'))
+
+    def test_cover_letter_authenticated_user(self):
+        self.client.login(username='testuser', password='StrongTestPass123')
+        response = self.client.get(self.cover_letter_url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'home/cover_letter_generator.html')
+        self.assertIsInstance(response.context['form'], CoverLetterForm)
+
+    def test_cover_letter_with_job_authenticated_user(self):
+        self.client.login(username='testuser', password='StrongTestPass123')
+        response = self.client.get(self.cover_letter_with_job_url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'home/cover_letter_generator.html')
+        self.assertIn('job', response.context)
+        self.assertEqual(response.context['job'], self.job)
+
+        form = response.context['form']
+        self.assertEqual(form.initial['company_name'], self.job.company)
+        self.assertEqual(form.initial['job_title'], self.job.title)
+        self.assertEqual(form.initial['job_description'], self.job.description)
+
+    def test_successful_cover_letter_generation(self):
+        self.client.login(username='testuser', password='StrongTestPass123')
+
+        with patch('home.cover_letter_service.CoverLetterService.generate_cover_letter') as mock_generate, \
+             patch('home.cover_letter_service.CoverLetterService.create_cover_letter_pdf') as mock_create_pdf:
+
+            mock_generate.return_value = "This is a generated cover letter content."
+            mock_create_pdf.return_value = b"%PDF-1.4 mock pdf content"
+
+            response = self.client.post(self.cover_letter_url, {
+                'user_name': 'bob smith',
+                'user_email': 'test@example.com',
+                'user_phone': '1234567890',
+                'user_address': '123 Test Street',
+                'use_resume': False,
+                'company_name': 'Test Company',
+                'job_title': 'Python Developer',
+                'job_description': 'Django development role',
+            })
+
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response['Content-Type'], 'application/pdf')
+            self.assertIn('attachment; filename=', response['Content-Disposition'])
+            self.assertTrue(response.content.startswith(b'%PDF'))
+
+            mock_generate.assert_called_once()
+            mock_create_pdf.assert_called_once_with(
+                cover_letter_text="This is a generated cover letter content.",
+                filename="cover_letter_testuser"
+            )
+    def test_generate_cover_letter_api_error(self):
+        from home.cover_letter_service import CoverLetterService
+
+        with patch('home.cover_letter_service.requests.post') as mock_post, \
+             patch.object(CoverLetterService, 'get_api_key', return_value='fake-key'):
+
+            mock_post.return_value.status_code = 500
+            mock_post.return_value.text = 'Internal Server Error'
+
+            result = CoverLetterService.generate_cover_letter(
+            job_description="Test job",
+            user_info={"name": "Jane Doe"}
+            )
+
+            self.assertIn("Dear Hiring Manager", result)  # fallback letter
+    def test_generate_cover_letter_api_exception(self):
+        from home.cover_letter_service import CoverLetterService
+
+        with patch('home.cover_letter_service.requests.post', side_effect=Exception("Connection error")), \
+             patch.object(CoverLetterService, 'get_api_key', return_value='fake-key'):
+
+            result = CoverLetterService.generate_cover_letter(
+                job_description="Test job",
+                user_info={"name": "Jane Doe"}
+            )
+
+            self.assertIn("Dear Hiring Manager", result)  # fallback letter
+
+
+    def test_template_cover_letter_content(self):
+        from home.cover_letter_service import CoverLetterService
+
+        user_info = {
+            "name": "Alice Smith",
+            "email": "alice@example.com",
+            "phone": "555-1234",
+            "address": "123 Main St"
+        }
+        date = "April 15, 2025"
+
+        result = CoverLetterService._get_template_cover_letter(user_info, date)
+
+        self.assertIn("Alice Smith", result)
+        self.assertIn("April 15, 2025", result)
+        self.assertIn("[Company Name]", result)
+        self.assertIn("[Position Title]", result)
+    def test_create_pdf_with_blank_content(self):
+        from home.cover_letter_service import CoverLetterService
+
+        result = CoverLetterService.create_cover_letter_pdf("\n\n\n", "blank_letter")
+        self.assertTrue(result.startswith(b'%PDF'))
+        self.assertGreater(len(result), 100)
+    def test_extract_text_from_resume_error(self):
+        from home.cover_letter_service import CoverLetterService
+
+        mock_file = MagicMock()
+        with patch('home.cover_letter_service.PdfReader', side_effect=Exception("boom!")):
+            result = CoverLetterService.extract_text_from_resume(mock_file)
+            self.assertIsNone(result)
+
+
+
+

@@ -1,10 +1,15 @@
-from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, get_object_or_404
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse, FileResponse
+from django.contrib import messages
+
+from users.models import Profile, Resume
 from home.models import JobListing
-from .forms import SearchJobForm
+from .forms import SearchJobForm, InterviewResponseForm, CoverLetterForm
 from .services import JobicyService
 from .interview_service import InterviewService
+from .cover_letter_service import CoverLetterService
+from django.contrib.auth.decorators import login_required
+
 
 
 def index(request):
@@ -452,3 +457,107 @@ def apply_flow(request, job_id):
 
     }
     return render(request, 'home/apply_flow.html', context)
+
+
+@login_required
+def cover_letter_generator(request, job_id=None):
+    """
+    View to handle the cover letter generator functionality
+    If job_id is provided, use that job's description
+    """
+    job = None
+    job_description = ""
+    resume_text = None
+    latest_resume = None
+
+    # Get user's latest resume
+    latest_resume = Resume.objects.filter(user=request.user).order_by('-uploaded_at').first()
+
+    # If a job ID is provided, get the job description
+    if job_id:
+        job = get_object_or_404(JobListing, job_id=job_id)
+        job_description = job.description
+
+    # Initialize form
+    initial_data = {
+        'job_description': job_description,
+        'user_name': f"{request.user.first_name} {request.user.last_name}".strip() or request.user.username,
+        'user_email': request.user.email,
+        'user_phone': "",
+        'use_resume': True if latest_resume else False
+    }
+
+    if job:
+        initial_data['company_name'] = job.company
+        initial_data['job_title'] = job.title
+
+    form = CoverLetterForm(initial=initial_data)
+
+    if request.method == "POST":
+        form = CoverLetterForm(request.POST)
+        if form.is_valid():
+            # Process form data
+            user_info = {
+                'name': form.cleaned_data['user_name'],
+                'email': form.cleaned_data['user_email'],
+                'phone': form.cleaned_data['user_phone'],
+                'address': form.cleaned_data['user_address']
+            }
+
+            job_description = form.cleaned_data['job_description']
+            use_resume = form.cleaned_data['use_resume']
+
+            # Get resume text if needed
+            if use_resume and latest_resume:
+                try:
+                    resume_file = latest_resume.resume
+                    resume_text = CoverLetterService.extract_text_from_resume(resume_file)
+                except Exception as e:
+                    messages.error(request, f"Error extracting text from your resume: {e}")
+
+            try:
+                # Generate cover letter
+                cover_letter_text = CoverLetterService.generate_cover_letter(
+                    job_description=job_description,
+                    resume_text=resume_text,
+                    user_info=user_info
+                )
+
+                # Replace placeholders with actual data if provided
+                company_name = form.cleaned_data.get('company_name')
+                job_title = form.cleaned_data.get('job_title')
+
+                if company_name:
+                    cover_letter_text = cover_letter_text.replace('[Company Name]', company_name)
+                    cover_letter_text = cover_letter_text.replace('[COMPANY NAME]', company_name)
+                    cover_letter_text = cover_letter_text.replace('[Employer Name]', company_name)
+                    cover_letter_text = cover_letter_text.replace('[EMPLOYER NAME]', company_name)
+
+                if job_title:
+                    cover_letter_text = cover_letter_text.replace('[Position Title]', job_title)
+                    cover_letter_text = cover_letter_text.replace('[POSITION TITLE]', job_title)
+                    cover_letter_text = cover_letter_text.replace('[Job Title]', job_title)
+                    cover_letter_text = cover_letter_text.replace('[JOB TITLE]', job_title)
+
+                # Create PDF
+                pdf_data = CoverLetterService.create_cover_letter_pdf(
+                    cover_letter_text=cover_letter_text,
+                    filename=f"cover_letter_{request.user.username}"
+                )
+
+                # Create response
+                response = HttpResponse(pdf_data, content_type='application/pdf')
+                company_name_safe = "".join(
+                    c for c in (company_name or "company") if c.isalnum() or c in " _-").strip().replace(" ", "_")
+                response['Content-Disposition'] = f'attachment; filename="Cover_Letter_{company_name_safe}.pdf"'
+                return response
+
+            except Exception as e:
+                messages.error(request, f"Error generating cover letter: {e}")
+
+    context = {
+        'job': job,
+        'form': form,
+        'has_resume': latest_resume is not None
+    }
+    return render(request, 'home/cover_letter_generator.html', context)
