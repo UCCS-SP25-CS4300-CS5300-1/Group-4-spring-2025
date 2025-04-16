@@ -3,9 +3,11 @@ from django.urls import reverse
 from django.contrib.auth.models import User
 from users.models import Profile
 from home.models import Application, JobListing
-from .forms import SearchJobForm, InterviewResponseForm
+from .forms import SearchJobForm, InterviewResponseForm, CoverLetterForm
 from django.utils import timezone
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
+import os
+import io
 
 
 class HomeViewTest(TestCase):
@@ -552,3 +554,447 @@ class AuthRedirectTest(TestCase):
         # The first redirected URL should be to the dashboard
         self.assertEqual(response.redirect_chain[0][0], '/dashboard/')
         self.assertEqual(response.status_code, 200)
+
+
+class CoverLetterGeneratorViewTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.cover_letter_url = reverse('cover_letter_generator')
+
+        # Creating a test user
+        self.user = User.objects.create_user(
+            username='testuser',
+            email='test@example.com',
+            password='StrongTestPass123'
+        )
+
+        self.profile = Profile.objects.get(user=self.user)
+        self.profile.save()
+
+        # creating a test job listing
+        self.job = JobListing.objects.create(
+            job_id='test-job-1',
+            title='Senior Python Developer',
+            company='Test Company',
+            location='Remote',
+            description='This job requires expertise in Python, Django, and API development.',
+            url='https://example.com/job1',
+            job_type='Full-time',
+            published_at=timezone.now(),
+            search_key='python'
+        )
+
+        # url with job id
+        self.cover_letter_with_job_url = reverse('cover_letter_generator_with_job', args=[self.job.job_id])
+
+        # sample resume content
+        self.resume_content = b"bob smith\nSenior Python Developer\n5 years experience in Django development"
+
+    def test_cover_letter_login_required(self):
+        """testing that unauthenticated users are redirecting to login"""
+        response = self.client.get(self.cover_letter_url)
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(response.url.startswith('/users/login/'))
+
+    def test_cover_letter_with_job_login_required(self):
+        """testing that unauthenticated users are redirecting when accessing cover letter with job"""
+        response = self.client.get(self.cover_letter_with_job_url)
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(response.url.startswith('/users/login/'))
+
+    def test_cover_letter_authenticated_user(self):
+        """testing that authenticated users are accessing the cover letter generator"""
+        self.client.login(username='testuser', password='StrongTestPass123')
+        response = self.client.get(self.cover_letter_url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'home/cover_letter_generator.html')
+
+        # Check for forms in context
+        self.assertIsInstance(response.context['form'], CoverLetterForm)
+        self.assertIsInstance(response.context['resume_form'], ResumeUploadForm)
+
+    def test_cover_letter_with_job_authenticated_user(self):
+        """testing that authenticated users are accessing the cover letter generator with a job"""
+        self.client.login(username='testuser', password='StrongTestPass123')
+        response = self.client.get(self.cover_letter_with_job_url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'home/cover_letter_generator.html')
+
+        # checking that the job is in the context
+        self.assertIn('job', response.context)
+        self.assertEqual(response.context['job'], self.job)
+
+        # verifying job details are pre-filling in form
+        form = response.context['form']
+        self.assertEqual(form.initial['company_name'], self.job.company)
+        self.assertEqual(form.initial['job_title'], self.job.title)
+        self.assertEqual(form.initial['job_description'], self.job.description)
+
+    def test_form_validation_missing_fields(self):
+        """testing validation when required fields are missing"""
+        self.client.login(username='testuser', password='StrongTestPass123')
+
+        # Submit form with missing fields
+        response = self.client.post(self.cover_letter_url, {
+            'applicant_name': 'John Doe',
+            # Missing other required fields
+        })
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'home/cover_letter_generator.html')
+        self.assertTrue('form' in response.context)
+        self.assertTrue(response.context['form'].errors)
+
+        # Check for specific error messages
+        form = response.context['form']
+        self.assertIn('company_name', form.errors)
+        self.assertIn('job_title', form.errors)
+
+    def test_successful_cover_letter_generation(self):
+        """testing successful cover letter generating"""
+        self.client.login(username='testuser', password='StrongTestPass123')
+
+        # Mock the cover letter service
+        with patch('home.cover_letter_service.CoverLetterService.generate_cover_letter') as mock_generate:
+            mock_generate.return_value = "This is a generated cover letter content."
+
+            # submitting form with all required fields
+            response = self.client.post(self.cover_letter_url, {
+                'applicant_name': 'bob smith',
+                'company_name': 'Test Company',
+                'job_title': 'Python Developer',
+                'job_description': 'Django development role',
+                'skills': 'Python, Django, API development',
+                'experience': '5 years of web development'
+            })
+
+            self.assertEqual(response.status_code, 200)
+            self.assertTemplateUsed(response, 'home/cover_letter_generator.html')
+
+            # checking that the generated cover letter is in the context
+            self.assertIn('cover_letter', response.context)
+            self.assertEqual(response.context['cover_letter'], "This is a generated cover letter content.")
+
+            # verifying the mock was calling with correct parameters
+            mock_generate.assert_called_once()
+            args = mock_generate.call_args[0]
+            self.assertEqual(args[0], 'bob smith')
+            self.assertEqual(args[1], 'Test Company')
+            self.assertEqual(args[2], 'Python Developer')
+            self.assertEqual(args[3], 'Django development role')
+            self.assertEqual(args[4], 'Python, Django, API development')
+            self.assertEqual(args[5], '5 years of web development')
+
+    def test_pdf_generation_view(self):
+        """testing the pdf generating view"""
+        self.client.login(username='testuser', password='StrongTestPass123')
+
+        # creating a session variable with cover letter content
+        session = self.client.session
+        session['cover_letter'] = "This is a cover letter that should be in the PDF."
+        session.save()
+
+        # Mock the PDF generation
+        with patch('home.views.generate_pdf') as mock_pdf:
+            # Create a mock PDF file
+            mock_pdf_content = b"%PDF-1.4 mock pdf content"
+            mock_pdf.return_value = mock_pdf_content
+
+            response = self.client.get(reverse('download_cover_letter'))
+
+            # checking response properties
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response['Content-Type'], 'application/pdf')
+            self.assertEqual(response['Content-Disposition'], 'attachment; filename="cover_letter.pdf"')
+
+            # Check content
+            self.assertEqual(response.content, mock_pdf_content)
+
+            # Verify mock was called with correct content
+            mock_pdf.assert_called_once_with("This is a cover letter that should be in the PDF.")
+
+    def test_pdf_generation_no_content(self):
+        """testing pdf generating when no cover letter content is available"""
+        self.client.login(username='testuser', password='StrongTestPass123')
+
+        # No cover letter in session
+        response = self.client.get(reverse('download_cover_letter'))
+
+        # Should redirect to cover letter generator
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse('cover_letter_generator'))
+
+    def test_resume_upload_and_extraction(self):
+        """testing resume uploading and text extracting"""
+        self.client.login(username='testuser', password='StrongTestPass123')
+
+        # Create a mock PDF file
+        resume_file = SimpleUploadedFile(
+            "resume.pdf",
+            self.resume_content,
+            content_type="application/pdf"
+        )
+
+        # Mock the resume text extraction
+        with patch('home.views.extract_text_from_pdf') as mock_extract:
+            mock_extract.return_value = "John Doe\nSenior Python Developer\n5 years experience in Django"
+
+            response = self.client.post(
+                self.cover_letter_url,
+                {
+                    'resume_file': resume_file,
+                },
+                format='multipart'
+            )
+
+            self.assertEqual(response.status_code, 200)
+            self.assertTemplateUsed(response, 'home/cover_letter_generator.html')
+
+            # checking that extracted text is in the form
+            form = response.context['form']
+            self.assertIn('bob smith', form.initial['applicant_name'])
+            self.assertIn('Python Developer', form.initial['skills'])
+
+            # Verify mock was called
+            mock_extract.assert_called_once()
+
+    def test_resume_upload_invalid_file(self):
+        """testing resume uploading with invalid file type"""
+        self.client.login(username='testuser', password='StrongTestPass123')
+
+        # Create a non-PDF file
+        invalid_file = SimpleUploadedFile(
+            "resume.txt",
+            b"This is not a PDF file",
+            content_type="text/plain"
+        )
+
+        response = self.client.post(
+            self.cover_letter_url,
+            {
+                'resume_file': invalid_file,
+            },
+            format='multipart'
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'home/cover_letter_generator.html')
+
+        # Check for error in resume form
+        self.assertTrue('resume_form' in response.context)
+        self.assertTrue(response.context['resume_form'].errors)
+        self.assertIn('resume_file', response.context['resume_form'].errors)
+
+    def test_dashboard_integration(self):
+        """testing that the dashboard is containing links to the cover letter generator"""
+        self.client.login(username='testuser', password='StrongTestPass123')
+
+        # Mock the JobicyService.search_jobs method to return our test job
+        with patch('home.services.JobicyService.search_jobs') as mock_search:
+            mock_search.return_value = [self.job]
+
+            response = self.client.post(reverse('dashboard'), {'search_term': 'python'})
+
+            # Check that the cover letter generator link is in the response
+            self.assertContains(response, 'Generate Cover Letter')
+            self.assertContains(response, f'/cover-letter/{self.job.job_id}/')
+
+
+class CoverLetterServiceTest(TestCase):
+    """Tests for the CoverLetterService class"""
+
+    def test_generate_cover_letter_fallback(self):
+        """testing that generate_cover_letter is returning fallback content when api is failing"""
+        from home.cover_letter_service import CoverLetterService
+
+        # Force API failure by making openai.api_key None temporarily
+        import openai
+        original_key = openai.api_key
+        openai.api_key = None
+
+        try:
+            # This should use fallback content
+            cover_letter = CoverLetterService.generate_cover_letter(
+                "bob smith",
+                "ACME Corp",
+                "Software Engineer",
+                "Python development role",
+                "Python, Django, API development",
+                "5 years of web development"
+            )
+
+            # verifying we got some cover letter content
+            self.assertTrue(len(cover_letter) > 0)
+            self.assertTrue(isinstance(cover_letter, str))
+
+            # verifying that the content is including the provided information
+            self.assertIn("bob smith", cover_letter)
+            self.assertIn("ACME Corp", cover_letter)
+            self.assertIn("Software Engineer", cover_letter)
+        finally:
+            # Restore the API key
+            openai.api_key = original_key
+
+    def test_generate_pdf(self):
+        """testing the pdf generating function"""
+        from home.cover_letter_service import generate_pdf
+
+        # Mock the reportlab functionality
+        with patch('home.cover_letter_service.SimpleDocTemplate') as mock_doc:
+            mock_instance = MagicMock()
+            mock_doc.return_value = mock_instance
+
+            result = generate_pdf("This is test content for the PDF")
+
+            # Verify the mock was called
+            mock_doc.assert_called_once()
+            mock_instance.build.assert_called_once()
+
+    def test_extract_text_from_pdf(self):
+        """testing the pdf text extracting function"""
+        from home.cover_letter_service import extract_text_from_pdf
+
+        # Create a temporary PDF file
+        with tempfile.NamedTemporaryFile(suffix='.pdf', delete=False) as temp_file:
+            temp_file.write(b"%PDF-1.4 mock pdf content")
+            temp_file_path = temp_file.name
+
+        try:
+            # Mock PyPDF2 functionality
+            with patch('home.cover_letter_service.PdfReader') as mock_reader:
+                mock_reader_instance = MagicMock()
+                mock_reader.return_value = mock_reader_instance
+
+                # setting up the mock to returning text
+                mock_page = MagicMock()
+                mock_page.extract_text.return_value = "bob smith\nSenior Developer\n"
+                mock_reader_instance.pages = [mock_page, mock_page]  # Two pages
+
+                result = extract_text_from_pdf(temp_file_path)
+
+                # checking results
+                self.assertEqual(result, "bob smith\nSenior Developer\nbob smith\nSenior Developer\n")
+                mock_reader.assert_called_once_with(temp_file_path)
+        finally:
+            # Clean up the temp file
+            if os.path.exists(temp_file_path):
+                os.unlink(temp_file_path)
+
+
+class UrlsTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.user = User.objects.create_user(
+            username='testuser',
+            email='test@example.com',
+            password='StrongTestPass123'
+        )
+
+        # Create a test job listing
+        self.job = JobListing.objects.create(
+            job_id='test-job-1',
+            title='Senior Python Developer',
+            company='Test Company',
+            location='Remote',
+            description='Test job description',
+            url='https://example.com/job1',
+            job_type='Full-time',
+            published_at=timezone.now(),
+            search_key='python'
+        )
+
+    def test_cover_letter_url_exists(self):
+        """testing that the cover letter url is existing and requiring login"""
+        response = self.client.get('/cover-letter/')
+        self.assertEqual(response.status_code, 302)  # Should redirect to login
+
+        self.client.login(username='testuser', password='StrongTestPass123')
+        response = self.client.get('/cover-letter/')
+        self.assertEqual(response.status_code, 200)
+
+    def test_cover_letter_with_job_url_exists(self):
+        """testing that the cover letter with job url is existing and requiring login"""
+        response = self.client.get(f'/cover-letter/{self.job.job_id}/')
+        self.assertEqual(response.status_code, 302)  # Should redirect to login
+
+        self.client.login(username='testuser', password='StrongTestPass123')
+        response = self.client.get(f'/cover-letter/{self.job.job_id}/')
+        self.assertEqual(response.status_code, 200)
+
+    def test_download_cover_letter_url_exists(self):
+        """testing that the download cover letter url is existing and requiring login"""
+        response = self.client.get('/cover-letter/download/')
+        self.assertEqual(response.status_code, 302)  # Should redirect to login
+
+        self.client.login(username='testuser', password='StrongTestPass123')
+
+        # Create a session variable with cover letter content
+        session = self.client.session
+        session['cover_letter'] = "This is a test cover letter."
+        session.save()
+
+        # Mock PDF generation
+        with patch('home.views.generate_pdf') as mock_pdf:
+            mock_pdf.return_value = b"%PDF-1.4 mock pdf content"
+            response = self.client.get('/cover-letter/download/')
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response['Content-Type'], 'application/pdf')
+
+
+class CoverLetterFormTest(TestCase):
+    """Tests for the cover letter form"""
+
+    def test_form_valid_data(self):
+        """testing form with valid data"""
+        from home.forms import CoverLetterForm
+
+        form_data = {
+            'applicant_name': 'John Doe',
+            'company_name': 'ACME Corp',
+            'job_title': 'Software Engineer',
+            'job_description': 'Python development role',
+            'skills': 'Python, Django, API development',
+            'experience': '5 years of web development',
+        }
+
+        form = CoverLetterForm(data=form_data)
+        self.assertTrue(form.is_valid())
+
+    def test_form_invalid_data(self):
+        """testing form with invalid data"""
+        from home.forms import CoverLetterForm
+
+        # Missing required fields
+        form_data = {
+            'applicant_name': 'John Doe',
+            # Missing other fields
+        }
+
+        form = CoverLetterForm(data=form_data)
+        self.assertFalse(form.is_valid())
+        self.assertIn('company_name', form.errors)
+        self.assertIn('job_title', form.errors)
+
+    def test_form_max_length(self):
+        """testing form field max length validating"""
+        from home.forms import CoverLetterForm
+
+        # Create strings that exceed max length
+        long_name = 'A' * 101  # Assuming max_length=100
+        long_description = 'A' * 2001  # Assuming max_length=2000
+
+        form_data = {
+            'applicant_name': long_name,
+            'company_name': 'ACME Corp',
+            'job_title': 'Software Engineer',
+            'job_description': long_description,
+            'skills': 'Python, Django',
+            'experience': '5 years',
+        }
+
+        form = CoverLetterForm(data=form_data)
+        self.assertFalse(form.is_valid())
+        self.assertIn('applicant_name', form.errors)
+        self.assertIn('job_description', form.errors)

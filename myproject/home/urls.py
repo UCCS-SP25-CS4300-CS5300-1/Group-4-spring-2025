@@ -10,4 +10,6 @@ urlpatterns = [
     path('api/generate-questions/', views.ajax_generate_questions, name='generate_questions'),
     path('applications/', views.applications, name='applications'),
     path('apply/<str:job_id>/', views.apply_flow, name='apply_flow'),
+    path('cover-letter/', views.cover_letter_generator, name='cover_letter_generator'),
+    path('cover-letter/<str:job_id>/', views.cover_letter_generator, name='cover_letter_generator_with_job'),
 ] 
