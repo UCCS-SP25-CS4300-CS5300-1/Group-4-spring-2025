@@ -663,4 +663,16 @@ class CoverLetterGeneratorViewTest(TestCase):
             )
 
             self.assertIn("Dear Hiring Manager", result)  # fallback letter
+    def test_generate_cover_letter_api_exception(self):
+        from home.cover_letter_service import CoverLetterService
+
+        with patch('home.cover_letter_service.requests.post', side_effect=Exception("Connection error")), \
+             patch.object(CoverLetterService, 'get_api_key', return_value='fake-key'):
+
+            result = CoverLetterService.generate_cover_letter(
+                job_description="Test job",
+                user_info={"name": "Jane Doe"}
+            )
+
+            self.assertIn("Dear Hiring Manager", result)  # fallback letter
 
