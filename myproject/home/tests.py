@@ -676,3 +676,38 @@ class CoverLetterGeneratorViewTest(TestCase):
 
             self.assertIn("Dear Hiring Manager", result)  # fallback letter
 
+
+    def test_template_cover_letter_content(self):
+        from home.cover_letter_service import CoverLetterService
+
+        user_info = {
+            "name": "Alice Smith",
+            "email": "alice@example.com",
+            "phone": "555-1234",
+            "address": "123 Main St"
+        }
+        date = "April 15, 2025"
+
+        result = CoverLetterService._get_template_cover_letter(user_info, date)
+
+        self.assertIn("Alice Smith", result)
+        self.assertIn("April 15, 2025", result)
+        self.assertIn("[Company Name]", result)
+        self.assertIn("[Position Title]", result)
+    def test_create_pdf_with_blank_content(self):
+        from home.cover_letter_service import CoverLetterService
+
+        result = CoverLetterService.create_cover_letter_pdf("\n\n\n", "blank_letter")
+        self.assertTrue(result.startswith(b'%PDF'))
+        self.assertGreater(len(result), 100)
+    def test_extract_text_from_resume_error(self):
+        from home.cover_letter_service import CoverLetterService
+
+        mock_file = MagicMock()
+        with patch('home.cover_letter_service.PdfReader', side_effect=Exception("boom!")):
+            result = CoverLetterService.extract_text_from_resume(mock_file)
+            self.assertIsNone(result)
+
+
+
+
