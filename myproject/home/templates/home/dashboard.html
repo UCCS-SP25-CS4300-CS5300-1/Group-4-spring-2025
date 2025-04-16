@@ -1,4 +1,5 @@
 {% load static %}
+{% load job_filters %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -285,9 +286,9 @@
         experience.</p>
 </div>
 <nav class="navbar">
-    <a href="/" class="back-button">
+    <a href="{% url 'profile' %}" class="back-button">
         <i class="fas fa-arrow-left"></i>
-        Back
+        Back to Profile
     </a>
     <div class="navbar-brand">
         <a href="/" class="navbar-brand">ApplierPilotAI</a>
@@ -311,13 +312,34 @@
             <div class="search-container">
                 <form method="post" class="search-form">
                     {% csrf_token %}
-                    <div class="search-input-group">
-                        {{ form.as_p }}
-                        <button type="submit" class="btn-primary">
-                            <i class="fas fa-search"></i>
-                            Search
-                        </button>
+                    <div class="mb-3">
+                        <label for="{{ form.search_term.id_for_label }}" class="form-label">Keywords</label>
+                        {{ form.search_term }}
                     </div>
+
+                    <h5>Filters</h5>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-3">
+                            <label for="{{ form.job_type.id_for_label }}" class="form-label">Job Type</label>
+                            {{ form.job_type }}
+                        </div>
+                        <div class="col-md-3">
+                            <label for="{{ form.location.id_for_label }}" class="form-label">Location</label>
+                            {{ form.location }}
+                        </div>
+                        <div class="col-md-3">
+                            <label for="{{ form.industry.id_for_label }}" class="form-label">Industry</label>
+                            {{ form.industry }}
+                        </div>
+                        <div class="col-md-3">
+                            <label for="{{ form.job_level.id_for_label }}" class="form-label">Job Level</label>
+                            {{ form.job_level }}
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-search"></i>
+                        Search Jobs
+                    </button>
                 </form>
             </div>
         </div>
@@ -347,26 +369,51 @@
                                 </div>
                             </div>
                             <div class="job-meta">
-                                <span><i class="fas fa-map-marker-alt"></i>{{ job.location }}</span>
+                                <span><i class="fas fa-map-marker-alt"></i>{{ job.location|default:'N/A' }}</span>
                                 {% if job.salary_display %}
                                     <span><i class="fas fa-money-bill-wave"></i>{{ job.salary_display }}</span>
                                 {% endif %}
                                 {% if job.job_type %}
-                                    <span><i class="fas fa-clock"></i>{{ job.job_type }}</span>
+                                    <span><i class="fas fa-clock"></i>{{ job.job_type|format_field }}</span>
+                                {% endif %}
+                                {% if job.industry %}
+                                    <span><i class="fas fa-industry"></i>{{ job.industry|format_field }}</span>
+                                {% endif %}
+                                {% if job.job_level %}
+                                    <span><i class="fas fa-level-up-alt"></i>{{ job.job_level|format_field }}</span>
+                                {% endif %}
+                                {% if job.published_at %}
+                                    <span><i class="fas fa-calendar-alt"></i>{{ job.published_at|date:"M d, Y" }}</span>
                                 {% endif %}
                             </div>
-                            <div class="d-flex justify-content-between mt-3" style="gap: 8px;">
-                                <a href="{{ job.url }}" target="_blank" class="btn-primary" style="flex: 1; justify-content: center;">
+                            {% if job.description %}
+                                <p class="job-description-excerpt mt-2 text-muted">
+                                    {{ job.description|striptags|truncatewords_html:25 }}
+                                </p>
+                            {% endif %}
+                            <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
+                                <div>
+                                    <a href="{% url 'apply_flow' job_id=job.job_id %}"
+                                       class="btn btn-primary btn-sm me-2">
+                                        <i class="fas fa-rocket"></i>
+                                        Apply with ApplierPilot
+                                    </a>
+                                    <a href="{% url 'interview_coach_with_job' job_id=job.job_id %}"
+                                       class="btn btn-info btn-sm"
+                                       style="background-color: #0ea5e9; border-color: #0ea5e9;">
+                                        <i class="fas fa-comments"></i>
+                                        Interview Coach
+                                    </a>
+                                    <a href="{% url 'cover_letter_generator_with_job' job_id=job.job_id %}"
+                                       class="btn btn-success btn-sm"
+                                       style="background-color: #10b981; border-color: #10b981;">
+                                        <i class="fas fa-file-alt"></i>
+                                        Cover Letter
+                                    </a>
+                                </div>
+                                <a href="{{ job.url }}" target="_blank" class="btn btn-outline-secondary btn-sm">
                                     <i class="fas fa-external-link-alt"></i>
-                                    Apply
-                                </a>
-                                <a href="{% url 'interview_coach_with_job' job_id=job.job_id %}" class="btn-primary" style="flex: 1; justify-content: center; background-color: #0ea5e9;">
-                                    <i class="fas fa-comments"></i>
-                                    Interview
-                                </a>
-                                <a href="{% url 'cover_letter_generator_with_job' job_id=job.job_id %}" class="btn-primary" style="flex: 1; justify-content: center; background-color: #10b981;">
-                                    <i class="fas fa-file-alt"></i>
-                                    Cover Letter
+                                    View Job
                                 </a>
                             </div>
                         </div>
@@ -385,7 +432,6 @@
     </div>
 </main>
 
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
     function checkScreenSize() {
@@ -406,7 +452,7 @@
             img.addEventListener('error', function () {
                 if (this.dataset.fallback) {
                     this.src = this.dataset.fallback;
-                    // preventing infinite loop if fallback fails
+                    // preventing infinite loop if fallback  fails
                     this.dataset.fallback = '';
                 }
             });

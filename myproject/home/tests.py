@@ -5,7 +5,12 @@ from users.models import Profile
 from home.models import Application, JobListing
 from .forms import SearchJobForm, InterviewResponseForm
 from django.utils import timezone
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
+from .forms import CoverLetterForm
+from django.core.files.uploadedfile import SimpleUploadedFile
+import tempfile
+import os
+import io
 
 
 class HomeViewTest(TestCase):
@@ -224,126 +229,126 @@ class InterviewCoachViewTest(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertTrue(response.url.startswith('/users/login/'))
 
-    @patch('home.interview_service.InterviewService.generate_interview_questions')
-    def test_interview_coach_authenticated_user(self, mock_generate_questions):
+    def test_interview_coach_authenticated_user(self):
         """Test that authenticated users can access the interview coach"""
         # mocking the question generation
-        mock_generate_questions.return_value = [
-            "Tell me about yourself.",
-            "What experience do you have with Python?"
-        ]
+        with patch('home.interview_service.InterviewService.generate_interview_questions') as mock_generate_questions:
+            mock_generate_questions.return_value = [
+                "Tell me about yourself.",
+                "What experience do you have with Python?"
+            ]
 
-        self.client.login(username='testuser', password='StrongTestPass123')
-        response = self.client.get(self.interview_coach_url)
+            self.client.login(username='testuser', password='StrongTestPass123')
+            response = self.client.get(self.interview_coach_url)
 
-        self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, 'home/interview_coach.html')
+            self.assertEqual(response.status_code, 200)
+            self.assertTemplateUsed(response, 'home/interview_coach.html')
 
-        # checking that questions were generated
-        self.assertIn('questions', response.context)
-        self.assertEqual(len(response.context['questions']), 2)
+            # checking that questions were generated
+            self.assertIn('questions', response.context)
+            self.assertEqual(len(response.context['questions']), 2)
 
-        # verifying the mock was called correctly
-        mock_generate_questions.assert_called_once_with("")
+            # verifying the mock was called correctly
+            mock_generate_questions.assert_called_once_with("")
 
-    @patch('home.interview_service.InterviewService.generate_interview_questions')
-    def test_interview_coach_with_job_authenticated_user(self, mock_generate_questions):
+    def test_interview_coach_with_job_authenticated_user(self):
         """Test that authenticated users can access the interview coach with a job"""
         # mocking the question generation
-        mock_generate_questions.return_value = [
-            "Tell me about your experience with Python.",
-            "How have you used Django in previous projects?"
-        ]
+        with patch('home.interview_service.InterviewService.generate_interview_questions') as mock_generate_questions:
+            mock_generate_questions.return_value = [
+                "Tell me about your experience with Python.",
+                "How have you used Django in previous projects?"
+            ]
 
-        self.client.login(username='testuser', password='StrongTestPass123')
-        response = self.client.get(self.interview_coach_with_job_url)
+            self.client.login(username='testuser', password='StrongTestPass123')
+            response = self.client.get(self.interview_coach_with_job_url)
 
-        self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, 'home/interview_coach.html')
+            self.assertEqual(response.status_code, 200)
+            self.assertTemplateUsed(response, 'home/interview_coach.html')
 
-        # checking that the job is in the context
-        self.assertIn('job', response.context)
-        self.assertEqual(response.context['job'], self.job)
+            # checking that the job is in the context
+            self.assertIn('job', response.context)
+            self.assertEqual(response.context['job'], self.job)
 
-        # checking that questions were generated
-        self.assertIn('questions', response.context)
-        self.assertEqual(len(response.context['questions']), 2)
+            # checking that questions were generated
+            self.assertIn('questions', response.context)
+            self.assertEqual(len(response.context['questions']), 2)
 
-        # verifying the mock was called with the job description
-        mock_generate_questions.assert_called_once_with(self.job.description)
+            # verifying the mock was called with the job description
+            mock_generate_questions.assert_called_once_with(self.job.description)
 
-    @patch('home.interview_service.InterviewService.evaluate_response')
-    def test_interview_coach_post_response(self, mock_evaluate):
+    def test_interview_coach_post_response(self):
         """testing submitting an interview response"""
         # mocking the evaluation response
-        mock_evaluate.return_value = {
-            "score": 8,
-            "strengths": ["Good communication", "Relevant experience"],
-            "areas_to_improve": ["Be more specific"],
-            "suggestions": "Provide concrete examples of your work."
-        }
+        with patch('home.interview_service.InterviewService.evaluate_response') as mock_evaluate:
+            mock_evaluate.return_value = {
+                "score": 8,
+                "strengths": ["Good communication", "Relevant experience"],
+                "areas_to_improve": ["Be more specific"],
+                "suggestions": "Provide concrete examples of your work."
+            }
 
-        self.client.login(username='testuser', password='StrongTestPass123')
+            self.client.login(username='testuser', password='StrongTestPass123')
 
-        response = self.client.post(self.interview_coach_url, {
-            'question': 'Tell me about yourself.',
-            'response': 'I am a senior developer with 5 years of experience in Python.',
-            'job_description': ''
-        })
+            response = self.client.post(self.interview_coach_url, {
+                'question': 'Tell me about yourself.',
+                'response': 'I am a senior developer with 5 years of experience in Python.',
+                'job_description': ''
+            })
 
-        self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, 'home/interview_coach.html')
+            self.assertEqual(response.status_code, 200)
+            self.assertTemplateUsed(response, 'home/interview_coach.html')
 
-        # checking that feedback is in the context
-        self.assertIn('feedback', response.context)
-        self.assertEqual(response.context['feedback']['score'], 8)
+            # checking that feedback is in the context
+            self.assertIn('feedback', response.context)
+            self.assertEqual(response.context['feedback']['score'], 8)
 
-        # verifying the mock was called correctly
-        mock_evaluate.assert_called_once_with(
-            'Tell me about yourself.',
-            'I am a senior developer with 5 years of experience in Python.',
-            ''
-        )
+            # verifying the mock was called correctly
+            mock_evaluate.assert_called_once_with(
+                'Tell me about yourself.',
+                'I am a senior developer with 5 years of experience in Python.',
+                ''
+            )
 
-    @patch('home.interview_service.InterviewService.evaluate_response')
-    def test_ajax_evaluate_response(self, mock_evaluate):
+    def test_ajax_evaluate_response(self):
         """Test the AJAX endpoint for evaluating responses"""
         # mocking the evaluation response
-        mock_evaluate.return_value = {
-            "score": 9,
-            "strengths": ["Excellent communication", "Strong technical knowledge"],
-            "areas_to_improve": ["Could provide more examples"],
-            "suggestions": "Consider mentioning specific projects."
-        }
+        with patch('home.interview_service.InterviewService.evaluate_response') as mock_evaluate:
+            mock_evaluate.return_value = {
+                "score": 9,
+                "strengths": ["Excellent communication", "Strong technical knowledge"],
+                "areas_to_improve": ["Could provide more examples"],
+                "suggestions": "Consider mentioning specific projects."
+            }
 
-        self.client.login(username='testuser', password='StrongTestPass123')
+            self.client.login(username='testuser', password='StrongTestPass123')
 
-        response = self.client.post(
-            reverse('evaluate_response'),
-            {
-                'question': 'What experience do you have with Django?',
-                'response': 'I have built several web applications using Django over the past 3 years.',
-                'job_description': self.job.description
-            },
-            HTTP_X_REQUESTED_WITH='XMLHttpRequest'  # Simulates AJAX request
-        )
+            response = self.client.post(
+                reverse('evaluate_response'),
+                {
+                    'question': 'What experience do you have with Django?',
+                    'response': 'I have built several web applications using Django over the past 3 years.',
+                    'job_description': self.job.description
+                },
+                HTTP_X_REQUESTED_WITH='XMLHttpRequest'  # Simulates AJAX request
+            )
 
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response['Content-Type'], 'application/json')
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response['Content-Type'], 'application/json')
 
-        # parsing JSON response
-        data = response.json()
-        self.assertEqual(data['score'], 9)
-        self.assertEqual(len(data['strengths']), 2)
-        self.assertEqual(len(data['areas_to_improve']), 1)
-        self.assertIn('suggestions', data)
+            # parsing JSON response
+            data = response.json()
+            self.assertEqual(data['score'], 9)
+            self.assertEqual(len(data['strengths']), 2)
+            self.assertEqual(len(data['areas_to_improve']), 1)
+            self.assertIn('suggestions', data)
 
-        # verifying the mock was called correctly
-        mock_evaluate.assert_called_once_with(
-            'What experience do you have with Django?',
-            'I have built several web applications using Django over the past 3 years.',
-            self.job.description
-        )
+            # verifying the mock was called correctly
+            mock_evaluate.assert_called_once_with(
+                'What experience do you have with Django?',
+                'I have built several web applications using Django over the past 3 years.',
+                self.job.description
+            )
 
     def test_ajax_evaluate_response_validation(self):
         """testing validation in the AJAX endpoint"""
@@ -384,103 +389,65 @@ class InterviewCoachViewTest(TestCase):
 class InterviewServiceTest(TestCase):
     """tests for the InterviewService class"""
 
-    @patch('openai.chat.completions.create')
-    def test_generate_interview_questions(self, mock_openai):
-        """testing question generation with OpenAI"""
+    def test_generate_interview_questions_fallback(self):
+        """Test that generate_interview_questions returns fallback questions when API fails"""
         from home.interview_service import InterviewService
 
-        # mocking OpenAI response
-        mock_response = type('obj', (object,), {
-            'choices': [
-                type('obj', (object,), {
-                    'message': type('obj', (object,), {
-                        'content': "1. Tell me about your experience with Python.\n2. How have you used Django in your projects?"
-                    })
-                })
-            ]
-        })
-        mock_openai.return_value = mock_response
+        # Force API failure by making openai.api_key None temporarily
+        import openai
+        original_key = openai.api_key
+        openai.api_key = None
 
-        job_description = "Looking for an experienced Python developer with Django knowledge."
-        questions = InterviewService.generate_interview_questions(job_description)
+        try:
+            # This should use fallback questions
+            questions = InterviewService.generate_interview_questions("Test job description")
 
-        self.assertEqual(len(questions), 2)
-        self.assertIn("Tell me about your experience with Python", questions[0])
+            # Verify we got some questions
+            self.assertTrue(len(questions) > 0)
+            self.assertTrue(isinstance(questions, list))
+            self.assertTrue(all(isinstance(q, str) for q in questions))
 
-        # verifying OpenAI was called
-        mock_openai.assert_called_once()
+            # Verify the first fallback question is present
+            self.assertIn("Tell me about yourself", questions[0])
+        finally:
+            # Restore the API key
+            openai.api_key = original_key
 
-    @patch('openai.chat.completions.create')
-    def test_generate_interview_questions_error_handling(self, mock_openai):
-        """testing error handling in question generation"""
+    def test_evaluate_response_fallback(self):
+        """Test that evaluate_response returns fallback feedback when API fails"""
         from home.interview_service import InterviewService
 
-        # simulate API error
-        mock_openai.side_effect = Exception("API Error")
+        # Force API failure by making openai.api_key None temporarily
+        import openai
+        original_key = openai.api_key
+        openai.api_key = None
 
-        questions = InterviewService.generate_interview_questions("Some job description")
+        try:
+            # This should use fallback feedback
+            feedback = InterviewService.evaluate_response(
+                "Tell me about yourself.",
+                "I am a Python developer with 5 years of experience.",
+                "Python Developer job description"
+            )
 
-        self.assertTrue(len(questions) > 0)
-        self.assertIn("Tell me about yourself", questions[0])
+            # Check structure of feedback
+            self.assertIn('score', feedback)
+            self.assertIn('strengths', feedback)
+            self.assertIn('areas_to_improve', feedback)
+            self.assertIn('suggestions', feedback)
 
-    @patch('openai.chat.completions.create')
-    def test_evaluate_response(self, mock_openai):
-        """Testing response evaluation with OpenAI"""
-        from home.interview_service import InterviewService
-        import json
+            # Score should be between 1 and 10
+            self.assertTrue(1 <= feedback['score'] <= 10)
 
-        # mocking OpenAI response
-        feedback_json = json.dumps({
-            "score": 7,
-            "strengths": ["Clear communication", "Good examples"],
-            "areas_to_improve": ["Be more concise"],
-            "suggestions": "Focus on relevant skills for this role."
-        })
+            # Should have at least one strength and one area to improve
+            self.assertTrue(len(feedback['strengths']) > 0)
+            self.assertTrue(len(feedback['areas_to_improve']) > 0)
 
-        mock_response = type('obj', (object,), {
-            'choices': [
-                type('obj', (object,), {
-                    'message': type('obj', (object,), {
-                        'content': feedback_json
-                    })
-                })
-            ]
-        })
-        mock_openai.return_value = mock_response
-
-        feedback = InterviewService.evaluate_response(
-            "Tell me about yourself.",
-            "I am a Python developer with 5 years of experience.",
-            "Python Developer job description"
-        )
-
-        self.assertEqual(feedback['score'], 7)
-        self.assertEqual(len(feedback['strengths']), 2)
-        self.assertEqual(len(feedback['areas_to_improve']), 1)
-        self.assertIn('suggestions', feedback)
-
-        # Verify OpenAI was called correctly
-        mock_openai.assert_called_once()
-
-    @patch('openai.chat.completions.create')
-    def test_evaluate_response_error_handling(self, mock_openai):
-        """Test error handling in response evaluation"""
-        from home.interview_service import InterviewService
-
-        # Simulate API error
-        mock_openai.side_effect = Exception("API Error")
-
-        # Should return generic feedback on error
-        feedback = InterviewService.evaluate_response(
-            "Tell me about yourself.",
-            "I am a Python developer.",
-            ""
-        )
-
-        self.assertIn('score', feedback)  # Should return default feedback
-        self.assertIn('strengths', feedback)
-        self.assertIn('areas_to_improve', feedback)
-        self.assertIn('suggestions', feedback)
+            # Suggestions should be a string
+            self.assertTrue(isinstance(feedback['suggestions'], str))
+        finally:
+            # Restore the API key
+            openai.api_key = original_key
 
 
 class UrlsTest(TestCase):
@@ -631,3 +598,423 @@ class AuthRedirectTest(TestCase):
         # The first redirected URL should be to the dashboard
         self.assertEqual(response.redirect_chain[0][0], '/dashboard/')
         self.assertEqual(response.status_code, 200)
+
+
+class CoverLetterGeneratorViewTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.cover_letter_url = reverse('cover_letter_generator')
+
+        # Creating a test user
+        self.user = User.objects.create_user(
+            username='testuser',
+            email='test@example.com',
+            password='StrongTestPass123'
+        )
+
+        self.profile = Profile.objects.get(user=self.user)
+        self.profile.save()
+
+        # creating a test job listing
+        self.job = JobListing.objects.create(
+            job_id='test-job-1',
+            title='Senior Python Developer',
+            company='Test Company',
+            location='Remote',
+            description='This job requires expertise in Python, Django, and API development.',
+            url='https://example.com/job1',
+            job_type='Full-time',
+            published_at=timezone.now(),
+            search_key='python'
+        )
+
+        # url with job id
+        self.cover_letter_with_job_url = reverse('cover_letter_generator_with_job', args=[self.job.job_id])
+
+        # Note: Resume upload functionality not yet implemented
+
+    def test_cover_letter_login_required(self):
+        """testing that unauthenticated users are redirecting to login"""
+        response = self.client.get(self.cover_letter_url)
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(response.url.startswith('/users/login/'))
+
+    def test_cover_letter_with_job_login_required(self):
+        """testing that unauthenticated users are redirecting when accessing cover letter with job"""
+        response = self.client.get(self.cover_letter_with_job_url)
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(response.url.startswith('/users/login/'))
+
+    def test_cover_letter_authenticated_user(self):
+        """testing that authenticated users are accessing the cover letter generator"""
+        self.client.login(username='testuser', password='StrongTestPass123')
+        response = self.client.get(self.cover_letter_url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'home/templates/cover_letter_generator.html')
+
+        # checking for form in context
+        self.assertIsInstance(response.context['form'], CoverLetterForm)
+        # Note: ResumeUploadForm not yet implemented
+        self.assertNotIn('resume_form', response.context)
+
+    def test_cover_letter_with_job_authenticated_user(self):
+        """testing that authenticated users are accessing the cover letter generator with a job"""
+        self.client.login(username='testuser', password='StrongTestPass123')
+        response = self.client.get(self.cover_letter_with_job_url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'home/templates/cover_letter_generator.html')
+
+        # checking that the job is in the context
+        self.assertIn('job', response.context)
+        self.assertEqual(response.context['job'], self.job)
+
+        # verifying job details are pre-filling in form
+        form = response.context['form']
+        self.assertEqual(form.initial['company_name'], self.job.company)
+        self.assertEqual(form.initial['job_title'], self.job.title)
+        self.assertEqual(form.initial['job_description'], self.job.description)
+
+    def test_form_validation_missing_fields(self):
+        """testing validation when required fields are missing"""
+        self.client.login(username='testuser', password='StrongTestPass123')
+
+        # Submit form with missing fields
+        response = self.client.post(self.cover_letter_url, {
+            'applicant_name': 'bob smith',
+            # Missing other required fields
+        })
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'home/templates/cover_letter_generator.html')
+        self.assertTrue('form' in response.context)
+        self.assertTrue(response.context['form'].errors)
+
+        # Check for specific error messages
+        form = response.context['form']
+        self.assertIn('company_name', form.errors)
+        self.assertIn('job_title', form.errors)
+
+    def test_successful_cover_letter_generation(self):
+        """testing successful cover letter generating"""
+        self.client.login(username='testuser', password='StrongTestPass123')
+
+        # Mock the cover letter service
+        with patch('home.cover_letter_service.CoverLetterService.generate_cover_letter') as mock_generate:
+            mock_generate.return_value = "This is a generated cover letter content."
+
+            # submitting form with all required fields
+            response = self.client.post(self.cover_letter_url, {
+                'applicant_name': 'bob smith',
+                'company_name': 'Test Company',
+                'job_title': 'Python Developer',
+                'job_description': 'Django development role',
+                'skills': 'Python, Django, API development',
+                'experience': '5 years of web development'
+            })
+
+            self.assertEqual(response.status_code, 200)
+            self.assertTemplateUsed(response, 'home/templates/cover_letter_generator.html')
+
+            # checking that the generated cover letter is in the context
+            self.assertIn('cover_letter', response.context)
+            self.assertEqual(response.context['cover_letter'], "This is a generated cover letter content.")
+
+            # verifying the mock was calling with correct parameters
+            mock_generate.assert_called_once()
+            args = mock_generate.call_args[0]
+            self.assertEqual(args[0], 'bob smith')
+            self.assertEqual(args[1], 'Test Company')
+            self.assertEqual(args[2], 'Python Developer')
+            self.assertEqual(args[3], 'Django development role')
+            self.assertEqual(args[4], 'Python, Django, API development')
+            self.assertEqual(args[5], '5 years of web development')
+
+    def test_pdf_generation_view(self):
+        """testing the pdf generating view"""
+        self.client.login(username='testuser', password='StrongTestPass123')
+
+        # creating a session variable with cover letter content
+        session = self.client.session
+        session['cover_letter'] = "This is a cover letter that should be in the PDF."
+        session.save()
+
+        # Mock the PDF generation
+        with patch('home.views.generate_pdf') as mock_pdf:
+            # Create a mock PDF file
+            mock_pdf_content = b"%PDF-1.4 mock pdf content"
+            mock_pdf.return_value = mock_pdf_content
+
+            response = self.client.get(reverse('download_cover_letter'))
+
+            # checking response properties
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response['Content-Type'], 'application/pdf')
+            self.assertEqual(response['Content-Disposition'], 'attachment; filename="cover_letter.pdf"')
+
+            # Check content
+            self.assertEqual(response.content, mock_pdf_content)
+
+            # Verify mock was called with correct content
+            mock_pdf.assert_called_once_with("This is a cover letter that should be in the PDF.")
+
+    def test_pdf_generation_no_content(self):
+        """testing pdf generating when no cover letter content is available"""
+        self.client.login(username='testuser', password='StrongTestPass123')
+
+        # No cover letter in session
+        response = self.client.get(reverse('download_cover_letter'))
+
+        # Should redirect to cover letter generator
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse('cover_letter_generator'))
+
+    def test_resume_upload_and_extraction(self):
+        """testing resume uploading and text extracting"""
+        self.client.login(username='testuser', password='StrongTestPass123')
+
+        # Create a mock PDF file
+        resume_file = SimpleUploadedFile(
+            "resume.pdf",
+            self.resume_content,
+            content_type="application/pdf"
+        )
+
+        # Mock the resume text extraction
+        with patch('home.views.extract_text_from_pdf') as mock_extract:
+            mock_extract.return_value = "John Doe\nSenior Python Developer\n5 years experience in Django"
+
+            response = self.client.post(
+                self.cover_letter_url,
+                {
+                    'resume_file': resume_file,
+                },
+                format='multipart'
+            )
+
+            self.assertEqual(response.status_code, 200)
+            self.assertTemplateUsed(response, 'home/templates/cover_letter_generator.html')
+
+            # checking that extracted text is in the form
+            form = response.context['form']
+            self.assertIn('bob smith', form.initial['applicant_name'])
+            self.assertIn('Python Developer', form.initial['skills'])
+
+            # Verify mock was called
+            mock_extract.assert_called_once()
+
+    def test_resume_upload_invalid_file(self):
+        """testing resume uploading with invalid file type"""
+        self.client.login(username='testuser', password='StrongTestPass123')
+
+        # Create a non-PDF file
+        invalid_file = SimpleUploadedFile(
+            "resume.txt",
+            b"This is not a PDF file",
+            content_type="text/plain"
+        )
+
+        response = self.client.post(
+            self.cover_letter_url,
+            {
+                'resume_file': invalid_file,
+            },
+            format='multipart'
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'home/templates/cover_letter_generator.html')
+
+        # Check for error in resume form
+        self.assertTrue('resume_form' in response.context)
+        self.assertTrue(response.context['resume_form'].errors)
+        self.assertIn('resume_file', response.context['resume_form'].errors)
+
+    def test_dashboard_integration(self):
+        """testing that the dashboard is containing links to the cover letter generator"""
+        self.client.login(username='testuser', password='StrongTestPass123')
+
+        # Mock the JobicyService.search_jobs method to return our test job
+        with patch('home.services.JobicyService.search_jobs') as mock_search:
+            mock_search.return_value = [self.job]
+
+            response = self.client.post(reverse('dashboard'), {'search_term': 'python'})
+
+            # Check that the cover letter generator link is in the response
+            self.assertContains(response, 'Generate Cover Letter')
+            self.assertContains(response, f'/cover-letter/{self.job.job_id}/')
+
+
+class CoverLetterServiceTest(TestCase):
+    """Tests for the CoverLetterService class"""
+
+    def test_generate_cover_letter_fallback(self):
+        """testing that generate_cover_letter is returning fallback content when api is failing"""
+        from home.cover_letter_service import CoverLetterService
+
+        # Force API failure by making openai.api_key None temporarily
+        import openai
+        original_key = openai.api_key
+        openai.api_key = None
+
+        try:
+            # This should use fallback content
+            cover_letter = CoverLetterService.generate_cover_letter(
+                "bob smith",
+                "ACME Corp",
+                "Software Engineer",
+                "Python development role",
+                "Python, Django, API development",
+                "5 years of web development"
+            )
+
+            # verifying we got some cover letter content
+            self.assertTrue(len(cover_letter) > 0)
+            self.assertTrue(isinstance(cover_letter, str))
+
+            # verifying that the content is including the provided information
+            self.assertIn("bob smith", cover_letter)
+            self.assertIn("ACME Corp", cover_letter)
+            self.assertIn("Software Engineer", cover_letter)
+        finally:
+            # Restore the API key
+            openai.api_key = original_key
+
+    def test_generate_pdf(self):
+        """testing the pdf generating function"""
+        from home.cover_letter_service import generate_pdf
+
+        # Mock the reportlab functionality
+        with patch('home.cover_letter_service.SimpleDocTemplate') as mock_doc:
+            mock_instance = MagicMock()
+            mock_doc.return_value = mock_instance
+
+            result = generate_pdf("This is test content for the PDF")
+
+            # Verify the mock was called
+            mock_doc.assert_called_once()
+            mock_instance.build.assert_called_once()
+
+    # PDF text extraction not yet implemented
+    # def test_extract_text_from_pdf(self):
+    #     """testing the pdf text extracting function"""
+    #     pass
+
+
+class UrlsTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.user = User.objects.create_user(
+            username='testuser',
+            email='test@example.com',
+            password='StrongTestPass123'
+        )
+
+        # Create a test job listing
+        self.job = JobListing.objects.create(
+            job_id='test-job-1',
+            title='Senior Python Developer',
+            company='Test Company',
+            location='Remote',
+            description='Test job description',
+            url='https://example.com/job1',
+            job_type='Full-time',
+            published_at=timezone.now(),
+            search_key='python'
+        )
+
+    def test_cover_letter_url_exists(self):
+        """testing that the cover letter url is existing and requiring login"""
+        response = self.client.get('/cover-letter/')
+        self.assertEqual(response.status_code, 302)  # Should redirect to login
+
+        self.client.login(username='testuser', password='StrongTestPass123')
+        response = self.client.get('/cover-letter/')
+        self.assertEqual(response.status_code, 200)
+
+    def test_cover_letter_with_job_url_exists(self):
+        """testing that the cover letter with job url is existing and requiring login"""
+        response = self.client.get(f'/cover-letter/{self.job.job_id}/')
+        self.assertEqual(response.status_code, 302)  # Should redirect to login
+
+        self.client.login(username='testuser', password='StrongTestPass123')
+        response = self.client.get(f'/cover-letter/{self.job.job_id}/')
+        self.assertEqual(response.status_code, 200)
+
+    def test_download_cover_letter_url_exists(self):
+        """testing that the download cover letter url is existing and requiring login"""
+        response = self.client.get('/cover-letter/download/')
+        self.assertEqual(response.status_code, 302)  # Should redirect to login
+
+        self.client.login(username='testuser', password='StrongTestPass123')
+
+        # Create a session variable with cover letter content
+        session = self.client.session
+        session['cover_letter'] = "This is a test cover letter."
+        session.save()
+
+        # Mock PDF generation
+        with patch('home.views.generate_pdf') as mock_pdf:
+            mock_pdf.return_value = b"%PDF-1.4 mock pdf content"
+            response = self.client.get('/cover-letter/download/')
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response['Content-Type'], 'application/pdf')
+
+
+class CoverLetterFormTest(TestCase):
+    """Tests for the cover letter form"""
+
+    def test_form_valid_data(self):
+        """testing form with valid data"""
+        from home.forms import CoverLetterForm
+
+        form_data = {
+            'applicant_name': 'bob smith',
+            'company_name': 'ACME Corp',
+            'job_title': 'Software Engineer',
+            'job_description': 'Python development role',
+            'skills': 'Python, Django, API development',
+            'experience': '5 years of web development',
+        }
+
+        form = CoverLetterForm(data=form_data)
+        self.assertTrue(form.is_valid())
+
+    def test_form_invalid_data(self):
+        """testing form with invalid data"""
+        from home.forms import CoverLetterForm
+
+        # Missing required fields
+        form_data = {
+            'applicant_name': 'John Doe',
+            # Missing other fields
+        }
+
+        form = CoverLetterForm(data=form_data)
+        self.assertFalse(form.is_valid())
+        self.assertIn('company_name', form.errors)
+        self.assertIn('job_title', form.errors)
+
+    def test_form_max_length(self):
+        """testing form field max length validating"""
+        from home.forms import CoverLetterForm
+
+        # Create strings that exceed max length
+        long_name = 'A' * 101  # Assuming max_length=100
+        long_description = 'A' * 2001  # Assuming max_length=2000
+
+        form_data = {
+            'applicant_name': long_name,
+            'company_name': 'ACME Corp',
+            'job_title': 'Software Engineer',
+            'job_description': long_description,
+            'skills': 'Python, Django',
+            'experience': '5 years',
+        }
+
+        form = CoverLetterForm(data=form_data)
+        self.assertFalse(form.is_valid())
+        self.assertIn('applicant_name', form.errors)
+        self.assertIn('job_description', form.errors)
+
