@@ -653,11 +653,11 @@ class CoverLetterGeneratorViewTest(TestCase):
         self.assertIn('job_title', form.errors)
 
     def test_successful_cover_letter_generation(self):
-    """testing successful cover letter generating and PDF response"""
-    self.client.login(username='testuser', password='StrongTestPass123')
+        """testing successful cover letter generating and PDF response"""
+        self.client.login(username='testuser', password='StrongTestPass123')
 
     
-    with patch('home.cover_letter_service.CoverLetterService.generate_cover_letter') as mock_generate, \
+        with patch('home.cover_letter_service.CoverLetterService.generate_cover_letter') as mock_generate, \
          patch('home.cover_letter_service.CoverLetterService.create_cover_letter_pdf') as mock_create_pdf:
         
         mock_generate.return_value = "This is a generated cover letter content."
