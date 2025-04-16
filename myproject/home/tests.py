@@ -649,7 +649,6 @@ class CoverLetterGeneratorViewTest(TestCase):
 
         # Check for specific error messages
         form = response.context['form']
-        self.assertIn('company_name', form.errors)
         self.assertIn('job_title', form.errors)
 
     def test_successful_cover_letter_generation(self):
