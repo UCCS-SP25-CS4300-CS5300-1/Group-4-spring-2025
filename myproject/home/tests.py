@@ -657,8 +657,7 @@ class CoverLetterGeneratorViewTest(TestCase):
         self.client.login(username='testuser', password='StrongTestPass123')
 
     
-        with patch('home.cover_letter_service.CoverLetterService.generate_cover_letter') as mock_generate, \
-            patch('home.cover_letter_service.CoverLetterService.create_cover_letter_pdf') as mock_create_pdf:
+        with patch('home.cover_letter_service.CoverLetterService.create_cover_letter_pdf') as mock_create_pdf:
         
         mock_generate.return_value = "This is a generated cover letter content."
         mock_create_pdf.return_value = b"%PDF-1.4 mock pdf content"
