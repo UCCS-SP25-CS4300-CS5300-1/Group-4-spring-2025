@@ -8,6 +8,8 @@ from .forms import SearchJobForm, InterviewResponseForm, CoverLetterForm
 from .services import JobicyService
 from .interview_service import InterviewService
 from .cover_letter_service import CoverLetterService
+from django.contrib.auth.decorators import login_required
+
 
 
 def index(request):
