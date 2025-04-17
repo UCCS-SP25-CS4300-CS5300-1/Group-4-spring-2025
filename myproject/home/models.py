@@ -57,4 +57,23 @@ class JobListing(models.Model):
             return f"Up to {self.salary_max:,.0f} {self.salary_currency}"
         return None
 
+class UserJobInteraction(models.Model):
+    """Tracks user interactions with job listings (viewed, applied)."""
+    INTERACTION_TYPES = (
+        ('viewed', 'Viewed'),
+        ('applied', 'Applied'),
+    )
+    
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='job_interactions')
+    job = models.ForeignKey(JobListing, on_delete=models.CASCADE, related_name='user_interactions')
+    interaction_type = models.CharField(max_length=10, choices=INTERACTION_TYPES)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'job', 'interaction_type')
+        ordering = ['-timestamp']
+
+    def __str__(self):
+        return f"{self.user.username} - {self.get_interaction_type_display()} - {self.job.title}"
+
 

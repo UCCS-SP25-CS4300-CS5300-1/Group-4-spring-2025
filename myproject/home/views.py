@@ -1,10 +1,10 @@
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse, HttpResponse
 from django.contrib import messages
 import base64
 
 from users.models import Resume
-from home.models import JobListing
+from home.models import JobListing, UserJobInteraction
 from .forms import SearchJobForm, CoverLetterForm
 from .services import JobicyService
 from .interview_service import InterviewService
@@ -83,303 +83,36 @@ def dashboard(request):
 
 @login_required
 def applications(request):
-    applied_jobs = [
-        {
-            "job_id": 1, 
-            "title": "Software Engineer", 
-            "company": "Tesseract",
-            "company_logo": "https://jobicy.com/data/server-nyc0409/galaxy/mercury/2024/04/ebafc0a3-221.jpeg",
-            "job_type": "full_time",
-            "location": "Richmond, VA",
-            "description": "As a Software Engineer at Tesseract, you will be responsible for designing, developing, and maintaining software solutions that enhance the company's product offerings. You'll collaborate with cross-functional teams to implement scalable and efficient systems, ensuring high-performance and reliability. Your work will involve using modern programming languages and technologies to solve complex problems and improve user experiences.",
-            "url": "https://www.zeldaspeedruns.com/tp/",
-            "salary_min": "60000",
-            "salary_max": "100000",
-            "salary_currency": "USD",
-            "published_at": "2025-04-05",
-            "created_at": "2025-04-05",
-            "updated_at": "2025-04-05",
-            "search_key": "computer science",
-            "date": "2025-04-05",
-        },
-        {
-            "job_id": 2, 
-            "title": "Software Developer", 
-            "company": "Midna",
-            "company_logo": "https://jobicy.com/data/server-nyc0409/galaxy/mercury/2021/01/WRILS-210105054741-917528.png",
-            "job_type": "part_time",
-            "location": "Denver, CO",
-            "description": "Midna is seeking a Software Developer to join their dynamic team. In this role, you will be responsible for building, testing, and deploying software applications that meet the needs of the business. You will work closely with other developers and stakeholders to write clean, efficient code while maintaining system performance and security. Your contributions will directly impact the development of innovative solutions for Midna's clients.",
-            "url": "https://www.zeldaspeedruns.com/tp/",
-            "salary_min": "70000",
-            "salary_max": "110000",
-            "salary_currency": "USD",
-            "published_at": "2025-04-05",
-            "created_at": "2025-04-05",
-            "updated_at": "2025-04-05",
-            "search_key": "computer science",
-            "date": "2025-04-05",
-        },
-        {
-            "job_id": 2, 
-            "title": "Software Engineer", 
-            "company": "Jayce",
-            "company_logo": "https://jobicy.com/data/server-nyc0409/galaxy/mercury/2022/02/f269bad3-221.jpeg",
-            "job_type": "part_time",
-            "location": "Denver, CO",
-            "description": "Midna is seeking a Software Developer to join their dynamic team. In this role, you will be responsible for building, testing, and deploying software applications that meet the needs of the business. You will work closely with other developers and stakeholders to write clean, efficient code while maintaining system performance and security. Your contributions will directly impact the development of innovative solutions for Midna's clients.",
-            "url": "https://www.zeldaspeedruns.com/tp/",
-            "salary_min": "70000",
-            "salary_max": "110000",
-            "salary_currency": "USD",
-            "published_at": "2025-04-05",
-            "created_at": "2025-04-05",
-            "updated_at": "2025-04-05",
-            "search_key": "computer science",
-            "date": "2025-04-05",
-        },
-        {
-            "job_id": 2, 
-            "title": "Computer Scientist", 
-            "company": "MikeLabs",
-            "company_logo": "https://jobicy.com/data/server-nyc0409/galaxy/mercury/2021/09/372fbf25d6bbb7ba24bc519fac29dbf9.jpeg",
-            "job_type": "part_time",
-            "location": "Denver, CO",
-            "description": "Midna is seeking a Software Developer to join their dynamic team. In this role, you will be responsible for building, testing, and deploying software applications that meet the needs of the business. You will work closely with other developers and stakeholders to write clean, efficient code while maintaining system performance and security. Your contributions will directly impact the development of innovative solutions for Midna's clients.",
-            "url": "https://www.zeldaspeedruns.com/tp/",
-            "salary_min": "70000",
-            "salary_max": "110000",
-            "salary_currency": "USD",
-            "published_at": "2025-04-05",
-            "created_at": "2025-04-05",
-            "updated_at": "2025-04-05",
-            "search_key": "computer science",
-            "date": "2025-04-05",
-        },
-        {
-            "job_id": 2, 
-            "title": "Software Consultant", 
-            "company": "Bondrewdo",
-            "company_logo": "https://jobicy.com/data/server-nyc0409/galaxy/mercury/2021/09/50cccf084c34089de2274f72e18841d0.jpg",
-            "job_type": "part_time",
-            "location": "Denver, CO",
-            "description": "Midna is seeking a Software Developer to join their dynamic team. In this role, you will be responsible for building, testing, and deploying software applications that meet the needs of the business. You will work closely with other developers and stakeholders to write clean, efficient code while maintaining system performance and security. Your contributions will directly impact the development of innovative solutions for Midna's clients.",
-            "url": "https://www.zeldaspeedruns.com/tp/",
-            "salary_min": "70000",
-            "salary_max": "110000",
-            "salary_currency": "USD",
-            "published_at": "2025-04-05",
-            "created_at": "2025-04-05",
-            "updated_at": "2025-04-05",
-            "search_key": "computer science",
-            "date": "2025-04-05",
-        },
-        {
-            "job_id": 2, 
-            "title": "IT Specialist", 
-            "company": "Jesnix",
-            "company_logo": "https://jobicy.com/data/server-nyc0409/galaxy/mercury/2020/08/FNDL-200825111113-468175.png",
-            "job_type": "part_time",
-            "location": "Denver, CO",
-            "description": "Midna is seeking a Software Developer to join their dynamic team. In this role, you will be responsible for building, testing, and deploying software applications that meet the needs of the business. You will work closely with other developers and stakeholders to write clean, efficient code while maintaining system performance and security. Your contributions will directly impact the development of innovative solutions for Midna's clients.",
-            "url": "https://www.zeldaspeedruns.com/tp/",
-            "salary_min": "70000",
-            "salary_max": "110000",
-            "salary_currency": "USD",
-            "published_at": "2025-04-05",
-            "created_at": "2025-04-05",
-            "updated_at": "2025-04-05",
-            "search_key": "computer science",
-            "date": "2025-04-05",
-        },
-        {
-            "job_id": 2, 
-            "title": "Sr. Software Developer", 
-            "company": "Ardemi",
-            "company_logo": "https://jobicy.com/data/server-nyc0409/galaxy/mercury/2021/10/ab5e97ed23587138329ff60a8dd8ad95.png",
-            "job_type": "part_time",
-            "location": "Denver, CO",
-            "description": "Midna is seeking a Software Developer to join their dynamic team. In this role, you will be responsible for building, testing, and deploying software applications that meet the needs of the business. You will work closely with other developers and stakeholders to write clean, efficient code while maintaining system performance and security. Your contributions will directly impact the development of innovative solutions for Midna's clients.",
-            "url": "https://www.zeldaspeedruns.com/tp/",
-            "salary_min": "70000",
-            "salary_max": "110000",
-            "salary_currency": "USD",
-            "published_at": "2025-04-05",
-            "created_at": "2025-04-05",
-            "updated_at": "2025-04-05",
-            "search_key": "computer science",
-            "date": "2025-04-05",
-        },
-    ]
-    viewed_jobs = [
-        {
-            "job_id": 3, 
-            "title": "Cyber Analyst", 
-            "company": "Oceanic",
-            "company_logo": "https://jobicy.com/data/server-nyc0409/galaxy/mercury/2021/08/a0f68d769896c0f098621799a6396382.jpeg",
-            "job_type": "full_time",
-            "location": "Charlottesville, VA",
-            "description": "Oceanic is looking for a skilled Cyber Analyst to protect the company's digital infrastructure. In this role, you will monitor, detect, and respond to cybersecurity threats, ensuring the integrity and security of systems. You will analyze security breaches, conduct vulnerability assessments, and collaborate with teams to implement robust security measures. Your expertise will play a vital role in safeguarding sensitive data and protecting the organization from cyberattacks.",
-            "url": "https://www.zeldaspeedruns.com/tp/",
-            "salary_min": "30000",
-            "salary_max": "900000",
-            "salary_currency": "USD",
-            "published_at": "2025-04-05",
-            "created_at": "2025-04-05",
-            "updated_at": "2025-04-05",
-            "search_key": "computer science",
-            "date": "2025-04-05",
-        },
-        {
-            "job_id": 4, 
-            "title": "Sr. Software Engineer", 
-            "company": "Urasawa",
-            "company_logo": "https://jobicy.com/data/server-nyc0409/galaxy/mercury/2021/04/Headspace.jpg",
-            "job_type": "part_time",
-            "location": "Los Angeles, CA",
-            "description": "As a Senior Software Engineer at Urasawa, you will lead the development of high-quality software solutions that align with the company's strategic goals. You'll guide teams through technical challenges, design and architect software systems, and mentor junior engineers. Your role will involve using cutting-edge technologies to build scalable, secure, and maintainable solutions while ensuring performance optimization and code quality.",
-            "url": "https://www.zeldaspeedruns.com/tp/",
-            "salary_min": "80000",
-            "salary_max": "120000",
-            "salary_currency": "USD",
-            "published_at": "2025-04-05",
-            "created_at": "2025-04-05",
-            "updated_at": "2025-04-05",
-            "search_key": "computer science",
-            "date": "2025-04-05",
-        },
-        {
-            "job_id": 1, 
-            "title": "Software Engineer", 
-            "company": "Tesseract",
-            "company_logo": "https://jobicy.com/data/server-nyc0409/galaxy/mercury/2024/04/ebafc0a3-221.jpeg",
-            "job_type": "full_time",
-            "location": "Richmond, VA",
-            "description": "As a Software Engineer at Tesseract, you will be responsible for designing, developing, and maintaining software solutions that enhance the company's product offerings. You'll collaborate with cross-functional teams to implement scalable and efficient systems, ensuring high-performance and reliability. Your work will involve using modern programming languages and technologies to solve complex problems and improve user experiences.",
-            "url": "https://www.zeldaspeedruns.com/tp/",
-            "salary_min": "60000",
-            "salary_max": "100000",
-            "salary_currency": "USD",
-            "published_at": "2025-04-05",
-            "created_at": "2025-04-05",
-            "updated_at": "2025-04-05",
-            "search_key": "computer science",
-            "date": "2025-04-05",
-        },
-        {
-            "job_id": 2, 
-            "title": "Software Developer", 
-            "company": "Midna",
-            "company_logo": "https://jobicy.com/data/server-nyc0409/galaxy/mercury/2021/01/WRILS-210105054741-917528.png",
-            "job_type": "part_time",
-            "location": "Denver, CO",
-            "description": "Midna is seeking a Software Developer to join their dynamic team. In this role, you will be responsible for building, testing, and deploying software applications that meet the needs of the business. You will work closely with other developers and stakeholders to write clean, efficient code while maintaining system performance and security. Your contributions will directly impact the development of innovative solutions for Midna's clients.",
-            "url": "https://www.zeldaspeedruns.com/tp/",
-            "salary_min": "70000",
-            "salary_max": "110000",
-            "salary_currency": "USD",
-            "published_at": "2025-04-05",
-            "created_at": "2025-04-05",
-            "updated_at": "2025-04-05",
-            "search_key": "computer science",
-            "date": "2025-04-05",
-        },
-        {
-            "job_id": 2, 
-            "title": "Software Engineer", 
-            "company": "Jayce",
-            "company_logo": "https://jobicy.com/data/server-nyc0409/galaxy/mercury/2022/02/f269bad3-221.jpeg",
-            "job_type": "part_time",
-            "location": "Denver, CO",
-            "description": "Midna is seeking a Software Developer to join their dynamic team. In this role, you will be responsible for building, testing, and deploying software applications that meet the needs of the business. You will work closely with other developers and stakeholders to write clean, efficient code while maintaining system performance and security. Your contributions will directly impact the development of innovative solutions for Midna's clients.",
-            "url": "https://www.zeldaspeedruns.com/tp/",
-            "salary_min": "70000",
-            "salary_max": "110000",
-            "salary_currency": "USD",
-            "published_at": "2025-04-05",
-            "created_at": "2025-04-05",
-            "updated_at": "2025-04-05",
-            "search_key": "computer science",
-            "date": "2025-04-05",
-        },
-        {
-            "job_id": 2, 
-            "title": "Computer Scientist", 
-            "company": "MikeLabs",
-            "company_logo": "https://jobicy.com/data/server-nyc0409/galaxy/mercury/2021/09/372fbf25d6bbb7ba24bc519fac29dbf9.jpeg",
-            "job_type": "part_time",
-            "location": "Denver, CO",
-            "description": "Midna is seeking a Software Developer to join their dynamic team. In this role, you will be responsible for building, testing, and deploying software applications that meet the needs of the business. You will work closely with other developers and stakeholders to write clean, efficient code while maintaining system performance and security. Your contributions will directly impact the development of innovative solutions for Midna's clients.",
-            "url": "https://www.zeldaspeedruns.com/tp/",
-            "salary_min": "70000",
-            "salary_max": "110000",
-            "salary_currency": "USD",
-            "published_at": "2025-04-05",
-            "created_at": "2025-04-05",
-            "updated_at": "2025-04-05",
-            "search_key": "computer science",
-            "date": "2025-04-05",
-        },
-        {
-            "job_id": 2, 
-            "title": "Software Consultant", 
-            "company": "Bondrewdo",
-            "company_logo": "https://jobicy.com/data/server-nyc0409/galaxy/mercury/2021/09/50cccf084c34089de2274f72e18841d0.jpg",
-            "job_type": "part_time",
-            "location": "Denver, CO",
-            "description": "Midna is seeking a Software Developer to join their dynamic team. In this role, you will be responsible for building, testing, and deploying software applications that meet the needs of the business. You will work closely with other developers and stakeholders to write clean, efficient code while maintaining system performance and security. Your contributions will directly impact the development of innovative solutions for Midna's clients.",
-            "url": "https://www.zeldaspeedruns.com/tp/",
-            "salary_min": "70000",
-            "salary_max": "110000",
-            "salary_currency": "USD",
-            "published_at": "2025-04-05",
-            "created_at": "2025-04-05",
-            "updated_at": "2025-04-05",
-            "search_key": "computer science",
-            "date": "2025-04-05",
-        },
-        {
-            "job_id": 2, 
-            "title": "IT Specialist", 
-            "company": "Jesnix",
-            "company_logo": "https://jobicy.com/data/server-nyc0409/galaxy/mercury/2020/08/FNDL-200825111113-468175.png",
-            "job_type": "part_time",
-            "location": "Denver, CO",
-            "description": "Midna is seeking a Software Developer to join their dynamic team. In this role, you will be responsible for building, testing, and deploying software applications that meet the needs of the business. You will work closely with other developers and stakeholders to write clean, efficient code while maintaining system performance and security. Your contributions will directly impact the development of innovative solutions for Midna's clients.",
-            "url": "https://www.zeldaspeedruns.com/tp/",
-            "salary_min": "70000",
-            "salary_max": "110000",
-            "salary_currency": "USD",
-            "published_at": "2025-04-05",
-            "created_at": "2025-04-05",
-            "updated_at": "2025-04-05",
-            "search_key": "computer science",
-            "date": "2025-04-05",
-        },
-        {
-            "job_id": 2, 
-            "title": "Sr. Software Developer", 
-            "company": "Ardemi",
-            "company_logo": "https://jobicy.com/data/server-nyc0409/galaxy/mercury/2021/10/ab5e97ed23587138329ff60a8dd8ad95.png",
-            "job_type": "part_time",
-            "location": "Denver, CO",
-            "description": "Midna is seeking a Software Developer to join their dynamic team. In this role, you will be responsible for building, testing, and deploying software applications that meet the needs of the business. You will work closely with other developers and stakeholders to write clean, efficient code while maintaining system performance and security. Your contributions will directly impact the development of innovative solutions for Midna's clients.",
-            "url": "https://www.zeldaspeedruns.com/tp/",
-            "salary_min": "70000",
-            "salary_max": "110000",
-            "salary_currency": "USD",
-            "published_at": "2025-04-05",
-            "created_at": "2025-04-05",
-            "updated_at": "2025-04-05",
-            "search_key": "computer science",
-            "date": "2025-04-05",
-        },        
-    ]
+    applied_interactions = UserJobInteraction.objects.filter(
+        user=request.user,
+        interaction_type='applied'
+    ).select_related('job').order_by('-timestamp')
+
+    applied_jobs_list = []
+    applied_job_ids = set()
+    for interaction in applied_interactions:
+        if interaction.job.job_id not in applied_job_ids:
+            applied_jobs_list.append(interaction.job)
+            applied_job_ids.add(interaction.job.job_id)
+
+    viewed_interactions = UserJobInteraction.objects.filter(
+        user=request.user,
+        interaction_type='viewed'
+    ).exclude(
+        job__job_id__in=applied_job_ids
+    ).select_related('job').order_by('-timestamp')
+
+    viewed_jobs_list = []
+    viewed_job_ids_processed = set()
+    for interaction in viewed_interactions:
+        if interaction.job.job_id not in viewed_job_ids_processed:
+            viewed_jobs_list.append(interaction.job)
+            viewed_job_ids_processed.add(interaction.job.job_id)
 
     context = {
         'user': request.user,
-        'applied_jobs': applied_jobs,
-        'viewed_jobs': viewed_jobs
+        'applied_jobs_list': applied_jobs_list,
+        'viewed_jobs_list': viewed_jobs_list
     }
 
     return render(request, 'home/applications.html', context)
@@ -479,7 +212,7 @@ def apply_flow(request, job_id):
         'use_resume': True if has_resume else False
     }
     form = CoverLetterForm(initial=initial_data)
-    
+
     context = {
         'job': job_details,
         'latest_resume': latest_resume,
@@ -702,14 +435,14 @@ def cover_letter_generator(request, job_id=None):
                         filename=f"cover_letter_{request.user.username}"
                     )
 
-                    response = HttpResponse(pdf_data, content_type='application/pdf')
+                response = HttpResponse(pdf_data, content_type='application/pdf')
 
-                    company_name_safe = "".join(
-                        c for c in (company_name or "company") if c.isalnum() or c in " _-").strip().replace(" ", "_")
-                    download_filename = f'Cover_Letter_{company_name_safe}.pdf'
+                company_name_safe = "".join(
+                c for c in (company_name or "company") if c.isalnum() or c in " _-").strip().replace(" ", "_")
+                download_filename = f'Cover_Letter_{company_name_safe}.pdf'
                     
-                    response['Content-Disposition'] = f'attachment; filename="{download_filename}"'
-                    return response
+                response['Content-Disposition'] = f'attachment; filename="{download_filename}"'
+                return response
 
             except Exception as e:
                 messages.error(request, f"Error generating cover letter: {e}")
@@ -717,9 +450,9 @@ def cover_letter_generator(request, job_id=None):
 
     if 'job' not in locals(): 
         job = None
-        
+
     context = {
-        'job': job, 
+        'job': job,
         'form': form,
         'has_resume': has_resume 
     }
@@ -841,3 +574,75 @@ def get_job_fit_analysis(job_title, job_description, industry=None, location=Non
         return response.choices[0].message.content
     except Exception as e:
         return f"Unable to generate job fit analysis: {str(e)}"
+
+@login_required
+def ajax_track_job_view(request):
+    if request.method == "POST" and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        job_id = request.POST.get('job_id')
+        if not job_id:
+            return JsonResponse({'error': 'Missing job_id'}, status=400)
+
+        try:
+            job = JobListing.objects.get(job_id=job_id)
+            interaction, created = UserJobInteraction.objects.get_or_create(
+                user=request.user,
+                job=job,
+                interaction_type='viewed'
+            )
+            return JsonResponse({'success': True, 'created': created})
+        except JobListing.DoesNotExist:
+            return JsonResponse({'error': 'Job not found'}, status=404)
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error("Error tracking job view", exc_info=True)
+            return JsonResponse({'error': 'An internal error occurred while tracking the job view.'}, status=500)
+    
+    return JsonResponse({'error': 'Invalid request'}, status=400)
+
+@login_required
+def ajax_track_application(request):
+    if request.method == "POST" and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        job_id = request.POST.get('job_id')
+        if not job_id:
+            return JsonResponse({'error': 'Missing job_id'}, status=400)
+
+        try:
+            job = JobListing.objects.get(job_id=job_id)
+            interaction, created = UserJobInteraction.objects.get_or_create(
+                user=request.user,
+                job=job,
+                interaction_type='applied'
+            )
+            UserJobInteraction.objects.get_or_create(
+                user=request.user,
+                job=job,
+                interaction_type='viewed'
+            )
+            return JsonResponse({'success': True, 'created': created})
+        except JobListing.DoesNotExist:
+            return JsonResponse({'error': 'Job not found'}, status=404)
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error("Error tracking application", exc_info=True)
+            return JsonResponse({'error': 'An internal error occurred while tracking the application.'}, status=500)
+    
+    return JsonResponse({'error': 'Invalid request'}, status=400)
+
+@login_required
+def job_fit_analysis_page(request, job_id):
+    job_details = JobicyService.get_job_details(job_id)
+    if not job_details:
+        messages.error(request, f"Could not find job details for ID: {job_id}")
+        return redirect('dashboard') 
+
+    latest_resume = Resume.objects.filter(user=request.user).order_by('-uploaded_at').first()
+    has_resume = latest_resume is not None
+    
+    context = {
+        'job': job_details,
+        'latest_resume': latest_resume,
+        'has_resume': has_resume,
+    }
+    return render(request, 'home/job_fit_analysis.html', context)
