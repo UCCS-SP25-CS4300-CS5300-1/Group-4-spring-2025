@@ -932,5 +932,63 @@ class ApplyFlowViewTest(TestCase):
             self.assertTrue(any("Error extracting text from your resume" in str(m) for m in messages))
             self.assertIsNone(response.context['resume_text'])
 
+    def test_job_outlook_success(self):
+        self.client.login(username='testuser', password='StrongTestPass123')
+        
+        with patch('home.views.get_job_fit_analysis', return_value="Sample job fit analysis"), \
+             patch('users.views.parse_resume', return_value="Resume content"):
+            
+            response = self.client.post(
+                reverse('job_outlook'),
+                {
+                    'job_title': 'Python Developer',
+                    'job_description': 'Sample job description',
+                    'industry': 'Technology',
+                    'location': 'Remote'
+                },
+                HTTP_X_REQUESTED_WITH='XMLHttpRequest'
+            )
+            
+            self.assertEqual(response.status_code, 200)
+            data = response.json()
+            self.assertTrue(data['success'])
+            self.assertEqual(data['fit_analysis'], "Sample job fit analysis")
 
+    def test_job_outlook_missing_title(self):
+        self.client.login(username='testuser', password='StrongTestPass123')
+        
+        response = self.client.post(
+            reverse('job_outlook'),
+            {
+                'job_description': 'Sample job description',
+                'industry': 'Technology',
+                'location': 'Remote'
+            },
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest'
+        )
+        
+        self.assertEqual(response.status_code, 400)
+        data = response.json()
+        self.assertEqual(data['error'], 'No job title provided')
 
+    def test_job_outlook_with_resume(self):
+        self.client.login(username='testuser', password='StrongTestPass123')
+        
+        with patch('users.views.parse_resume', return_value="Resume content"), \
+             patch('home.views.get_job_fit_analysis') as mock_analysis:
+            
+            mock_analysis.return_value = "Analysis with resume data"
+            
+            response = self.client.post(
+                reverse('job_outlook'),
+                {
+                    'job_title': 'Python Developer',
+                    'job_description': 'Sample job description',
+                },
+                HTTP_X_REQUESTED_WITH='XMLHttpRequest'
+            )
+            
+            self.assertEqual(response.status_code, 200)
+            call_args = mock_analysis.call_args[1]
+            self.assertEqual(call_args['resume_text'], "Resume content")
+            self.assertEqual(call_args['job_title'], "Python Developer")

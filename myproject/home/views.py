@@ -757,3 +757,87 @@ def generate_cover_letter_pdf(request):
             return JsonResponse({'error': f"Error generating PDF: {e}"}, status=500)
             
     return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+@login_required
+def ajax_job_outlook(request):
+    if request.method == "POST" and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        job_title = request.POST.get('job_title', '')
+        job_description = request.POST.get('job_description', '')
+        industry = request.POST.get('industry', '')
+        location = request.POST.get('location', '')
+        
+        if not job_title:
+            return JsonResponse({'error': 'No job title provided'}, status=400)
+            
+        try:
+            resume_text = None
+            latest_resume = Resume.objects.filter(user=request.user).order_by('-uploaded_at').first()
+            if latest_resume:
+                try:
+                    from users.views import parse_resume
+                    resume_text = parse_resume(latest_resume.resume)
+                except Exception:
+                    pass
+            
+            if not resume_text:
+                return JsonResponse({'error': 'No resume found to analyze fit'}, status=400)
+            
+            fit_analysis = get_job_fit_analysis(
+                job_title=job_title,
+                job_description=job_description,
+                industry=industry,
+                location=location,
+                resume_text=resume_text
+            )
+            
+            return JsonResponse({
+                'success': True,
+                'fit_analysis': fit_analysis
+            })
+        except Exception as e:
+            return JsonResponse({'error': f'Error generating fit analysis: {str(e)}'}, status=500)
+    
+    return JsonResponse({'error': 'Invalid request'}, status=400)
+
+def get_job_fit_analysis(job_title, job_description, industry=None, location=None, resume_text=None):
+    try:
+        import openai
+        import os
+        if os.environ.get('OPENAI_API_KEY'):
+            openai.api_key = os.environ.get('OPENAI_API_KEY')
+        else:
+            return "Job fit analysis requires an OpenAI API key."
+            
+        if not resume_text:
+            return "Cannot analyze fit without a resume. Please upload your resume first."
+            
+        user_prompt = f"Job Title: {job_title}\n"
+        
+        if job_description:
+            user_prompt += f"\nJob Description: {job_description[:1000]}...\n"
+        
+        if industry:
+            user_prompt += f"\nIndustry: {industry}\n"
+            
+        if location:
+            user_prompt += f"\nLocation: {location}\n"
+            
+        user_prompt += f"\nCandidate Resume: {resume_text}\n"
+        
+        user_prompt += "\nPlease analyze how well this candidate's resume matches the job posting. Include:"
+        user_prompt += "\n1. Overall match score (percentage)"
+        user_prompt += "\n2. Key strengths that align with the job requirements"
+        user_prompt += "\n3. Critical gaps in skills or experience"
+        user_prompt += "\n4. Specific recommendations to improve the application"
+        user_prompt += "\n5. Suggested talking points for interviews based on the candidate's strengths"
+        
+        response = openai.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": "You are a recruiting specialist who analyzes how well candidates match specific job postings. Provide detailed, honest assessments of fit along with actionable recommendations."},
+                {"role": "user", "content": user_prompt}
+            ],
+        )
+        return response.choices[0].message.content
+    except Exception as e:
+        return f"Unable to generate job fit analysis: {str(e)}"

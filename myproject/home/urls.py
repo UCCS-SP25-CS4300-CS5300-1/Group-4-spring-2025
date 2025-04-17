@@ -15,4 +15,5 @@ urlpatterns = [
     path('ajax/generate-cover-letter/', views.ajax_generate_cover_letter, name='ajax_generate_cover_letter'),
     path('generate-cover-letter-pdf/', views.generate_cover_letter_pdf, name='generate_cover_letter_pdf'),
     path('ajax/resume-feedback/', views.ajax_resume_feedback, name='resume_feedback'),
+    path('ajax/job-outlook/', views.ajax_job_outlook, name='job_outlook'),
 ] 
