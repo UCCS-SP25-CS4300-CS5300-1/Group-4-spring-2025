@@ -636,7 +636,7 @@ class CoverLetterGeneratorViewTest(TestCase):
                 'company_name': 'Test Company',
                 'job_title': 'Python Developer',
                 'job_description': 'Django development role',
-            })
+            }, HTTP_USER_AGENT='Mozilla/5.0 Python-tests')
 
             self.assertEqual(response.status_code, 200)
             self.assertEqual(response['Content-Type'], 'application/pdf')

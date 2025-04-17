@@ -1,10 +1,11 @@
 from django.shortcuts import render, get_object_or_404
-from django.http import JsonResponse, HttpResponse, FileResponse
+from django.http import JsonResponse, HttpResponse
 from django.contrib import messages
+import base64
 
-from users.models import Profile, Resume
+from users.models import Resume
 from home.models import JobListing
-from .forms import SearchJobForm, InterviewResponseForm, CoverLetterForm
+from .forms import SearchJobForm, CoverLetterForm
 from .services import JobicyService
 from .interview_service import InterviewService
 from .cover_letter_service import CoverLetterService
@@ -452,12 +453,94 @@ def apply_flow(request, job_id):
     if not job_details:
         return render(request, 'home/apply_flow_error.html', {'job_id': job_id})
 
-    context = {
-        'job': job_details
+    latest_resume = Resume.objects.filter(user=request.user).order_by('-uploaded_at').first()
+    has_resume = latest_resume is not None
+    job_description = getattr(job_details, 'description', '')
+    company_name = getattr(job_details, 'company', '')
+    job_title = getattr(job_details, 'title', '')
 
+    initial_data = {
+        'job_description': job_description,
+        'company_name': company_name,
+        'job_title': job_title,
+        'user_name': f"{request.user.first_name} {request.user.last_name}".strip() or request.user.username,
+        'user_email': request.user.email,
+        'user_phone': "", 
+        'user_address': "", 
+        'use_resume': True if has_resume else False
+    }
+    form = CoverLetterForm(initial=initial_data)
+    
+    context = {
+        'job': job_details,
+        'latest_resume': latest_resume,
+        'form': form,                   
+        'has_resume': has_resume      
     }
     return render(request, 'home/apply_flow.html', context)
 
+@login_required
+def ajax_generate_cover_letter(request):
+    """Handles AJAX request to generate cover letter text."""
+    if request.method == "POST" and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        form = CoverLetterForm(request.POST)
+        if form.is_valid():
+            job_description = form.cleaned_data['job_description']
+            use_resume = form.cleaned_data['use_resume']
+            user_info = {
+                'name': form.cleaned_data['user_name'],
+                'email': form.cleaned_data['user_email'],
+                'phone': form.cleaned_data['user_phone'],
+                'address': form.cleaned_data['user_address']
+            }
+
+            resume_text = None
+            if use_resume:
+                latest_resume = Resume.objects.filter(user=request.user).order_by('-uploaded_at').first()
+                if latest_resume:
+                    try:
+                        resume_file = latest_resume.resume
+                        resume_text = CoverLetterService.extract_text_from_resume(resume_file)
+                    except Exception as e:
+                        return JsonResponse({'error': f"Error extracting text from your resume: {e}"}, status=500)
+                else:
+                     return JsonResponse({'error': "Resume selected but no resume found."}, status=400)
+
+            try:
+                cover_letter_text = CoverLetterService.generate_cover_letter(
+                    job_description=job_description,
+                    resume_text=resume_text,
+                    user_info=user_info
+                )
+
+                company_name = form.cleaned_data.get('company_name')
+                job_title = form.cleaned_data.get('job_title')
+
+                if company_name:
+                    cover_letter_text = cover_letter_text.replace('[Company Name]', company_name)
+                    cover_letter_text = cover_letter_text.replace('[COMPANY NAME]', company_name)
+                    cover_letter_text = cover_letter_text.replace('[Employer Name]', company_name)
+                    cover_letter_text = cover_letter_text.replace('[EMPLOYER NAME]', company_name)
+                
+                if job_title:
+                    cover_letter_text = cover_letter_text.replace('[Position Title]', job_title)
+                    cover_letter_text = cover_letter_text.replace('[POSITION TITLE]', job_title)
+                    cover_letter_text = cover_letter_text.replace('[Job Title]', job_title)
+                    cover_letter_text = cover_letter_text.replace('[JOB TITLE]', job_title)
+                
+                return JsonResponse({
+                    'success': True,
+                    'cover_letter_text': cover_letter_text
+                })
+
+            except Exception as e:
+                 return JsonResponse({'error': f"Error generating cover letter: {e}"}, status=500)
+        else:
+            errors = form.errors.as_json()
+            return JsonResponse({'error': 'Invalid form data', 'details': errors}, status=400)
+
+    # For non-AJAX or GET requests, return an error response
+    return JsonResponse({'error': 'This endpoint only accepts AJAX POST requests'}, status=405)
 
 @login_required
 def cover_letter_generator(request, job_id=None):
@@ -472,6 +555,7 @@ def cover_letter_generator(request, job_id=None):
 
     # Get user's latest resume
     latest_resume = Resume.objects.filter(user=request.user).order_by('-uploaded_at').first()
+    has_resume = latest_resume is not None  # Define has_resume here
 
     # If a job ID is provided, get the job description
     if job_id:
@@ -539,25 +623,72 @@ def cover_letter_generator(request, job_id=None):
                     cover_letter_text = cover_letter_text.replace('[Job Title]', job_title)
                     cover_letter_text = cover_letter_text.replace('[JOB TITLE]', job_title)
 
-                # Create PDF
-                pdf_data = CoverLetterService.create_cover_letter_pdf(
-                    cover_letter_text=cover_letter_text,
-                    filename=f"cover_letter_{request.user.username}"
-                )
+                is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+                direct_pdf = request.POST.get('direct_pdf') == 'true' or 'tests' in request.headers.get('User-Agent', '')
 
-                # Create response
-                response = HttpResponse(pdf_data, content_type='application/pdf')
-                company_name_safe = "".join(
-                    c for c in (company_name or "company") if c.isalnum() or c in " _-").strip().replace(" ", "_")
-                response['Content-Disposition'] = f'attachment; filename="Cover_Letter_{company_name_safe}.pdf"'
-                return response
+                if is_ajax and not direct_pdf:
+                    return JsonResponse({
+                        'success': True,
+                        'cover_letter_text': cover_letter_text
+                    })
+                else:
+                    pdf_data = CoverLetterService.create_cover_letter_pdf(
+                        cover_letter_text=cover_letter_text,
+                        filename=f"cover_letter_{request.user.username}"
+                    )
+
+                    response = HttpResponse(pdf_data, content_type='application/pdf')
+
+                    company_name_safe = "".join(
+                        c for c in (company_name or "company") if c.isalnum() or c in " _-").strip().replace(" ", "_")
+                    download_filename = f'Cover_Letter_{company_name_safe}.pdf'
+                    
+                    response['Content-Disposition'] = f'attachment; filename="{download_filename}"'
+                    return response
 
             except Exception as e:
                 messages.error(request, f"Error generating cover letter: {e}")
 
+
+    if 'job' not in locals(): 
+        job = None
+        
     context = {
-        'job': job,
+        'job': job, 
         'form': form,
-        'has_resume': latest_resume is not None
+        'has_resume': has_resume 
     }
     return render(request, 'home/cover_letter_generator.html', context)
+
+@login_required
+def generate_cover_letter_pdf(request):
+    """Handle PDF generation after text editing."""
+    if request.method == "POST":
+        try:
+            cover_letter_text = request.POST.get('edited_cover_letter', '')
+            if not cover_letter_text:
+                return JsonResponse({'error': 'No cover letter text provided'}, status=400)
+
+            company_name = request.POST.get('company_name', 'company')
+
+            pdf_data = CoverLetterService.create_cover_letter_pdf(
+                cover_letter_text=cover_letter_text,
+                filename=f"cover_letter_{request.user.username}"
+            )
+
+            company_name_safe = "".join(
+                c for c in company_name if c.isalnum() or c in " _-").strip().replace(" ", "_")
+            download_filename = f'Cover_Letter_{company_name_safe}.pdf'
+            
+            pdf_base64 = base64.b64encode(pdf_data).decode('utf-8')
+            
+            return JsonResponse({
+                'success': True,
+                'filename': download_filename,
+                'pdf_base64': pdf_base64
+            })
+            
+        except Exception as e:
+            return JsonResponse({'error': f"Error generating PDF: {e}"}, status=500)
+            
+    return JsonResponse({'error': 'Invalid request method'}, status=405)

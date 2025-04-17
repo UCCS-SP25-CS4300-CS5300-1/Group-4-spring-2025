@@ -12,4 +12,6 @@ urlpatterns = [
     path('apply/<str:job_id>/', views.apply_flow, name='apply_flow'),
     path('cover-letter/', views.cover_letter_generator, name='cover_letter_generator'),
     path('cover-letter/<str:job_id>/', views.cover_letter_generator, name='cover_letter_generator_with_job'),
+    path('ajax/generate-cover-letter/', views.ajax_generate_cover_letter, name='ajax_generate_cover_letter'),
+    path('generate-cover-letter-pdf/', views.generate_cover_letter_pdf, name='generate_cover_letter_pdf'),
 ] 

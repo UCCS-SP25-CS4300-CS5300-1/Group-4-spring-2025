@@ -319,18 +319,150 @@
             }
         }
 
-        // Check on load and on resize
         window.addEventListener('load', checkScreenSize);
         window.addEventListener('resize', checkScreenSize);
 
-        document.addEventListener('DOMContentLoaded', function() {
-            // Show loading indicator when form is submitted
-            document.getElementById('coverLetterForm').addEventListener('submit', function() {
-                document.getElementById('generateButton').disabled = true;
-                document.getElementById('loadingContainer').style.display = 'block';
-                document.getElementById('coverLetterForm').style.opacity = '0.5';
+        function downloadPdfFromBase64(base64Data, filename) {
+            try {
+                const byteCharacters = atob(base64Data);
+                const byteNumbers = new Array(byteCharacters.length);
+                for (let i = 0; i < byteCharacters.length; i++) {
+                    byteNumbers[i] = byteCharacters.charCodeAt(i);
+                }
+                const byteArray = new Uint8Array(byteNumbers);
+                const blob = new Blob([byteArray], {type: 'application/pdf'});
+
+                const link = document.createElement('a');
+                link.href = window.URL.createObjectURL(blob);
+                link.download = filename;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(link.href);
+            } catch (e) {
+                console.error("Error decoding or downloading PDF:", e);
+                alert("Failed to initiate PDF download. Please check the console for errors.");
+            }
+        }
+
+        $(document).ready(function() {
+            $('#coverLetterForm').on('submit', function(e) {
+                e.preventDefault();
+
+                const form = $(this);
+                const generateButton = $('#generateButton');
+                const loadingContainer = $('#loadingContainer');
+                const errorContainer = $('.messages.mb-4'); 
+                errorContainer.empty(); 
+
+                form.css('opacity', '0.5');
+                loadingContainer.show();
+                generateButton.prop('disabled', true);
+
+                $.ajax({
+                    url: form.attr('action') || window.location.pathname,
+                    type: "POST",
+                    data: form.serialize(),
+                    dataType: "json",
+                    success: function(response) {
+                        if (response.success && response.cover_letter_text) {
+                            form.hide();
+                            
+                            if (!$('#edit-container').length) {
+                                $('<div id="edit-container" class="mt-4">' +
+                                  '<h5>Review and Edit Your Cover Letter:</h5>' +
+                                  '<textarea id="edit-cover-letter" class="form-control mb-3" rows="15" style="font-family: monospace; font-size: 0.9rem;"></textarea>' +
+                                  '<div class="d-flex justify-content-between">' +
+                                  '<button class="btn btn-secondary" id="edit-back"><i class="fas fa-arrow-left me-1"></i> Back to Form</button>' +
+                                  '<button class="btn btn-primary" id="generate-pdf"><i class="fas fa-file-download me-1"></i> Generate PDF</button>' +
+                                  '</div></div>').insertAfter(form);
+                                
+                                $('#edit-back').on('click', function() {
+                                    $('#edit-container').hide();
+                                    form.css('opacity', '1').show();
+                                });
+                                
+                                $('#generate-pdf').on('click', function() {
+                                    generatePdf($('#edit-cover-letter').val(), form.serialize());
+                                });
+                            }
+                            
+                            $('#edit-cover-letter').val(response.cover_letter_text);
+                            $('#edit-container').show();
+                            
+                            errorContainer.html('<div class="alert alert-success">Cover letter generated! Review and edit before creating PDF.</div>');
+                        } else {
+                            let errorMsg = response.error || 'An unexpected error occurred while generating the cover letter.';
+                            errorContainer.html(`<div class="alert alert-danger">${errorMsg}</div>`);
+                            form.css('opacity', '1');
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        let errorMsg = 'An error occurred.';
+                        if (xhr.responseJSON && xhr.responseJSON.error) {
+                            errorMsg = xhr.responseJSON.error;
+                             if (xhr.responseJSON.details) {
+                                try {
+                                     const errors = JSON.parse(xhr.responseJSON.details);
+                                     errorMsg += "<br>Details: ";
+                                     for (const field in errors) {
+                                         errorMsg += `<br>- ${field}: ${errors[field][0].message}`;
+                                     }
+                                } catch(e) { }
+                            }
+                        } else if (xhr.responseText) {
+                            errorMsg += ` Server response: ${xhr.responseText.substring(0, 200)}...`; // Show partial response
+                        }
+                         errorContainer.html(`<div class="alert alert-danger">${errorMsg}</div>`);
+                    },
+                    complete: function() {
+                        loadingContainer.hide();
+                        generateButton.prop('disabled', false);
+                    }
+                });
             });
         });
+
+        function generatePdf(coverLetterText, formData) {
+            const loadingContainer = $('#loadingContainer');
+            const errorContainer = $('.messages.mb-4');
+            errorContainer.empty();
+            loadingContainer.show();
+            
+
+            const originalFormData = new URLSearchParams(formData);
+            const fd = new FormData();
+
+            for (const [key, value] of originalFormData.entries()) {
+                fd.append(key, value);
+            }
+            
+            fd.append('edited_cover_letter', coverLetterText);
+            fd.append('generate_pdf', 'true');
+            
+            $.ajax({
+                url: '/generate-cover-letter-pdf/',
+                type: 'POST',
+                data: fd,
+                processData: false,
+                contentType: false,
+                success: function(response) {
+                    if (response.success && response.pdf_base64) {
+                        // Download PDF
+                        downloadPdfFromBase64(response.pdf_base64, response.filename);
+                        errorContainer.html('<div class="alert alert-success">PDF generated and downloaded!</div>');
+                    } else {
+                        errorContainer.html('<div class="alert alert-danger">Failed to generate PDF.</div>');
+                    }
+                },
+                error: function() {
+                    errorContainer.html('<div class="alert alert-danger">Server error while generating PDF.</div>');
+                },
+                complete: function() {
+                    loadingContainer.hide();
+                }
+            });
+        }
     </script>
 </body>
 </html>
