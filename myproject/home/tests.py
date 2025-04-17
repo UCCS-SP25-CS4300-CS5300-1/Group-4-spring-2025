@@ -9,6 +9,7 @@ from unittest.mock import patch, MagicMock
 from users.models import Resume
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.http import HttpResponse
+from home.models import UserJobInteraction
 
 class HomeViewTest(TestCase):
     def setUp(self):
@@ -992,3 +993,88 @@ class ApplyFlowViewTest(TestCase):
             call_args = mock_analysis.call_args[1]
             self.assertEqual(call_args['resume_text'], "Resume content")
             self.assertEqual(call_args['job_title'], "Python Developer")
+
+class JobTrackingTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.user = User.objects.create_user(
+            username='testuser', 
+            password='StrongTestPass123'
+        )
+        self.job1 = JobListing.objects.create(
+            job_id='track-job-1', 
+            title='Job 1', 
+            company='Company A'
+        )
+        self.job2 = JobListing.objects.create(
+            job_id='track-job-2', 
+            title='Job 2', 
+            company='Company B'
+        )
+        self.track_view_url = reverse('track_job_view')
+        self.track_apply_url = reverse('track_application')
+        self.applications_url = reverse('applications')
+        self.client.login(username='testuser', password='StrongTestPass123')
+
+    def test_track_job_view_success(self):
+        response = self.client.post(
+            self.track_view_url, 
+            {'job_id': self.job1.job_id}, 
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest'
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data['success'])
+        self.assertTrue(data['created'])
+        self.assertTrue(UserJobInteraction.objects.filter(
+            user=self.user, 
+            job=self.job1, 
+            interaction_type='viewed'
+        ).exists())
+
+    def test_track_job_view_twice(self):
+        self.client.post(self.track_view_url, {'job_id': self.job1.job_id}, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        response = self.client.post(
+            self.track_view_url, 
+            {'job_id': self.job1.job_id}, 
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest'
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data['success'])
+        self.assertFalse(data['created'])
+        self.assertEqual(UserJobInteraction.objects.filter(user=self.user, job=self.job1, interaction_type='viewed').count(), 1)
+
+    def test_track_job_view_invalid_job(self):
+        response = self.client.post(
+            self.track_view_url, 
+            {'job_id': 'invalid-job-id'}, 
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest'
+        )
+        self.assertEqual(response.status_code, 404)
+
+    def test_track_application_success(self):
+        response = self.client.post(
+            self.track_apply_url, 
+            {'job_id': self.job1.job_id}, 
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest'
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data['success'])
+        self.assertTrue(data['created'])
+        self.assertTrue(UserJobInteraction.objects.filter(user=self.user, job=self.job1, interaction_type='applied').exists())
+        self.assertTrue(UserJobInteraction.objects.filter(user=self.user, job=self.job1, interaction_type='viewed').exists())
+
+    def test_applications_view_shows_tracked_jobs(self):
+        self.client.post(self.track_view_url, {'job_id': self.job1.job_id}, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.client.post(self.track_apply_url, {'job_id': self.job2.job_id}, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+
+        response = self.client.get(self.applications_url)
+        self.assertEqual(response.status_code, 200)
+        
+        self.assertIn(self.job2, response.context['applied_jobs_list'])
+        self.assertNotIn(self.job1, response.context['applied_jobs_list'])
+        
+        self.assertIn(self.job1, response.context['viewed_jobs_list'])
+        self.assertNotIn(self.job2, response.context['viewed_jobs_list'], "Applied job should not appear in the viewed list.")

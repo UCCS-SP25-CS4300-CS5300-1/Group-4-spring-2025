@@ -226,10 +226,10 @@
             </div>
             
             <div id="applied-jobs-section">
-                {% if applied_jobs %}
+                {% if applied_jobs_list %}
                     <ul class="job-list">
                         <div class="job-grid">
-                            {% for job in applied_jobs %}
+                            {% for job in applied_jobs_list %}
                                 <li class="job-item">
                                     <div class="job-header">
                                         {% if job.company_logo %}
@@ -245,13 +245,12 @@
                                             <p class="company-name">{{ job.company }}</p>
                                         </div>
                                     </div>    
-                                    <strong>Location:</strong> {{ job.location }} <br>
-                                    <strong>Salary:</strong> {{ job.salary_min }} - {{ job.salary_max }} {{ job.salary_currency }} <br>
-                                    <strong>Type:</strong> {{ job.job_type }} <br>
-                                    <strong>Applied:</strong> {{ job.date }} <br>
-                                    <strong>Published:</strong> {{ job.published_at }} <br><br>
-                                    <strong>Description:</strong> {{ job.description }} <br>
-                                    <a href="{{ job.url }}" target="_blank" class="btn-primary btn-upper-right">View</a>
+                                    <strong>Location:</strong> {{ job.location|default:'N/A' }} <br>
+                                    <strong>Salary:</strong> {{ job.salary_display|default:'N/A' }} <br>
+                                    <strong>Type:</strong> {{ job.job_type|default:'N/A' }} <br>
+                                    <strong>Published:</strong> {{ job.published_at|date:"M d, Y"|default:'N/A' }} <br><br>
+                                    <strong>Description:</strong> {{ job.description|striptags|truncatewords:30|default:'No description available.' }} <br>
+                                    <a href="{{ job.url }}" target="_blank" class="btn-primary btn-upper-right">View Original Posting</a>
                                 </li>
                             {% endfor %}
                         </div>
@@ -262,10 +261,10 @@
             </div>
     
             <div id="viewed-jobs-section" style="display: none;">
-                {% if viewed_jobs %}
+                {% if viewed_jobs_list %}
                 <ul class="job-list">
                     <div class="job-grid">
-                        {% for job in viewed_jobs %}
+                        {% for job in viewed_jobs_list %}
                             <li class="job-item">
                                 <div class="job-header">
                                     {% if job.company_logo %}
@@ -281,13 +280,12 @@
                                         <p class="company-name">{{ job.company }}</p>
                                     </div>
                                 </div>    
-                                <strong>Location:</strong> {{ job.location }} <br>
-                                <strong>Salary:</strong> {{ job.salary_min }} - {{ job.salary_max }} {{ job.salary_currency }} <br>
-                                <strong>Type:</strong> {{ job.job_type }} <br>
-                                <strong>Viewed:</strong> {{ job.date }} <br>
-                                <strong>Published:</strong> {{ job.published_at }} <br><br>
-                                <strong>Description:</strong> {{ job.description }} <br>
-                                <a href="{{ job.url }}" target="_blank" class="btn-primary btn-upper-right">View</a>
+                                <strong>Location:</strong> {{ job.location|default:'N/A' }} <br>
+                                <strong>Salary:</strong> {{ job.salary_display|default:'N/A' }} <br>
+                                <strong>Type:</strong> {{ job.job_type|default:'N/A' }} <br>
+                                <strong>Published:</strong> {{ job.published_at|date:"M d, Y"|default:'N/A' }} <br><br>
+                                <strong>Description:</strong> {{ job.description|striptags|truncatewords:30|default:'No description available.' }} <br>
+                                <a href="{{ job.url }}" target="_blank" class="btn-primary btn-upper-right">View Original Posting</a>
                             </li>
                         {% endfor %}
                     </div>
