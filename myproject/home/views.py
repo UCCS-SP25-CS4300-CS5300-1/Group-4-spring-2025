@@ -593,7 +593,10 @@ def ajax_track_job_view(request):
         except JobListing.DoesNotExist:
             return JsonResponse({'error': 'Job not found'}, status=404)
         except Exception as e:
-            return JsonResponse({'error': f'Error tracking view: {str(e)}'}, status=500)
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error("Error tracking job view", exc_info=True)
+            return JsonResponse({'error': 'An internal error occurred while tracking the job view.'}, status=500)
     
     return JsonResponse({'error': 'Invalid request'}, status=400)
 
@@ -620,7 +623,10 @@ def ajax_track_application(request):
         except JobListing.DoesNotExist:
             return JsonResponse({'error': 'Job not found'}, status=404)
         except Exception as e:
-            return JsonResponse({'error': f'Error tracking application: {str(e)}'}, status=500)
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error("Error tracking application", exc_info=True)
+            return JsonResponse({'error': 'An internal error occurred while tracking the application.'}, status=500)
     
     return JsonResponse({'error': 'Invalid request'}, status=400)
 
