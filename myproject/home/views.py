@@ -459,6 +459,15 @@ def apply_flow(request, job_id):
     company_name = getattr(job_details, 'company', '')
     job_title = getattr(job_details, 'title', '')
 
+    resume_text = None
+    if has_resume:
+        try:
+            resume_file = latest_resume.resume
+            from users.views import parse_resume
+            resume_text = parse_resume(resume_file)
+        except Exception as e:
+            messages.error(request, f"Error extracting text from your resume: {e}")
+
     initial_data = {
         'job_description': job_description,
         'company_name': company_name,
@@ -474,10 +483,66 @@ def apply_flow(request, job_id):
     context = {
         'job': job_details,
         'latest_resume': latest_resume,
-        'form': form,                   
-        'has_resume': has_resume      
+        'form': form,
+        'has_resume': has_resume,
+        'resume_text': resume_text
     }
     return render(request, 'home/apply_flow.html', context)
+
+@login_required
+def ajax_resume_feedback(request):
+    """AJAX endpoint to get feedback on a resume for a specific job."""
+    if request.method == "POST" and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        job_description = request.POST.get('job_description', '')
+        resume_id = request.POST.get('resume_id')
+        
+        if not resume_id:
+            return JsonResponse({'error': 'No resume selected'}, status=400)
+            
+        try:
+            resume = Resume.objects.get(id=resume_id, user=request.user)
+            resume_file = resume.resume
+            
+            from users.views import parse_resume
+            resume_text = parse_resume(resume_file)
+            
+            from users.views import get_resume_feedback
+            general_feedback = get_resume_feedback(resume_text)
+            
+            job_specific_feedback = get_job_specific_feedback(resume_text, job_description)
+            
+            return JsonResponse({
+                'success': True,
+                'general_feedback': general_feedback,
+                'job_specific_feedback': job_specific_feedback
+            })
+        except Resume.DoesNotExist:
+            return JsonResponse({'error': 'Resume not found'}, status=404)
+        except Exception as e:
+            return JsonResponse({'error': f'Error generating feedback: {str(e)}'}, status=500)
+    
+    return JsonResponse({'error': 'Invalid request'}, status=400)
+
+def get_job_specific_feedback(resume_text, job_description):
+    """Get feedback comparing resume to job description."""
+    try:
+        import openai
+        import os
+        if os.environ.get('OPENAI_API_KEY'):
+            openai.api_key = os.environ.get('OPENAI_API_KEY')
+        else:
+            return "Job-specific feedback requires an OpenAI API key."
+            
+        response = openai.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": "You are an expert at analyzing resumes against job descriptions. Provide detailed, helpful feedback on how well the resume matches the job requirements and suggest improvements to increase chances of getting the job."},
+                {"role": "user", "content": f"Resume:\n{resume_text}\n\nJob Description:\n{job_description}\n\nProvide an analysis of how well this resume matches the job requirements. Include:\n1. Match score (out of 100)\n2. Key strengths that align with the job\n3. Notable gaps or missing skills\n4. Specific suggestions to tailor the resume for this job"}
+            ],
+        )
+        return response.choices[0].message.content
+    except Exception as e:
+        return f"Unable to generate job-specific feedback: {str(e)}"
 
 @login_required
 def ajax_generate_cover_letter(request):

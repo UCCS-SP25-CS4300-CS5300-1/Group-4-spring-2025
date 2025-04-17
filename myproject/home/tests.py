@@ -2,13 +2,13 @@ from django.test import TestCase, Client
 from django.urls import reverse
 from django.contrib.auth.models import User
 from users.models import Profile
-from home.models import Application, JobListing
-from .forms import SearchJobForm, InterviewResponseForm, CoverLetterForm
+from home.models import JobListing
+from .forms import SearchJobForm, CoverLetterForm
 from django.utils import timezone
 from unittest.mock import patch, MagicMock
-import os
-import io
-
+from users.models import Resume
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.http import HttpResponse
 
 class HomeViewTest(TestCase):
     def setUp(self):
@@ -708,6 +708,229 @@ class CoverLetterGeneratorViewTest(TestCase):
             result = CoverLetterService.extract_text_from_resume(mock_file)
             self.assertIsNone(result)
 
+
+class ResumeFeedbackTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.user = User.objects.create_user(
+            username='testuser',
+            email='test@example.com',
+            password='StrongTestPass123'
+        )
+        self.profile = Profile.objects.get(user=self.user)
+        self.job = JobListing.objects.create(
+            job_id='test-job-1',
+            title='Senior Python Developer',
+            company='Test Company',
+            location='Remote',
+            description='This job requires expertise in Python, Django, and API development.',
+            url='https://example.com/job1',
+            job_type='Full-time',
+            published_at=timezone.now(),
+            search_key='python'
+        )
+        self.resume_content = b"Bob Smith\nSenior Python Developer\n5 years experience in Python, Django"
+        self.resume = Resume.objects.create(
+            user=self.user,
+            resume=SimpleUploadedFile("resume.pdf", self.resume_content)
+        )
+        self.apply_flow_url = reverse('apply_flow', args=[self.job.job_id])
+        self.resume_feedback_url = reverse('resume_feedback')
+
+    def test_apply_flow_with_resume(self):
+        self.client.login(username='testuser', password='StrongTestPass123')
+        
+        with patch('home.views.JobicyService.get_job_details') as mock_get_job_details, \
+             patch('users.views.parse_resume', return_value="Parsed resume content"):
+            
+            mock_get_job_details.return_value = self.job
+            
+            response = self.client.get(self.apply_flow_url)
+            self.assertEqual(response.status_code, 200)
+            self.assertTemplateUsed(response, 'home/apply_flow.html')
+            self.assertTrue('resume_text' in response.context)
+            self.assertEqual(response.context['resume_text'], "Parsed resume content")
+            
+            self.assertContains(response, 'Get Resume Feedback')
+            self.assertContains(response, f'formData.append(\'resume_id\', \'{self.resume.id}\')')
+
+    def test_ajax_resume_feedback_success(self):
+        self.client.login(username='testuser', password='StrongTestPass123')
+        
+        with patch('users.views.parse_resume', return_value="Parsed resume content"), \
+             patch('users.views.get_resume_feedback', return_value="General resume feedback"), \
+             patch('home.views.get_job_specific_feedback', return_value="Job-specific feedback"):
+            
+            response = self.client.post(
+                self.resume_feedback_url,
+                {
+                    'resume_id': self.resume.id,
+                    'job_description': self.job.description
+                },
+                HTTP_X_REQUESTED_WITH='XMLHttpRequest'
+            )
+            
+            self.assertEqual(response.status_code, 200)
+            data = response.json()
+            self.assertTrue(data['success'])
+            self.assertEqual(data['general_feedback'], "General resume feedback")
+            self.assertEqual(data['job_specific_feedback'], "Job-specific feedback")
+
+    def test_ajax_resume_feedback_no_resume(self):
+        self.client.login(username='testuser', password='StrongTestPass123')
+        
+        response = self.client.post(
+            self.resume_feedback_url,
+            {
+                'job_description': self.job.description
+            },
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest'
+        )
+        
+        self.assertEqual(response.status_code, 400)
+        data = response.json()
+        self.assertEqual(data['error'], 'No resume selected')
+
+    def test_ajax_resume_feedback_invalid_resume(self):
+        self.client.login(username='testuser', password='StrongTestPass123')
+        
+        response = self.client.post(
+            self.resume_feedback_url,
+            {
+                'resume_id': 9999,
+                'job_description': self.job.description
+            },
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest'
+        )
+        
+        self.assertEqual(response.status_code, 404)
+        data = response.json()
+        self.assertEqual(data['error'], 'Resume not found')
+
+    def test_ajax_resume_feedback_not_ajax(self):
+        self.client.login(username='testuser', password='StrongTestPass123')
+        
+        response = self.client.post(
+            self.resume_feedback_url,
+            {
+                'resume_id': self.resume.id,
+                'job_description': self.job.description
+            }
+        )
+        
+        self.assertEqual(response.status_code, 400)
+        data = response.json()
+        self.assertEqual(data['error'], 'Invalid request')
+
+    def test_get_job_specific_feedback(self):
+        from home.views import get_job_specific_feedback
+        
+        with patch('openai.chat.completions.create') as mock_openai:
+            mock_openai.return_value.choices = [MagicMock(message=MagicMock(content="Mocked feedback"))]
+            
+            result = get_job_specific_feedback("Resume text", "Job description")
+            self.assertEqual(result, "Mocked feedback")
+            
+            mock_openai.assert_called_once()
+            call_args = mock_openai.call_args[1]
+            self.assertEqual(call_args['model'], "gpt-4o-mini")
+            self.assertEqual(len(call_args['messages']), 2)
+            self.assertIn("Resume", call_args['messages'][1]['content'])
+            self.assertIn("Job Description", call_args['messages'][1]['content'])
+            
+        with patch('os.environ.get', return_value=None):
+            result = get_job_specific_feedback("Resume text", "Job description")
+            self.assertIn("requires an OpenAI API key", result)
+        
+        with patch('openai.chat.completions.create', side_effect=Exception("API error")):
+            result = get_job_specific_feedback("Resume text", "Job description")
+            self.assertIn("Unable to generate job-specific feedback", result)
+            self.assertIn("API error", result)
+
+
+class ApplyFlowViewTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.user = User.objects.create_user(
+            username='testuser',
+            email='test@example.com',
+            password='StrongTestPass123'
+        )
+        self.profile = Profile.objects.get(user=self.user)
+        self.job = JobListing.objects.create(
+            job_id='test-job-1',
+            title='Senior Python Developer',
+            company='Test Company',
+            location='Remote',
+            description='This job requires expertise in Python, Django, and API development.',
+            url='https://example.com/job1',
+            job_type='Full-time',
+            published_at=timezone.now(),
+            search_key='python'
+        )
+        self.resume_content = b"Bob Smith\nSenior Python Developer\n5 years experience in Python, Django"
+        self.resume = Resume.objects.create(
+            user=self.user,
+            resume=SimpleUploadedFile("resume.pdf", self.resume_content)
+        )
+        self.apply_flow_url = reverse('apply_flow', args=[self.job.job_id])
+
+    def test_apply_flow_login_required(self):
+        response = self.client.get(self.apply_flow_url)
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(response.url.startswith('/users/login/'))
+
+    def test_apply_flow_authenticated_user(self):
+        self.client.login(username='testuser', password='StrongTestPass123')
+        
+        with patch('home.views.JobicyService.get_job_details') as mock_get_job_details:
+            mock_get_job_details.return_value = self.job
+            
+            response = self.client.get(self.apply_flow_url)
+            self.assertEqual(response.status_code, 200)
+            self.assertTemplateUsed(response, 'home/apply_flow.html')
+            
+            self.assertEqual(response.context['job'], self.job)
+            self.assertEqual(response.context['latest_resume'], self.resume)
+            self.assertTrue(response.context['has_resume'])
+            
+            form = response.context['form']
+            self.assertEqual(form.initial['job_description'], self.job.description)
+            self.assertEqual(form.initial['company_name'], self.job.company)
+            self.assertEqual(form.initial['job_title'], self.job.title)
+            self.assertEqual(form.initial['user_name'], 'testuser')
+            self.assertEqual(form.initial['use_resume'], True)
+
+    def test_apply_flow_invalid_job_id(self):
+        self.client.login(username='testuser', password='StrongTestPass123')
+        
+        with patch('home.views.JobicyService.get_job_details', return_value=None), \
+             patch('home.views.render') as mock_render:
+            
+            mock_render.return_value = HttpResponse(status=200)
+            
+            invalid_url = reverse('apply_flow', args=['invalid-job-id'])
+            response = self.client.get(invalid_url)
+            
+            mock_render.assert_called_once()
+            args, kwargs = mock_render.call_args
+            self.assertEqual(args[1], 'home/apply_flow_error.html')
+            self.assertEqual(args[2]['job_id'], 'invalid-job-id')
+
+    def test_apply_flow_with_resume_error(self):
+        self.client.login(username='testuser', password='StrongTestPass123')
+        
+        with patch('home.views.JobicyService.get_job_details') as mock_get_job_details, \
+             patch('users.views.parse_resume', side_effect=Exception("Resume parsing error")):
+            
+            mock_get_job_details.return_value = self.job
+            
+            response = self.client.get(self.apply_flow_url)
+            self.assertEqual(response.status_code, 200)
+            
+            messages = list(response.context['messages'])
+            self.assertTrue(any("Error extracting text from your resume" in str(m) for m in messages))
+            self.assertIsNone(response.context['resume_text'])
 
 
 

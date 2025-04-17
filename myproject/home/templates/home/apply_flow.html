@@ -182,9 +182,81 @@
                     </button>
                 </h2>
                 <div id="collapseOne" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#applicationStepsAccordion">
-                    <div class="accordion-body placeholder-content">
-                        <p>Upload your resume and get AI-powered suggestions to tailor it specifically for the <strong>{{ job.title }}</strong> role at <strong>{{ job.company }}</strong>.</p>
-                        <button class="btn btn-secondary btn-sm" disabled><i class="fas fa-magic me-1"></i> Tune Resume (Coming Soon)</button>
+                    <div class="accordion-body">
+                        {% if has_resume %}
+                            <div id="resumeFeedbackError" class="alert alert-danger alert-dismissible fade show" role="alert" style="display: none;">
+                                <span id="resumeFeedbackErrorMessage"></span>
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                            
+                            <p>Get AI-powered feedback on how well your resume matches the requirements for <strong>{{ job.title }}</strong> at <strong>{{ job.company }}</strong>.</p>
+                            
+                            <div class="mb-3">
+                                <h5 class="mb-2">Your Current Resume</h5>
+                                <div class="d-flex align-items-center gap-2 mb-3">
+                                    <i class="fas fa-file-pdf text-danger fs-4"></i>
+                                    <span>{{ latest_resume.resume.name|default:"" }}</span>
+                                    <a href="{% url 'view_resume' latest_resume.id %}" class="btn btn-outline-secondary btn-sm ms-2" target="_blank">
+                                        <i class="fas fa-eye me-1"></i> View
+                                    </a>
+                                </div>
+                                
+                                {% if resume_text %}
+                                <div class="card mb-3">
+                                    <div class="card-header bg-light">
+                                        Resume Content Preview
+                                    </div>
+                                    <div class="card-body">
+                                        <pre class="resume-preview" style="max-height: 150px; overflow-y: auto; font-size: 0.85rem; white-space: pre-wrap;">{{ resume_text|truncatechars:500 }}</pre>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            <button class="btn btn-primary" id="generateResumeFeedback">
+                                <i class="fas fa-magic me-1"></i> Get Resume Feedback
+                            </button>
+                            
+                            <div class="loading-container mt-4" id="resumeLoadingContainer" style="display: none;">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <p class="mt-3">Analyzing your resume against the job description...</p>
+                                <p class="text-muted small">This may take a few moments</p>
+                            </div>
+                            
+                            <div id="resumeFeedbackResult" class="mt-4" style="display: none;">
+                                <h5>Resume Feedback Analysis</h5>
+                                
+                                <div class="card mb-3">
+                                    <div class="card-header bg-primary text-white">
+                                        <i class="fas fa-bullseye me-2"></i> Job-Specific Analysis
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="jobSpecificFeedback"></div>
+                                    </div>
+                                </div>
+                                
+                                <div class="card mb-3">
+                                    <div class="card-header bg-info text-white">
+                                        <i class="fas fa-file-alt me-2"></i> General Resume Feedback
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="generalResumeFeedback"></div>
+                                    </div>
+                                </div>
+                                
+                                <button class="btn btn-outline-primary" onclick="$('#resumeFeedbackResult').hide();">
+                                    <i class="fas fa-chevron-up me-1"></i> Hide Feedback
+                                </button>
+                            </div>
+                        {% else %}
+                            <div class="alert alert-warning">
+                                <h6><i class="fas fa-exclamation-triangle me-2"></i> Resume Not Found</h6>
+                                <p class="mb-0">To get AI-powered resume feedback, please <a href="{% url 'upload_resume' %}" target="_blank">upload your resume</a> first.</p>
+                            </div>
+                            <p>After uploading your resume, return to this page to get personalized feedback on how well your resume matches the requirements for <strong>{{ job.title }}</strong> at <strong>{{ job.company }}</strong>.</p>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -480,6 +552,101 @@
                     complete: function() {
                         loadingContainer.hide();
                         generateButton.prop('disabled', false);
+                    }
+                });
+            });
+
+            $('#generateResumeFeedback').on('click', function() {
+                const button = $(this);
+                const loadingContainer = $('#resumeLoadingContainer');
+                const resultContainer = $('#resumeFeedbackResult');
+                const errorContainer = $('#resumeFeedbackError');
+                const errorMessageSpan = $('#resumeFeedbackErrorMessage');
+
+                resultContainer.hide();
+                errorContainer.hide();
+                errorMessageSpan.text('');
+
+                loadingContainer.show();
+                button.prop('disabled', true);
+
+                const formData = new FormData();
+                formData.append('resume_id', '{{ latest_resume.id|default:"" }}');
+                formData.append('job_description', '{{ job.description|escapejs }}');
+                formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+                
+                $.ajax({
+                    url: "{% url 'resume_feedback' %}",
+                    type: "POST",
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            $('#generalResumeFeedback').html(markdownToHtml(response.general_feedback));
+                            $('#jobSpecificFeedback').html(markdownToHtml(response.job_specific_feedback));
+                            resultContainer.show();
+                        } else {
+                            errorMessageSpan.text(response.error || 'An unexpected error occurred.');
+                            errorContainer.show();
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        let errorMsg = 'An error occurred while analyzing your resume.';
+                        if (xhr.responseJSON && xhr.responseJSON.error) {
+                            errorMsg = xhr.responseJSON.error;
+                        }
+                        errorMessageSpan.text(errorMsg);
+                        errorContainer.show();
+                    },
+                    complete: function() {
+                        loadingContainer.hide();
+                        button.prop('disabled', false);
+                    }
+                });
+            });
+            
+            function markdownToHtml(markdown) {
+                if (!markdown) return '';
+                
+                let html = markdown
+                    .replace(/^### (.*$)/gim, '<h5>$1</h5>')
+                    .replace(/^## (.*$)/gim, '<h4>$1</h4>')
+                    .replace(/^# (.*$)/gim, '<h3>$1</h3>')
+                    
+                    .replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>')
+                    .replace(/\*(.*?)\*/gim, '<em>$1</em>')
+                    
+                    .replace(/^\d+\. (.*$)/gim, '<ol><li>$1</li></ol>')
+                    .replace(/^- (.*$)/gim, '<ul><li>$1</li></ul>')
+
+                    .replace(/\n\n/gim, '<br><br>');
+                
+                return html;
+            }
+        });
+
+        function checkScreenSize() {
+            const mobileWarning = document.getElementById('mobile-warning');
+            if (window.innerWidth < 768) {
+                mobileWarning.style.display = 'block';
+            } else {
+                mobileWarning.style.display = 'none';
+            }
+        }
+
+        window.addEventListener('load', checkScreenSize);
+        window.addEventListener('resize', checkScreenSize);
+
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('img.company-logo').forEach(function (img) {
+                img.addEventListener('error', function () {
+                    if (this.dataset.fallback) {
+                        this.src = this.dataset.fallback;
+                        this.dataset.fallback = '';
                     }
                 });
             });
