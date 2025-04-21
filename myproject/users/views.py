@@ -8,8 +8,8 @@ from pypdf import PdfReader
 from docx2pdf import convert
 from docx import Document
 from django.http import FileResponse, Http404
-import os
 from django.utils.http import url_has_allowed_host_and_scheme
+from django.conf import settings
 
 from jobs.models import Job
 from .forms import UserRegistrationForm, UserLoginForm, EditProfileForm, ResumeUploadForm, EditPreferenceForm
@@ -17,6 +17,7 @@ from .models import Profile, Resume
 import os
 import openai
 import markdown
+RESUME_GUIDE_TEXT = None
 
 if(os.environ.get('OPENAI_API_KEY')):
     openai.api_key = os.environ.get('OPENAI_API_KEY')
@@ -151,13 +152,36 @@ def parse_resume(file):
     
     return text
 
+def load_resume_guide():
+    global RESUME_GUIDE_TEXT
+    
+    if RESUME_GUIDE_TEXT is not None:
+        return RESUME_GUIDE_TEXT
+        
+    guide_path = os.path.join(settings.BASE_DIR, 'mediafiles', 'References', 'UCCS_Resume_Guide.pdf')
+    try:
+        with open(guide_path, 'rb') as file:
+            reader = PdfReader(file)
+            text = ''
+            for page in reader.pages:
+                page_text = page.extract_text()
+                if page_text:
+                    text += page_text + '\n'
+        RESUME_GUIDE_TEXT = text.strip()
+        return RESUME_GUIDE_TEXT
+    except Exception as e:
+        return f"Error loading resume guide: {e}"
+        
+
 def get_resume_feedback(resume_text):
+    guide_text = load_resume_guide()
+    
     try:
         response = openai.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
                 {"role": "system", "content": "You are a helpful resume reviewer. Review the following resume and provide constructive feedback. Focus on general advice, formatting, keyword optimization, and job relevance."},
-                #{"role": "user", "content": f"Here are some helpful guidelines to follow when giving the feedback:\\n\\n"},
+                {"role": "user", "content": f"Here are some helpful guidelines to follow when giving the feedback:\\n\\n{guide_text}"},
                 {"role": "user", "content": f"Please review this resume:\\n\\n{resume_text}"}
             ],
         )
