@@ -52,14 +52,21 @@
     <div class="profile-section">
         <div class="profile-header">
             <h3>Resume</h3>
-            {% if latest_resume %}
-                <a href="{% url 'view_resume' latest_resume.id %}" class="btn-sm btn-outline-success" target="_blank">
-                    <i class="fas fa-download"></i> View
+            <div class="resume-actions">                
+                {% if latest_resume %}
+                    <a href="{% url 'view_resume' latest_resume.id %}" class="btn-sm btn-outline-success" target="_blank">
+                        <i class="fas fa-download"></i> View
+                    </a>
+                {% endif %}
+                <a href="{% url 'upload_resume' %}" class="btn-sm btn-outline-primary">
+                    <i class="fas fa-upload"></i> {% if latest_resume %}Update{% else %}Upload{% endif %}
                 </a>
-            {% endif %}
-            <a href="{% url 'upload_resume' %}" class="btn-sm btn-outline-primary">
-                <i class="fas fa-upload"></i> {% if latest_resume %}Update{% else %}Upload{% endif %}
-            </a>
+                {% if latest_resume %}
+                <a href="{% url 'delete_resume' %}" class="btn-sm btn-outline-danger">
+                    <i class="fas fa-trash"></i> Delete
+                </a>            
+                {% endif %}
+            </div>
         </div>
         <div class="profile-info">
             {% if latest_resume %}
@@ -110,6 +117,14 @@
     .profile-info p {
         margin-bottom: 8px;
     }
+
+    .resume-actions {
+        align-items: center;
+    }
+
+    .resume-actions .btn-sm {
+        margin-left: 0.25rem;
+    }
     
     .btn-sm {
         padding: 0.25rem 0.5rem;
@@ -138,6 +153,16 @@
     
     .btn-outline-success:hover {
         background-color: #10b981;
+        color: white;
+    }
+
+    .btn-outline-danger {
+        color: #8f0404;
+        border: 1px solid #8f0404;
+    }
+    
+    .btn-outline-danger:hover {
+        background-color: #8f0404;
         color: white;
     }
     
