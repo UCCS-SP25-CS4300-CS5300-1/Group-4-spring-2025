@@ -9,15 +9,26 @@
 
     <h2 class="mb-4">AI Feedback by GPT-4o-mini</h2>
 
-    {% if message %}
-        <div class="alert alert-warning">{{ message }}</div>
-    {% endif %}
-
-    {% if feedback %}
-        <div class="card shadow-sm mb-4">
-            <div class="card-body">
-                {{ feedback | safe }}
-            </div>
+    {# Display error message if present #}
+    {% if error_message %}
+        <div class="alert alert-danger">
+            {{ error_message | safe }}
         </div>
     {% endif %}
+
+    {# Display feedback if present #}
+    {% if feedback %}
+        <div class="card shadow-sm mb-4">
+            <div class="card-body" id="feedbackContent">
+                 {{ feedback | safe }}
+            </div>
+        </div>
+    {% elif not error_message %}
+        {# Optional: Message if no feedback and no error (e.g., first view for eligible user) #}
+         <div class="alert alert-info">
+             Feedback has not been generated yet. If this persists, please contact support.
+         </div>
+    {% endif %}
+
 {% endblock %}
+
