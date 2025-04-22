@@ -7,9 +7,9 @@ from django.views import generic
 from pypdf import PdfReader
 from docx2pdf import convert
 from docx import Document
-from django.http import FileResponse, Http404
-import os
+from django.http import FileResponse, Http404, JsonResponse
 from django.utils.http import url_has_allowed_host_and_scheme
+from django.conf import settings
 
 from jobs.models import Job
 from .forms import UserRegistrationForm, UserLoginForm, EditProfileForm, ResumeUploadForm, EditPreferenceForm
@@ -17,6 +17,8 @@ from .models import Profile, Resume
 import os
 import openai
 import markdown
+from openai import APITimeoutError
+RESUME_GUIDE_TEXT = None
 
 if(os.environ.get('OPENAI_API_KEY')):
     openai.api_key = os.environ.get('OPENAI_API_KEY')
@@ -100,39 +102,16 @@ def upload_resume(request):
             file = resume_instance.resume
             filename = file.name.lower()
             
-            ## For DOCX files, we'll just save as is for now
             resume_instance.save()
+            messages.success(request, "Your resume has been uploaded successfully.")
+            return redirect('profile')
             
-            file = resume_instance.resume
-            file_path = file.path
-
-            try:
-                text = parse_resume(file)
-                    
-                if request.user.is_superuser or profile.whitelisted_for_ai:
-                    feedback = get_resume_feedback(text)
-                    feedback_html = markdown.markdown(feedback)
-                    return render(request, 'users/upload_resume.html', {
-                        'form': resume_form, 
-                        'feedback': feedback_html
-                    })
-                else:
-                    return render(request, 'users/upload_resume.html', {
-                        'form': resume_form,
-                        'message': 'Resume uploaded successfully. AI feedback is only available to whitelisted users.'
-                    })
-            except Exception as e:
-                import logging
-                logger = logging.getLogger('users')
-                logger.error(f"Error processing resume: {str(e)}")
-                return render(request, 'users/upload_resume.html', {
-                    'form': resume_form,
-                    'message': 'Resume uploaded successfully, but there was an error processing it for feedback.'
-                })
     else:
         resume_form = ResumeUploadForm()
 
-    return render(request, 'users/upload_resume.html', {'form': resume_form})
+    return render(request, 'users/upload_resume.html', {
+        'form': resume_form,
+    })
 
 @login_required
 def delete_resume(request):
@@ -143,7 +122,6 @@ def delete_resume(request):
             resume.delete()
         messages.info(request, "You have removed your resume.")
     except Resume.DoesNotExist:
-        # shouldn't be possible
         messages.error(request, "You don't have a resume to delete.") 
     
     return redirect('profile')
@@ -153,37 +131,107 @@ def parse_resume(file):
     file_path = file.path
     filename = file.name.lower()
     
-    if filename.endswith(".pdf"):
-        reader = PdfReader(file)
-        page = reader.pages[0]
-        text = page.extract_text()
-    elif filename.endswith(".docx"):
-        doc = Document(file_path)
-        text = "\n".join([p.text for p in doc.paragraphs])
-    else:
-        text = "Unsupported file type"
+    try:
+        if filename.endswith(".pdf"):
+            reader = PdfReader(file)
+            text = ""
+            for page in reader.pages:
+                page_text = page.extract_text()
+                if page_text:
+                    text += page_text + "\n"
+        elif filename.endswith(".docx"):
+            doc = Document(file_path)
+            text = "\n".join([p.text for p in doc.paragraphs])
+        else:
+            text = "Unsupported file type"
+    except Exception as e:
+        text = f"Error parsing file: {e}"
     
-    return text
+    return text.strip()
+
+def load_resume_guide():
+    global RESUME_GUIDE_TEXT
+    
+    if RESUME_GUIDE_TEXT is not None:
+        return RESUME_GUIDE_TEXT
+        
+    guide_path = os.path.join(settings.BASE_DIR, 'mediafiles', 'References', 'UCCS_Resume_Guide.pdf')
+    try:
+        with open(guide_path, 'rb') as file:
+            reader = PdfReader(file)
+            text = ''
+            for page in reader.pages:
+                page_text = page.extract_text()
+                if page_text:
+                    text += page_text + '\n'
+        RESUME_GUIDE_TEXT = text.strip()
+        return RESUME_GUIDE_TEXT
+    except Exception as e:
+        return f"Error loading resume guide: {e}"
 
 def get_resume_feedback(resume_text):
+    guide_text = load_resume_guide()
+    if "Error loading resume guide:" in guide_text:
+         return "Could not generate feedback due to a configuration issue (unable to load guide)."
+    
     try:
+        if not os.environ.get('OPENAI_API_KEY'):
+             return "Could not generate feedback: OpenAI API key not configured."
+        
+        openai.api_key = os.environ.get('OPENAI_API_KEY')
         response = openai.chat.completions.create(
-            model="gpt-4o-mini",
+            model="gpt-4o-mini", 
             messages=[
                 {"role": "system", "content": "You are a helpful resume reviewer. Review the following resume and provide constructive feedback. Focus on general advice, formatting, keyword optimization, and job relevance."},
-                #{"role": "user", "content": f"Here are some helpful guidelines to follow when giving the feedback:\\n\\n"},
-                {"role": "user", "content": f"Please review this resume:\\n\\n{resume_text}"}
+                {"role": "user", "content": f"Here are some helpful guidelines to follow when giving the feedback:\n\n{guide_text}"},
+                {"role": "user", "content": f"Please review this resume:\n\n{resume_text}"}
             ],
+            timeout=60.0,
         )
-        return response.choices[0].message.content
+        return markdown.markdown(response.choices[0].message.content)
+    except APITimeoutError as e:
+        return markdown.markdown("## Error\n\nError generating AI feedback: The request to the AI service timed out after 60 seconds. This might be due to a long resume or temporary high load on the AI service. Please try again later.")
     except Exception as ex:
-        return f"Error generating AI feedback: {ex}"
+        return markdown.markdown(f"## Error\n\nError generating AI feedback: {ex}")
+
+@login_required
+def resume_feedback(request, resume_id):
+    resume = get_object_or_404(Resume, id=resume_id, user=request.user)
+    profile = request.user.profile
+    feedback_html = ""
+    error_message = ""
+
+    try:
+        if not (request.user.is_superuser or profile.whitelisted_for_ai):
+            error_message = markdown.markdown("## Eligibility\n\nYou are not currently eligible for AI feedback. Please contact support if you believe this is an error.")
+        else:
+            if resume.ai_feedback:
+                feedback_html = resume.ai_feedback
+            else:
+                resume_text = parse_resume(resume.resume)
+                if "Error parsing file:" in resume_text or "Unsupported file type" in resume_text:
+                    error_message = markdown.markdown(f"## Error\n\nCould not parse resume file: {resume_text}")
+                else:
+                    feedback_html = get_resume_feedback(resume_text)
+                    if feedback_html.startswith("## Error") or "Could not generate feedback" in feedback_html:
+                        error_message = feedback_html
+                        feedback_html = ""
+                    else:
+                        resume.ai_feedback = feedback_html 
+                        resume.save()
+
+    except Exception as e:
+        error_message = markdown.markdown(f"## Error\n\nAn unexpected server error occurred while generating feedback: {str(e)}")
+
+    context = {
+        'resume': resume,
+        'feedback': feedback_html, 
+        'error_message': error_message
+    }
+    return render(request, 'users/feedback_page.html', context)
 
 @login_required
 def profile_view(request):
-    """
-    Display the user's profile information
-    """
     if(not hasattr(request.user, 'profile')):
         profile = Profile.objects.create(user=request.user)
     else:
@@ -201,9 +249,6 @@ def profile_view(request):
 
 @login_required
 def update_preferences(request):
-    """
-    Display the user's preference selections
-    """
     if(not hasattr(request.user, 'profile')):
         profile = Profile.objects.create(user=request.user)
     else:
@@ -232,9 +277,6 @@ def update_preferences(request):
 
 @login_required
 def view_resume(request, resume_id):
-    """
-    Securely serve resume files only to their owners
-    """
     resume = get_object_or_404(Resume, id=resume_id)
     
     if(resume.user != request.user and not request.user.is_superuser):
@@ -245,7 +287,6 @@ def view_resume(request, resume_id):
         content_type = 'application/pdf' if filename.endswith('.pdf') else 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
         response = FileResponse(open(resume.resume.path, 'rb'), content_type=content_type)
         
-        ## Set content-disposition to inline for PDFs (view in browser) and attachment for DOCX (download)
         disposition = 'inline' if filename.endswith('.pdf') else 'attachment'
         response['Content-Disposition'] = f'{disposition}; filename="{os.path.basename(resume.resume.name)}"'
         

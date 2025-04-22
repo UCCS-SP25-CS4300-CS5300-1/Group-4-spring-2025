@@ -136,7 +136,7 @@ MEDIA_URL = 'media/'
 if('test' in sys.argv):
     MEDIA_ROOT = BASE_DIR / 'test_media'
 else:
-    MEDIA_ROOT = Path('/app/database/media')
+    MEDIA_ROOT = BASE_DIR / 'media'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field

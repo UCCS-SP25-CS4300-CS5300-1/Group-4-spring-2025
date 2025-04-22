@@ -830,7 +830,7 @@ class ResumeFeedbackTest(TestCase):
             mock_openai.return_value.choices = [MagicMock(message=MagicMock(content="Mocked feedback"))]
             
             result = get_job_specific_feedback("Resume text", "Job description")
-            self.assertEqual(result, "Mocked feedback")
+            self.assertEqual(result, "<p>Mocked feedback</p>") 
             
             mock_openai.assert_called_once()
             call_args = mock_openai.call_args[1]
@@ -842,9 +842,11 @@ class ResumeFeedbackTest(TestCase):
         with patch('os.environ.get', return_value=None):
             result = get_job_specific_feedback("Resume text", "Job description")
             self.assertIn("requires an OpenAI API key", result)
+            self.assertTrue(result.startswith("<h2>Error</h2>"), "Error message should start with H2")
         
         with patch('openai.chat.completions.create', side_effect=Exception("API error")):
             result = get_job_specific_feedback("Resume text", "Job description")
+            self.assertTrue(result.startswith("<h2>Error</h2>"), "Error message should start with H2")
             self.assertIn("Unable to generate job-specific feedback", result)
             self.assertIn("API error", result)
 

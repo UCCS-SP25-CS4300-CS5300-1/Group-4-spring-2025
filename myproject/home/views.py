@@ -2,6 +2,11 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse, HttpResponse
 from django.contrib import messages
 import base64
+import markdown
+import openai
+import os
+from openai import APITimeoutError
+import logging
 
 from users.models import Resume
 from pypdf import PdfReader
@@ -14,7 +19,6 @@ from .cover_letter_service import CoverLetterService
 from django.contrib.auth.decorators import login_required
 
 from users.models import Profile, Resume
-import openai
 
 
 def index(request):
@@ -260,25 +264,31 @@ def ajax_resume_feedback(request):
     return JsonResponse({'error': 'Invalid request'}, status=400)
 
 def get_job_specific_feedback(resume_text, job_description):
-    """Get feedback comparing resume to job description."""
     try:
-        import openai
-        import os
         if os.environ.get('OPENAI_API_KEY'):
             openai.api_key = os.environ.get('OPENAI_API_KEY')
         else:
-            return "Job-specific feedback requires an OpenAI API key."
-            
+            return markdown.markdown("## Error\n\nJob-specific feedback requires an OpenAI API key.")
+
+        model_name = "gpt-4o-mini"
+        system_prompt = "You are an expert at analyzing resumes against job descriptions..."
+        user_prompt_template = "Resume:\n{resume_text}\n\nJob Description:\n{job_description}..."
+        user_prompt = user_prompt_template.format(resume_text=resume_text, job_description=job_description)
+
         response = openai.chat.completions.create(
-            model="gpt-4o-mini",
+            model=model_name,
             messages=[
-                {"role": "system", "content": "You are an expert at analyzing resumes against job descriptions. Provide detailed, helpful feedback on how well the resume matches the job requirements and suggest improvements to increase chances of getting the job."},
-                {"role": "user", "content": f"Resume:\n{resume_text}\n\nJob Description:\n{job_description}\n\nProvide an analysis of how well this resume matches the job requirements. Include:\n1. Match score (out of 100)\n2. Key strengths that align with the job\n3. Notable gaps or missing skills\n4. Specific suggestions to tailor the resume for this job"}
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
             ],
+            timeout=60.0,
         )
-        return response.choices[0].message.content
+
+        return markdown.markdown(response.choices[0].message.content)
+    except APITimeoutError as e:
+        return markdown.markdown("## Error\n\nUnable to generate job-specific feedback: The request to the AI service timed out after 60 seconds. Please try again later.")
     except Exception as e:
-        return f"Unable to generate job-specific feedback: {str(e)}"
+        return markdown.markdown(f"## Error\n\nUnable to generate job-specific feedback: {str(e)}")
 
 @login_required
 def ajax_generate_cover_letter(request):
@@ -537,8 +547,6 @@ def ajax_job_outlook(request):
 
 def get_job_fit_analysis(job_title, job_description, industry=None, location=None, resume_text=None):
     try:
-        import openai
-        import os
         if os.environ.get('OPENAI_API_KEY'):
             openai.api_key = os.environ.get('OPENAI_API_KEY')
         else:
@@ -573,8 +581,11 @@ def get_job_fit_analysis(job_title, job_description, industry=None, location=Non
                 {"role": "system", "content": "You are a recruiting specialist who analyzes how well candidates match specific job postings. Provide detailed, honest assessments of fit along with actionable recommendations."},
                 {"role": "user", "content": user_prompt}
             ],
+            timeout=60.0, # Add timeout for consistency
         )
         return response.choices[0].message.content
+    except APITimeoutError as e:
+         return f"Unable to generate job fit analysis: Request timed out ({e})."
     except Exception as e:
         return f"Unable to generate job fit analysis: {str(e)}"
     
@@ -621,8 +632,6 @@ def ajax_rejection_generator(request):
 
 def generate_rejection_reasons(job_title, job_description, industry=None, location=None, resume_text=None):
     try:
-        import openai
-        import os
         if os.environ.get('OPENAI_API_KEY'):
             openai.api_key = os.environ.get('OPENAI_API_KEY')
         else:
@@ -652,10 +661,14 @@ def generate_rejection_reasons(job_title, job_description, industry=None, locati
                 {"role": "system", "content": "You are a recruiting specialist who analyzes how well candidates match specific job postings. Provide detailed, honest assessments of areas of weakness along with actionable recommendations."},
                 {"role": "user", "content": user_prompt}
             ],
+            timeout=60.0, # Add timeout for consistency
         )
         return response.choices[0].message.content
+    except APITimeoutError as e:
+        logger = logging.getLogger(__name__)
+        logger.error("Timeout in generate_rejection_reasons", exc_info=True)
+        return f"Unable to generate rejection reasons: Request timed out ({e})."
     except Exception as e:
-        import logging
         logger = logging.getLogger(__name__)
         logger.error("Error in generate_rejection_reasons", exc_info=True)
         return "Unable to generate rejection reasons due to an internal error."

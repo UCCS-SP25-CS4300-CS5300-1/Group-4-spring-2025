@@ -48,12 +48,14 @@
         </div>
     </div>
 
-    
     <div class="profile-section">
         <div class="profile-header">
             <h3>Resume</h3>
-            <div class="resume-actions">                
+            <div class="resume-actions">
                 {% if latest_resume %}
+                    <a href="{% url 'resume_feedback' latest_resume.id %}" class="btn-sm btn-outline-primary">
+                        <i class="fas fa-sync-alt"></i> Feedback
+                    </a>
                     <a href="{% url 'view_resume' latest_resume.id %}" class="btn-sm btn-outline-success" target="_blank">
                         <i class="fas fa-download"></i> View
                     </a>
@@ -62,9 +64,9 @@
                     <i class="fas fa-upload"></i> {% if latest_resume %}Update{% else %}Upload{% endif %}
                 </a>
                 {% if latest_resume %}
-                <a href="{% url 'delete_resume' %}" class="btn-sm btn-outline-danger">
-                    <i class="fas fa-trash"></i> Delete
-                </a>            
+                    <a href="{% url 'delete_resume' %}" class="btn-sm btn-outline-danger">
+                        <i class="fas fa-trash"></i> Delete
+                    </a>
                 {% endif %}
             </div>
         </div>
@@ -120,6 +122,8 @@
 
     .resume-actions {
         align-items: center;
+        display: inline-flex;
+        gap: 0.25rem;
     }
 
     .resume-actions .btn-sm {
@@ -185,4 +189,4 @@
         max-width: 900px !important;
     }
 </style>
-{% endblock %} 
+{% endblock %}
