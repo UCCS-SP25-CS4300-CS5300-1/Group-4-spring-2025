@@ -994,6 +994,89 @@ class ApplyFlowViewTest(TestCase):
             self.assertEqual(call_args['resume_text'], "Resume content")
             self.assertEqual(call_args['job_title'], "Python Developer")
 
+    def test_rejection_simulator_success(self):
+        self.client.login(username='testuser', password='StrongTestPass123')
+        
+        with patch('home.views.generate_rejection_reasons', return_value="Sample rejection reasons"), \
+             patch('users.views.parse_resume', return_value="Resume content"):
+            
+            response = self.client.post(
+                reverse('rejection_generator'),
+                {
+                    'job_title': 'Python Developer',
+                    'job_description': 'Sample job description',
+                    'industry': 'Technology',
+                    'location': 'Remote'
+                },
+                HTTP_X_REQUESTED_WITH='XMLHttpRequest'
+            )
+            
+            self.assertEqual(response.status_code, 200)
+            data = response.json()
+            self.assertTrue(data['success'])
+            self.assertEqual(data['rejection_reasons'], "Sample rejection reasons")        
+
+    def test_rejection_simulator_missing_title(self):
+        self.client.login(username='testuser', password='StrongTestPass123')
+        
+        response = self.client.post(
+            reverse('rejection_generator'),
+            {
+                'job_description': 'Sample job description',
+                'industry': 'Technology',
+                'location': 'Remote'
+            },
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest'
+        )
+        
+        self.assertEqual(response.status_code, 400)
+        data = response.json()
+        self.assertEqual(data['error'], 'No job title provided')      
+
+    def test_rejection_simulator_with_resume(self):
+        self.client.login(username='testuser', password='StrongTestPass123')
+        
+        with patch('users.views.parse_resume', return_value="Resume content"), \
+             patch('home.views.generate_rejection_reasons') as mock_analysis:
+            
+            mock_analysis.return_value = "Analysis with resume data"
+            
+            response = self.client.post(
+                reverse('rejection_generator'),
+                {
+                    'job_title': 'Python Developer',
+                    'job_description': 'Sample job description',
+                },
+                HTTP_X_REQUESTED_WITH='XMLHttpRequest'
+            )
+            
+            self.assertEqual(response.status_code, 200)
+            call_args = mock_analysis.call_args[1]
+            self.assertEqual(call_args['resume_text'], "Resume content")
+            self.assertEqual(call_args['job_title'], "Python Developer")   
+
+    def test_rejection_simulator_with_no_resume(self):
+        self.client.login(username='testuser', password='StrongTestPass123')
+        
+        with patch('users.views.parse_resume', return_value=None), \
+             patch('home.views.generate_rejection_reasons') as mock_analysis:
+            
+            mock_analysis.return_value = "Analysis without resume data"
+            
+            response = self.client.post(
+                reverse('rejection_generator'),
+                {
+                    'job_title': 'Python Developer',
+                    'job_description': 'Sample job description',
+                },
+                HTTP_X_REQUESTED_WITH='XMLHttpRequest'
+            )
+            
+            self.assertEqual(response.status_code, 200)
+            call_args = mock_analysis.call_args[1]
+            self.assertEqual(call_args['resume_text'], None)
+            self.assertEqual(call_args['job_title'], "Python Developer")               
+
 class JobTrackingTest(TestCase):
     def setUp(self):
         self.client = Client()

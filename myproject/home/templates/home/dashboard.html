@@ -415,12 +415,19 @@
                                         Cover Letter
                                     </a>
                                     <a href="{% url 'job_fit_analysis' job_id=job.job_id %}"
-                                       class="btn btn-info btn-sm mt-1 track-view"
+                                       class="btn btn-info btn-sm track-view"
                                        data-jobid="{{ job.job_id }}"
                                        style="background-color: #8b5cf6; border-color: #8b5cf6; color: white;">
                                         <i class="fas fa-user-check"></i>
                                         Fit Analysis
                                     </a>
+                                    <a href="{% url 'rejection_simulator' job_id=job.job_id %}"
+                                       class="btn btn-info btn-sm track-view"
+                                       data-jobid="{{ job.job_id }}"
+                                       style="background-color: #d47474; border-color: #d47474; color: white;">
+                                        <i class="fas fa-user-xmark"></i>
+                                        Rejection Simulator
+                                    </a>                                    
                                 </div>
                                 <a href="{{ job.url }}" target="_blank" class="btn btn-outline-secondary btn-sm track-view" data-jobid="{{ job.job_id }}">
                                     <i class="fas fa-external-link-alt"></i>
