@@ -612,7 +612,10 @@ def ajax_rejection_generator(request):
                 'rejection_reasons': rejection_reasons
             })
         except Exception as e:
-            return JsonResponse({'error': f'Error generating rejection reasons: {str(e)}'}, status=500)
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error("Error generating rejection reasons", exc_info=True)
+            return JsonResponse({'error': 'An internal error occurred while generating rejection reasons.'}, status=500)
     
     return JsonResponse({'error': 'Invalid request'}, status=400)  
 
