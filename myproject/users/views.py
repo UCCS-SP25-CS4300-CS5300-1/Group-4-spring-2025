@@ -111,6 +111,20 @@ def upload_resume(request):
         'form': resume_form,
     })
 
+@login_required
+def delete_resume(request):
+    try:
+        resumes = Resume.objects.filter(user=request.user)
+        for resume in resumes:
+            resume.resume.delete()
+            resume.delete()
+        messages.info(request, "You have removed your resume.")
+    except Resume.DoesNotExist:
+        # shouldn't be possible
+        messages.error(request, "You don't have a resume to delete.") 
+    
+    return redirect('profile')
+
 def parse_resume(file):
     
     file_path = file.path

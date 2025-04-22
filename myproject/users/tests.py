@@ -357,6 +357,29 @@ class ResumeViewTest(TestCase):
         self.assertTrue(response.context['form'].errors)
         self.assertEqual(Resume.objects.count(), 0)
 
+    @patch('users.views.PdfReader')
+    def test_delete_resume(self, mock_pdf_reader):
+        mock_instance = mock_pdf_reader.return_value
+        mock_instance.pages = [type('obj', (object,), {'extract_text': lambda: 'Sample resume text'})]
+        
+        writer = PdfWriter() 
+        writer.add_page(writer.add_blank_page(width=210, height=297))
+
+        written_file = BytesIO()
+        writer.write(written_file)
+        written_file.seek(0) # zooms to start of file
+        uploaded_file = SimpleUploadedFile("some_resume.pdf", written_file.read(), content_type="application/pdf")
+
+        response = self.client.post(reverse('upload_resume'), {'resume': uploaded_file})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(Resume.objects.filter(user=self.user).count(), 1)
+
+        # now delete the resume
+        delete_response = self.client.get(reverse('delete_resume'), follow=True)
+        self.assertEqual(delete_response.status_code, 200)
+        self.assertEqual(Resume.objects.filter(user=self.user).count(), 0)
+        self.assertContains(delete_response, "You have removed your resume.")
+
     def tearDown(self):
         for resume in self.uploaded_files:
             if(resume.resume):
