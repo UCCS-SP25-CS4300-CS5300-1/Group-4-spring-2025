@@ -37,6 +37,7 @@ class Resume(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='resumes', null=True)
     resume = models.FileField(upload_to='resumes/')
     uploaded_at = models.DateTimeField(auto_now_add=True)
+    ai_feedback = models.TextField(blank=True, null=True)
 
     def __str__(self):
         return f"Resume {self.id}"  
