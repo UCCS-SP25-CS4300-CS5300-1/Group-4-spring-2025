@@ -655,7 +655,10 @@ def generate_rejection_reasons(job_title, job_description, industry=None, locati
         )
         return response.choices[0].message.content
     except Exception as e:
-        return f"Unable to generate rejection reasons: {str(e)}"  
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error("Error in generate_rejection_reasons", exc_info=True)
+        return "Unable to generate rejection reasons due to an internal error."
 
 @login_required
 def ajax_track_job_view(request):
