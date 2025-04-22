@@ -175,28 +175,6 @@ def ajax_evaluate_response(request):
 
     return JsonResponse({'error': 'Invalid request'}, status=400)
 
-@login_required
-def rejection_reason_simulator(request, job_id, resume_content=""):
-    """
-    View to handle the rejection reason generator functionality.
-    """
-    if(not hasattr(request.user, 'profile')):
-        profile = Profile.objects.create(user=request.user)
-    else:
-        profile = request.user.profile
-
-    job = get_object_or_404(JobListing, job_id=job_id)
-    job_description = job.description
-
-    if request.user.is_superuser or profile.whitelisted_for_ai:
-        return render(request, 'home/rejection_simulator.html', {
-            'job': job,
-            'job_description': job_description, 
-            'resume_content': resume_content,
-        })
-
-    return JsonResponse({'error': 'Not authorized for AI'}, status=401)
-
 def read_resume(user):
     resume_text = ""
     resume_file = user.resumes.first()
@@ -647,6 +625,88 @@ def get_job_fit_analysis(job_title, job_description, industry=None, location=Non
         return response.choices[0].message.content
     except Exception as e:
         return f"Unable to generate job fit analysis: {str(e)}"
+    
+@login_required
+def ajax_rejection_generator(request):
+    if request.method == "POST" and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        job_title = request.POST.get('job_title', '')
+        job_description = request.POST.get('job_description', '')
+        industry = request.POST.get('industry', '')
+        location = request.POST.get('location', '')
+        
+        if not job_title:
+            return JsonResponse({'error': 'No job title provided'}, status=400)
+            
+        try:
+            resume_text = None
+            latest_resume = Resume.objects.filter(user=request.user).order_by('-uploaded_at').first()
+            if latest_resume:
+                try:
+                    from users.views import parse_resume
+                    resume_text = parse_resume(latest_resume.resume)
+                except Exception:
+                    pass
+            
+            if not resume_text:
+                return JsonResponse({'error': 'No resume found to analyze fit'}, status=400)
+            
+            rejection_reasons = generate_rejection_reasons(
+                job_title=job_title,
+                job_description=job_description,
+                industry=industry,
+                location=location,
+                resume_text=resume_text
+            )
+            
+            return JsonResponse({
+                'success': True,
+                'rejection_reasons': rejection_reasons
+            })
+        except Exception as e:
+            return JsonResponse({'error': f'Error generating fit analysis: {str(e)}'}, status=500)
+    
+    return JsonResponse({'error': 'Invalid request'}, status=400)  
+
+def generate_rejection_reasons(job_title, job_description, industry=None, location=None, resume_text=None):
+    try:
+        import openai
+        import os
+        if os.environ.get('OPENAI_API_KEY'):
+            openai.api_key = os.environ.get('OPENAI_API_KEY')
+        else:
+            return "Rejection reason simulator requires an OpenAI API key."
+            
+        if not resume_text:
+            return "Cannot analyze fit without a resume. Please upload your resume first."
+            
+        user_prompt = f"Job Title: {job_title}\n"
+        
+        if job_description:
+            user_prompt += f"\nJob Description: {job_description[:1000]}...\n"
+        
+        if industry:
+            user_prompt += f"\nIndustry: {industry}\n"
+            
+        if location:
+            user_prompt += f"\nLocation: {location}\n"
+
+        if resume_text:
+            user_prompt += f"\nCandidate Resume: {resume_text}\n"
+            user_prompt += "\nPlease generate five potential reasons why the employer might reject the candidate based on their resume."
+            
+        if not resume_text:
+            user_prompt += "\nPlease generate five potential reasons why the employer might reject the candidate. The user hasn't uploaded a resume, so assume the most common reasons why an employer would reject a typical candidate."
+        
+        response = openai.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": "You are a recruiting specialist who analyzes how well candidates match specific job postings. Provide detailed, honest assessments of areas of weakness along with actionable recommendations."},
+                {"role": "user", "content": user_prompt}
+            ],
+        )
+        return response.choices[0].message.content
+    except Exception as e:
+        return f"Unable to generate rejection reasons: {str(e)}"  
 
 @login_required
 def ajax_track_job_view(request):
@@ -719,3 +779,20 @@ def job_fit_analysis_page(request, job_id):
         'has_resume': has_resume,
     }
     return render(request, 'home/job_fit_analysis.html', context)
+
+@login_required
+def rejection_simulator_page(request, job_id):
+    job_details = JobicyService.get_job_details(job_id)
+    if not job_details:
+        messages.error(request, f"Could not find job details for ID: {job_id}")
+        return redirect('dashboard') 
+
+    latest_resume = Resume.objects.filter(user=request.user).order_by('-uploaded_at').first()
+    has_resume = latest_resume is not None
+    
+    context = {
+        'job': job_details,
+        'latest_resume': latest_resume,
+        'has_resume': has_resume,
+    }
+    return render(request, 'home/rejection_simulator.html', context)

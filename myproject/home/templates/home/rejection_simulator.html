@@ -1,263 +1,48 @@
 {% load static %}
+{% load job_filters %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="{% static 'styles.css' %}">
-    <link rel="stylesheet" href="{% static 'interview_coach.css' %}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <title>Rejection Reason Simulator - ApplierPilotAI</title>
+    <title>Rejection Simulator for {{ job.title }} - ApplierPilotAI</title>
     <style>
-        body {
-            background-color: #f8fafc;
-            min-height: 100vh;
-            margin: 0;
-            padding: 0;
-        }
-
-        .navbar {
-            background-color: white;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            padding: 1rem 2rem;
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .back-button {
-            color: #4b5563;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-size: 0.9rem;
-            padding: 0.5rem 1rem;
-            border-radius: 6px;
-            transition: background-color 0.2s;
-        }
-
-        .back-button:hover {
-            background-color: #f3f4f6;
-            color: #2563eb;
-            text-decoration: none;
-        }
-
-        .navbar-brand {
-            color: #2563eb;
-            font-size: 1.5rem;
-            font-weight: bold;
-            text-decoration: none;
-        }
-
-        .navbar-brand:hover {
-            color: #1d4ed8;
-        }
-
-        .main-content {
-            padding: 2rem;
-            width: 100%;
-        }
-
-        .interview-card {
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-        }
-
-        .interview-card .card-header {
-            background-color: #2563eb;
-            color: white;
-            padding: 1rem 1.5rem;
-        }
-
-        .interview-card .card-header h2 i {
-            margin-right: 0.75rem;
-        }
-
-        .interview-card .card-body {
-            background-color: #fdfdff;
-            padding: 2rem;
-        }
-
-        .job-info-header, .alert-secondary {
-            background-color: #eef2ff;
-            border: 1px solid #dbeafe;
-            padding: 1rem;
-            border-radius: 8px;
-            margin-bottom: 2rem;
-        }
-        
-        .job-info-header h5, .alert-secondary h5 {
-            color: #4338ca;
-            margin-bottom: 0.25rem;
-        }
-
-        #interview-simulation h4 {
-            color: #1d4ed8;
-            border-bottom: 2px solid #dbeafe;
-            padding-bottom: 0.5rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .accordion .card {
-            border: 1px solid #e5e7eb;
-            border-radius: 8px;
-            box-shadow: none;
-            overflow: hidden;
-        }
-
-        .question-btn {
-            background-color: #f9fafb;
-            border: none;
-            padding: 1rem 1.5rem;
-            width: 100%;
-            text-align: left;
-            font-size: 1.1rem;
-            font-weight: 500;
-            color: #1f2937;
-            transition: background-color 0.2s ease-in-out;
-            border-bottom: 1px solid #e5e7eb;
-        }
-        
-        .question-btn:not(.collapsed) {
-             background-color: #eef2ff;
-             color: #1d4ed8;
-             border-bottom: none;
-        }
-
-        .question-btn:hover {
-            background-color: #f3f4f6;
-        }
-
-        .accordion .card-body {
-            padding: 1.5rem;
-            background-color: white;
-        }
-
-        .interviewer-question {
-            font-style: italic;
-            color: #4b5563;
-            margin-bottom: 1.5rem;
-            padding-left: 1rem;
-            border-left: 3px solid #9ca3af;
-        }
-
-        .response-form textarea {
-            border-radius: 8px;
-            border: 1px solid #d1d5db;
-        }
-        
-        .response-form textarea:focus {
-            border-color: #2563eb;
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-        }
-
-        .submit-response {
-            background-color: #10b981;
-            border-color: #059669;
-            color: white;
-            transition: background-color 0.2s;
-        }
-
-        .submit-response:hover {
-            background-color: #059669;
-            color: white;
-        }
-        
-        .feedback-section {
-            background-color: #f9fafb;
-            border: 1px solid #e5e7eb;
-            border-radius: 8px;
-            padding: 1.5rem;
-            margin-top: 2rem !important;
-        }
-
-        .feedback-section h5 {
-            color: #1d4ed8;
-        }
-
-        .feedback-score {
-            background: linear-gradient(to right, #ef4444, #f59e0b, #10b981);
-            font-weight: bold;
-            color: white;
-            text-shadow: 1px 1px 1px rgba(0,0,0,0.3);
-        }
-        
-        .progress {
-            background-color: #e5e7eb;
-            border-radius: 6px;
-            box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
-        }
-
-        .strengths-list, .improvements-list {
-            list-style: none;
-            padding-left: 0;
-        }
-
-        .strengths-list li::before {
-            content: '\f058';
-            font-family: 'Font Awesome 6 Free';
-            font-weight: 900;
-            color: #10b981;
-            margin-right: 0.75rem;
-        }
-        
-        .improvements-list li::before {
-            content: '\f06a';
-            font-family: 'Font Awesome 6 Free';
-            font-weight: 900;
-            color: #f59e0b;
-            margin-right: 0.75rem;
-        }
-
-        .strengths-list li,
-        .improvements-list li {
-            margin-bottom: 0.5rem;
-            color: #374151;
-        }
-        
-        .suggestions-section {
-            background-color: #eef2ff;
-            padding: 1rem;
-            border-radius: 6px;
-            border: 1px solid #dbeafe;
-        }
-
-        .suggestions-section h6 {
-            color: #4338ca;
-        }
-        
-        .suggestions-text {
-            color: #4b5563;
-            font-size: 0.95rem;
-        }
-        
-        .card-footer {
-            border-top: 1px solid #e5e7eb;
-        }
-
+        /* Reusing some styles from apply_flow for consistency */
+        body { background-color: #f8fafc; }
+        .navbar { background-color: white; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .navbar-brand { color: #2563eb; font-weight: bold; }
+        .back-button { color: #4b5563; text-decoration: none; transition: background-color 0.2s; }
+        .back-button:hover { background-color: #f3f4f6; color: #2563eb; }
+        .container { max-width: 960px; }
+        .job-header-card { background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05); margin-bottom: 2rem; border: 1px solid #e5e7eb; }
+        .company-logo { width: 56px; height: 56px; object-fit: contain; border-radius: 8px; background-color: #f3f4f6; flex-shrink: 0; }
+        .company-logo-placeholder { display: flex; align-items: center; justify-content: center; background-color: #e5e7eb; color: #4b5563; font-size: 1.8rem; font-weight: 600; text-transform: uppercase; }
+        .job-title { font-size: 1.5rem; font-weight: 600; color: #111827; }
+        .company-name { color: #4b5563; font-size: 1rem; }
+        .job-meta span { display: inline-flex; align-items: center; gap: 0.5rem; margin-right: 1rem; color: #4b5563; font-size: 0.9rem; }
+        .job-meta i { color: #6b7280; }
+        .analysis-section { background-color: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 1.5rem; margin-bottom: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .loading-container { text-align: center; color: #6b7280; }
     </style>
 </head>
 <body>
-    <div id="mobile-warning" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.9); z-index: 9999; color: white; text-align: center; padding-top: 20%;">
-        <h2>Mobile Access Not Supported</h2>
-        <p>This application is not optimized for mobile devices. Please use a desktop or laptop computer for the best experience.</p>
-    </div>
-    <nav class="navbar">
-        <a href="/dashboard/" class="back-button">
-            <i class="fas fa-arrow-left"></i>
-            Back to Dashboard
-        </a>
-        <div class="navbar-brand">
-            <a href="/" class="navbar-brand">ApplierPilotAI</a>
+    <nav class="navbar navbar-light mb-4">
+        <div class="container">
+            <a href="{% url 'dashboard' %}" class="back-button p-2 rounded">
+                <i class="fas fa-arrow-left me-1"></i> Back to Dashboard
+            </a>
+             <a href="/" class="navbar-brand">ApplierPilotAI</a>
+             <span></span>
         </div>
     </nav>
 
-    <main class="main-content">
+    <div class="container mt-4 mb-5">
+        
         {% if messages %}
-            <div class="messages mb-4">
+            <div class="messages mb-3">
                 {% for message in messages %}
                     <div class="alert alert-{{ message.tags }}">
                         {{ message }}
@@ -266,272 +51,147 @@
             </div>
         {% endif %}
 
-        <div class="container">
-            <div class="row">
-                <div class="col-lg-8 mx-auto">
-                    <div class="interview-card">
-                        <div class="card-header">
-                            <h2 class="mb-0 d-flex align-items-center">
-                                <i class="fas fa-comments me-2"></i> AI Rejection Reason Simulator
-                            </h2>
-                        </div>
-                        <div class="card-body">
-                            <div class="job-info-header">
-                                <h5>Generating possible rejection reasons for: {{ job.title }} at {{ job.company }}</h5>
-                                <p class="small mb-0">Using job description to generate possible rejection reasons</p>
-                            </div>
-
-                            <div id="interview-simulation">
-                                <div id="question-section" class="mb-4">
-                                    <div class="d-flex justify-content-between align-items-center mb-3">
-                                        <h4 class="mb-0">Rejection Reasons</h4>
-                                        <button id="regenerate-questions" class="btn btn-sm btn-outline-secondary">
-                                            <i class="fas fa-sync-alt me-1"></i> Regenerate Reasons
-                                        </button>
-                                    </div>
-
-                                    <div id="loading-questions" class="text-center py-5">
-                                        <div class="spinner-border text-primary" role="status">
-                                            <span class="visually-hidden">Loading...</span>
-                                        </div>
-                                        <p class="mt-2">Generating possible rejection reasons...</p>
-                                    </div>
-
-                                    <div class="accordion" id="interviewQuestions" style="display: none;">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="card-footer bg-white text-center p-3">
-                            <a href="{% url 'dashboard' %}" class="btn btn-secondary me-2">
-                                <i class="fas fa-arrow-left me-1"></i> Back to Dashboard
-                            </a>
-                        </div>
-                    </div>
+        <!-- Job Header -->
+        <div class="job-header-card">
+             <div class="d-flex align-items-start gap-3 mb-3">
+                {% if job.company_logo %}
+                    <img src="{{ job.company_logo }}" alt="{{ job.company }}" class="company-logo">
+                {% else %}
+                    <div class="company-logo company-logo-placeholder">{{ job.company|slice:":1" }}</div>
+                {% endif %}
+                <div class="flex-grow-1">
+                    <h1 class="job-title mb-1">{{ job.title }}</h1>
+                    <p class="company-name mb-2">{{ job.company }}</p>
+                    <div class="job-meta">
+                        {% if job.location %}<span><i class="fas fa-map-marker-alt"></i>{{ job.location }}</span>{% endif %}
+                        {% if job.job_type %}<span><i class="fas fa-clock"></i>{{ job.job_type|format_field }}</span>{% endif %}
+                        {% if job.salary_display %}<span><i class="fas fa-money-bill-wave"></i>{{ job.salary_display }}</span>{% endif %}
+                     </div>
                 </div>
+                 <a href="{{ job.url }}" target="_blank" class="btn btn-outline-secondary btn-sm flex-shrink-0 align-self-start">
+                    <i class="fas fa-external-link-alt"></i> View Posting
+                </a>
             </div>
         </div>
-    </main>
+
+        <!-- Fit Analysis Section -->
+        <div class="analysis-section">
+            <h2 class="h4 mb-3"><i class="fas fa-user-xmark me-2"></i>Rejection Reason Simulator</h2>
+            {% if has_resume %}
+                <p>Get AI-generated feedback on possible reasons an employer might reject your resume.</p>
+            {% else %}
+                <p>Get AI-generated feedback on possible reasons an employer might reject your application.</p>
+            {% endif %}
+            <div id="outlookError" class="alert alert-danger alert-dismissible fade show" role="alert" style="display: none;">
+                <span id="outlookErrorMessage"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            
+            
+            <button class="btn btn-primary" id="generateOutlook">
+                <i class="fas fa-chart-line me-1"></i> Generate Rejection Reasons
+            </button>
+            
+            <div class="loading-container mt-4" id="outlookLoadingContainer" style="display: none;">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-3">Generating rejection reasons for {{ job.title }} at {{ job.company }}...</p>
+                <p class="text-muted small">This may take a few moments</p>
+            </div>
+            
+            <div id="outlookResult" class="mt-4" style="display: none;">
+                <h5>Rejection Reasons</h5>
+                
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <i class="fas fa-user-xmark me-2"></i> Rejection reasons for {{ job.title }} at {{ job.company }}
+                    </div>
+                    <div class="card-body">
+                        <div id="outlookAnalysis"></div>
+                    </div>
+                </div>
+                
+                <button class="btn btn-outline-primary mt-3" onclick="$('#outlookResult').hide();">
+                    <i class="fas fa-chevron-up me-1"></i> Hide Reasons
+                </button>
+            </div>
+        </div>
+    </div>
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        function checkScreenSize() {
-            const mobileWarning = document.getElementById('mobile-warning');
-            if (window.innerWidth < 768) {
-                mobileWarning.style.display = 'block';
-            } else {
-                mobileWarning.style.display = 'none';
-            }
+        // Function to convert Markdown-like syntax to HTML
+        function markdownToHtml(markdown) {
+            if (!markdown) return '';
+            let html = markdown
+                .replace(/^### (.*$)/gim, '<h5>$1</h5>')
+                .replace(/^## (.*$)/gim, '<h4>$1</h4>')
+                .replace(/^# (.*$)/gim, '<h3>$1</h3>')
+                .replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/gim, '<em>$1</em>')
+                .replace(/^\d+\. (.*$)/gim, '<ol><li>$1</li></ol>')
+                .replace(/^- (.*$)/gim, '<ul><li>$1</li></ul>')
+                .replace(/\n\n/gim, '<br><br>');
+            return html;
         }
 
-        window.addEventListener('load', checkScreenSize);
-        window.addEventListener('resize', checkScreenSize);
+        $(document).ready(function() {
+            $('#generateOutlook').on('click', function() {
+                const button = $(this);
+                const loadingContainer = $('#outlookLoadingContainer');
+                const resultContainer = $('#outlookResult');
+                const errorContainer = $('#outlookError');
+                const errorMessageSpan = $('#outlookErrorMessage');
 
-        const jobDescription = "{{ job_description|escapejs }}";
-        const questionsUrl = "{% url 'generate_questions' %}";
-        const evaluateUrl = "{% url 'evaluate_response' %}";
-        const csrfToken = "{{ csrf_token }}";
+                resultContainer.hide();
+                errorContainer.hide();
+                errorMessageSpan.text('');
 
-        function fetchAndDisplayReasons(showLoading = true) {
-            const accordion = $('#interviewQuestions');
-            const loadingIndicator = $('#loading-questions');
-            const regenerateBtn = $('#regenerate-questions');
+                loadingContainer.show();
+                button.prop('disabled', true);
 
-            accordion.empty().hide();
-            if (showLoading) {
-                 loadingIndicator.show();
-            }
-            regenerateBtn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Regenerating...');
-
-            $.ajax({
-                url: questionsUrl,
-                type: "POST",
-                data: { 
-                    'job_description': jobDescription,
-                    'csrfmiddlewaretoken': csrfToken
-                 }, 
-                headers: {
-                    "X-Requested-With": "XMLHttpRequest",
-                    "X-CSRFToken": csrfToken
-                },
-                success: function(response) {
-                    accordion.empty();
-                    if (response.questions && response.questions.length > 0) {
-                        response.questions.forEach(function(question, index) {
-                            const questionHtml = `
-                                <div class="card mb-3 border">
-                                    <div class="card-header bg-white p-0" id="heading${index}">
-                                        <h5 class="mb-0">
-                                            <button class="question-btn" type="button" data-bs-toggle="collapse"
-                                                    data-bs-target="#collapse${index}" aria-expanded="${index === 0 ? 'true' : 'false'}"
-                                                    aria-controls="collapse${index}">
-                                                Question ${index + 1}
-                                            </button>
-                                        </h5>
-                                    </div>
-                                    <div id="collapse${index}" class="collapse ${index === 0 ? 'show' : ''}"
-                                         aria-labelledby="heading${index}" data-bs-parent="#interviewQuestions">
-                                        <div class="card-body">
-                                            <p class="interviewer-question">${question}</p>
-                                            <form class="response-form mt-3" method="post">
-                                                <input type="hidden" name="csrfmiddlewaretoken" value="${csrfToken}">
-                                                <input type="hidden" name="question" value="${question}">
-                                                <input type="hidden" name="job_description" value="${jobDescription}">
-                                                <div class="form-group">
-                                                    <label for="response${index}">Your Response:</label>
-                                                    <textarea id="response${index}" name="response" class="form-control" rows="5" required placeholder="Type your response here..."></textarea>
-                                                </div>
-                                                <div class="mt-3">
-                                                    <button type="submit" class="btn submit-response">Submit Response</button>
-                                                </div>
-                                            </form>
-                                            <div class="feedback-section mt-4" style="display: none;">
-                                                 <hr>
-                                                 <h5 class="text-primary mb-3">AI Feedback</h5>
-                                                 <div class="card">
-                                                     <div class="card-body">
-                                                         <div class="d-flex align-items-center mb-3">
-                                                             <h6 class="me-3 mb-0">Overall Score:</h6>
-                                                             <div class="progress flex-grow-1" style="height: 15px;">
-                                                                 <div class="progress-bar feedback-score" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="10">0/10</div>
-                                                             </div>
-                                                         </div>
-                                                         <div class="strengths-section mb-3">
-                                                             <h6 class="text-success"><i class="fas fa-check-circle me-1"></i> Strengths:</h6>
-                                                             <ul class="strengths-list ps-4"></ul>
-                                                         </div>
-                                                         <div class="improvements-section mb-3">
-                                                             <h6 class="text-warning"><i class="fas fa-exclamation-triangle me-1"></i> Areas to Improve:</h6>
-                                                             <ul class="improvements-list ps-4"></ul>
-                                                         </div>
-                                                         <div class="suggestions-section mt-3">
-                                                             <h6 class="text-info"><i class="fas fa-lightbulb me-1"></i> Suggestions:</h6>
-                                                             <p class="suggestions-text mt-2"></p>
-                                                         </div>
-                                                     </div>
-                                                 </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            `;
-                            accordion.append(questionHtml);
-                        });
-                        accordion.show();
-                        attachFormSubmitListeners(); 
-                    } else {
-                        accordion.html('<p class="text-center text-muted">Could not load questions.</p>');
-                        accordion.show();
+                const formData = new FormData();
+                formData.append('job_title', '{{ job.title|escapejs }}');
+                formData.append('job_description', '{{ job.description|escapejs }}');
+                formData.append('industry', '{{ job.industry|default:""|escapejs }}');
+                formData.append('location', '{{ job.location|default:""|escapejs }}');
+                formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+                
+                $.ajax({
+                    url: "{% url 'rejection_generator' %}",
+                    type: "POST",
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            $('#outlookAnalysis').html(markdownToHtml(response.rejection_reasons));
+                            resultContainer.show();
+                        } else {
+                            errorMessageSpan.text(response.error || 'An unexpected error occurred.');
+                            errorContainer.show();
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        let errorMsg = 'An error occurred while generating rejection reasons for this job.';
+                        if (xhr.responseJSON && xhr.responseJSON.error) {
+                            errorMsg = xhr.responseJSON.error;
+                        }
+                        errorMessageSpan.text(errorMsg);
+                        errorContainer.show();
+                    },
+                    complete: function() {
+                        loadingContainer.hide();
+                        button.prop('disabled', false);
                     }
-                },
-                error: function(xhr, status, error) {
-                    console.error("Error fetching questions:", error);
-                     accordion.html(`<p class="text-center text-danger">Error loading questions: ${xhr.responseJSON ? xhr.responseJSON.error : 'Unknown error'}. Please try again.</p>`);
-                     accordion.show();
-                },
-                complete: function() {
-                    loadingIndicator.hide();
-                    regenerateBtn.prop('disabled', false).html('<i class="fas fa-sync-alt me-1"></i> Regenerate Reasons');
-                }
+                });
             });
-        }
-        
-        function attachFormSubmitListeners() {
-            $('.response-form').off('submit').on('submit', function(e) {
-                e.preventDefault();
-
-                 const form = $(this);
-                 const questionContainer = form.closest('.card-body');
-                 const feedbackSection = questionContainer.find('.feedback-section');
-                 const submitBtn = form.find('button');
-                 const originalBtnText = submitBtn.html();
-                 
-                 submitBtn.html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...');
-                 submitBtn.prop('disabled', true);
-
-                 $.ajax({
-                     url: evaluateUrl,
-                     type: "POST",
-                     data: form.serialize(),
-                     headers: {
-                         "X-Requested-With": "XMLHttpRequest",
-                         "X-CSRFToken": csrfToken
-                     },
-                     success: function(response) {
-                         const scorePercent = (response.score / 10) * 100;
-                         feedbackSection.find('.feedback-score').css('width', scorePercent + '%');
-                         feedbackSection.find('.feedback-score').attr('aria-valuenow', response.score);
-                         feedbackSection.find('.feedback-score').text(response.score + '/10');
-
-                         const strengthsList = feedbackSection.find('.strengths-list');
-                         strengthsList.empty();
-                         if (response.strengths && response.strengths.length > 0) {
-                            response.strengths.forEach(function(strength) {
-                                strengthsList.append(`<li>${strength}</li>`);
-                            });
-                         } else {
-                             strengthsList.append(`<li>None identified.</li>`);
-                         }
-
-                         const improvementsList = feedbackSection.find('.improvements-list');
-                         improvementsList.empty();
-                         if (response.areas_to_improve && response.areas_to_improve.length > 0) {
-                             response.areas_to_improve.forEach(function(improvement) {
-                                 improvementsList.append(`<li>${improvement}</li>`);
-                             });
-                         } else {
-                             improvementsList.append(`<li>None identified.</li>`);
-                         }
-
-                         feedbackSection.find('.suggestions-text').text(response.suggestions || 'No specific suggestions.');
-                         feedbackSection.show();
-                         feedbackSection.addClass('visible');
-                         submitBtn.html(originalBtnText);
-                         submitBtn.prop('disabled', false);
-                         form.find('textarea').prop('readonly', true);
-                         const questionBtn = questionContainer.closest('.collapse').prev().find('.question-btn');
-                         questionBtn.find('i.fa-check-circle').remove(); 
-                         questionBtn.prepend('<i class="fas fa-check-circle text-success me-2"></i>');
-
-                         const nextCollapseEl = questionContainer.closest('.collapse').parent().next().find('.collapse')[0];
-                         if (nextCollapseEl) {
-                             setTimeout(function() {
-                                 const bsCollapse = new bootstrap.Collapse(nextCollapseEl, { toggle: true });
-                             }, 1500);
-                         }
-                     },
-                     error: function(xhr, status, error) {
-                         console.error("Error:", error);
-                         let errorMessage = "An error occurred while evaluating your response.";
-                         try {
-                             const response = JSON.parse(xhr.responseText);
-                             if (response.error) { errorMessage = response.error; }
-                         } catch (e) {} 
-                         alert(errorMessage + " Please try again.");
-                         submitBtn.html(originalBtnText);
-                         submitBtn.prop('disabled', false);
-                     }
-                 });
-            });
-        }
-
-        document.addEventListener('DOMContentLoaded', function() {
-            fetchAndDisplayQuestions();
-
-            $('#regenerate-questions').on('click', function() {
-                location.reload();
-            });
-
-            $('#start-over').on('click', function() {
-                location.reload();
-            });
-
-             $(document).on('click', '.question-btn', function() {
-                 $('.question-btn').removeClass('active');
-                 $(this).addClass('active');
-             });
         });
     </script>
 </body>
-</html>
+</html> 
