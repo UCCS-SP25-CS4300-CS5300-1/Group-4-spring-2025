@@ -101,6 +101,13 @@
             </div>
             
             <div id="outlookResult" class="mt-4" style="display: none;">
+                {% if not has_resume %}
+                <div class="alert alert-warning">
+                    <h6><i class="fas fa-exclamation-triangle me-2"></i> Resume Not Found</h6>
+                    <p class="mb-0">The rejection simulator is more accurate with a resume, where you can <a href="{% url 'upload_resume' %}" target="_blank">upload here</a> if you'd like.</p>
+                </div>
+                {% endif %}
+
                 <h5>Rejection Reasons</h5>
                 
                 <div class="card">

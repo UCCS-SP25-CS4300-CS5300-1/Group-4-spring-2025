@@ -647,9 +647,6 @@ def ajax_rejection_generator(request):
                 except Exception:
                     pass
             
-            if not resume_text:
-                return JsonResponse({'error': 'No resume found to analyze fit'}, status=400)
-            
             rejection_reasons = generate_rejection_reasons(
                 job_title=job_title,
                 job_description=job_description,
@@ -675,9 +672,6 @@ def generate_rejection_reasons(job_title, job_description, industry=None, locati
             openai.api_key = os.environ.get('OPENAI_API_KEY')
         else:
             return "Rejection reason simulator requires an OpenAI API key."
-            
-        if not resume_text:
-            return "Cannot analyze fit without a resume. Please upload your resume first."
             
         user_prompt = f"Job Title: {job_title}\n"
         
