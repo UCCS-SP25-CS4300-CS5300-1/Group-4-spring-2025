@@ -14,11 +14,11 @@
         <button type="submit" class="btn">Upload</button>
     </form>
 
-    <div id="loading-indicator" style="display: none; text-align: center; margin-top: 20px;">
+    <div id="success-indicator" style="display: none; text-align: center; margin-top: 20px;">
         <div class="spinner-border text-primary" role="status">
             <span class="visually-hidden">Loading...</span>
         </div>
-        <p class="mt-2">Generating AI feedback... This may take a moment.</p>
+        <p class="mt-2">Resume Uploaded Successfully</p>
     </div>
 
     {% if message %}
@@ -26,18 +26,12 @@
         <div class="alert alert-info">{{ message }}</div>
     {% endif %}
 
-    {% if feedback %}
-        <br>
-        <h3>AI Feedback by GPT-4o-mini:</h3>
-        <br>
-        <div>{{ feedback|safe }}</div>
-    {% endif %}
 
     <script>
         document.getElementById('resumeForm').addEventListener('submit', function() {
             // Only show loading indicator if a file is selected
             if (document.querySelector('input[type="file"]').files.length > 0) {
-                document.getElementById('loading-indicator').style.display = 'block';
+                document.getElementById('success-indicator').style.display = 'block';
             }
         });
     </script>

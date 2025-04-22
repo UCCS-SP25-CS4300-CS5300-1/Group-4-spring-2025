@@ -9,6 +9,7 @@ urlpatterns = [
     path('edit_profile/', views.update_user, name='edit_profile'),
     path('upload_resume/', views.upload_resume, name='upload_resume'),
     path('resume/<int:resume_id>/', views.view_resume, name='view_resume'),
+    path('resume/<int:resume_id>/feedback/', views.resume_feedback, name='resume_feedback'),
     path('profile/', views.profile_view, name='profile'),
     path('edit_preferences/', views.update_preferences, name='update_preferences'),
     path('password_change/', auth_views.PasswordChangeView.as_view(

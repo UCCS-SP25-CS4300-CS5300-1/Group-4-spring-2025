@@ -104,36 +104,12 @@ def upload_resume(request):
             ## For DOCX files, we'll just save as is for now
             resume_instance.save()
             
-            file = resume_instance.resume
-            file_path = file.path
-
-            try:
-                text = parse_resume(file)
-                    
-                if request.user.is_superuser or profile.whitelisted_for_ai:
-                    feedback = get_resume_feedback(text)
-                    feedback_html = markdown.markdown(feedback)
-                    return render(request, 'users/upload_resume.html', {
-                        'form': resume_form, 
-                        'feedback': feedback_html
-                    })
-                else:
-                    return render(request, 'users/upload_resume.html', {
-                        'form': resume_form,
-                        'message': 'Resume uploaded successfully. AI feedback is only available to whitelisted users.'
-                    })
-            except Exception as e:
-                import logging
-                logger = logging.getLogger('users')
-                logger.error(f"Error processing resume: {str(e)}")
-                return render(request, 'users/upload_resume.html', {
-                    'form': resume_form,
-                    'message': 'Resume uploaded successfully, but there was an error processing it for feedback.'
-                })
     else:
         resume_form = ResumeUploadForm()
 
-    return render(request, 'users/upload_resume.html', {'form': resume_form})
+    return render(request, 'users/upload_resume.html', {
+        'form': resume_form,
+    })
 
 def parse_resume(file):
     
@@ -188,6 +164,35 @@ def get_resume_feedback(resume_text):
         return response.choices[0].message.content
     except Exception as ex:
         return f"Error generating AI feedback: {ex}"
+    
+@login_required
+def resume_feedback(request, resume_id):
+    if(not hasattr(request.user, 'profile')):
+        profile = Profile.objects.create(user=request.user)
+    else:
+        profile = request.user.profile
+    
+    resume = get_object_or_404(Resume, id=resume_id, user=request.user)
+    
+    resume_text = parse_resume(resume.resume)
+    
+    if request.user.is_superuser or profile.whitelisted_for_ai:
+
+        feedback = markdown.markdown(resume.ai_feedback or "No feedback available.")
+
+        if not resume.ai_feedback:
+            feedback = markdown.markdown(get_resume_feedback(resume_text))
+            resume.ai_feedback = feedback
+            resume.save()
+    else:
+        feedback = "User is not eligible for feedback"
+    
+                
+    return render(request, 'users/feedback_page.html', {
+        'resume': resume,
+        'feedback': feedback
+    })
+
 
 @login_required
 def profile_view(request):
