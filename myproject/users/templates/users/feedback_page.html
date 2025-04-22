@@ -1,0 +1,23 @@
+{% extends 'base_auth.html' %}
+{% load static %}
+{% block title %}AI Resume Feedback{% endblock %}
+
+{% block content %}
+    <a href="{% url 'profile' %}" class="btn btn-sm btn-outline-secondary mb-3">
+        <i class="fas fa-arrow-left"></i> Back to Profile
+    </a>
+
+    <h2 class="mb-4">AI Feedback by GPT-4o-mini</h2>
+
+    {% if message %}
+        <div class="alert alert-warning">{{ message }}</div>
+    {% endif %}
+
+    {% if feedback %}
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                {{ feedback | safe }}
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}
