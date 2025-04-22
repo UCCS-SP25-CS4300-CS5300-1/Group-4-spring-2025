@@ -111,18 +111,14 @@
         }
         .step-icon {
              width: 24px; height: 24px;
-             background-color: #dbeafe;
-             color: #2563eb;
+             background-color: #dbeafe; /* Light blue */
+             color: #2563eb; /* Blue */
              border-radius: 50%;
              display: inline-flex;
              align-items: center;
              justify-content: center;
              margin-right: 0.75rem;
              font-size: 0.9rem;
-        }
-        .accordion-button:not(.collapsed) .step-icon {
-            background-color: #2563eb;
-            color: white;
         }
         .final-submit-section {
             background-color: white;
@@ -177,11 +173,11 @@
 
             <div class="accordion-item">
                 <h2 class="accordion-header" id="headingOne">
-                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
+                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
                        <span class="step-icon"><i class="fas fa-file-alt"></i></span> Resume Tuning
                     </button>
                 </h2>
-                <div id="collapseOne" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#applicationStepsAccordion">
+                <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#applicationStepsAccordion">
                     <div class="accordion-body">
                         {% if has_resume %}
                             <div id="resumeFeedbackError" class="alert alert-danger alert-dismissible fade show" role="alert" style="display: none;">
@@ -263,11 +259,11 @@
 
             <div class="accordion-item">
                 <h2 class="accordion-header" id="headingTwo">
-                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="true" aria-controls="collapseTwo">
                         <span class="step-icon"><i class="fas fa-envelope-open-text"></i></span> Cover Letter Draft
                     </button>
                 </h2>
-                <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-bs-parent="#applicationStepsAccordion">
+                <div id="collapseTwo" class="accordion-collapse collapse show" aria-labelledby="headingTwo" data-bs-parent="#applicationStepsAccordion">
                     <div class="accordion-body">
                         <div id="coverLetterError" class="alert alert-danger alert-dismissible fade show" role="alert" style="display: none;">
                             <span id="coverLetterErrorMessage"></span>
@@ -353,11 +349,11 @@
 
             <div class="accordion-item">
                 <h2 class="accordion-header" id="headingThree">
-                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="true" aria-controls="collapseThree">
                          <span class="step-icon"><i class="fas fa-binoculars"></i></span> Personal Fit Analysis
                     </button>
                 </h2>
-                <div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="headingThree" data-bs-parent="#applicationStepsAccordion">
+                <div id="collapseThree" class="accordion-collapse collapse show" aria-labelledby="headingThree" data-bs-parent="#applicationStepsAccordion">
                     <div class="accordion-body">
                         <p>Get an AI-driven assessment of how well your profile matches the specific requirements of this job posting.</p>
                         
