@@ -506,7 +506,7 @@ def generate_cover_letter_pdf(request):
             })
 
         except Exception as e:
-            return JsonResponse({'error': f"Error generating PDF: {e}"}, status=500)
+            return JsonResponse({'error': f"Error generating PDF. Please try again later."}, status=500)
 
     return JsonResponse({'error': 'Invalid request method'}, status=405)
 
@@ -591,9 +591,9 @@ def get_job_fit_analysis(job_title, job_description, industry=None, location=Non
         )
         return response.choices[0].message.content
     except APITimeoutError as e:
-         return f"Unable to generate job fit analysis: Request timed out ({e})."
+         return f"Unable to generate job fit analysis: Request timed out."
     except Exception as e:
-        return f"Unable to generate job fit analysis: {str(e)}"
+        return f"Unable to generate job fit analysis. Please try again later."
 
 @login_required
 def ajax_rejection_generator(request):
