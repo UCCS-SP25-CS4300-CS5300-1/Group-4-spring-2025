@@ -55,9 +55,9 @@ def search_jobs(request):
     remote = request.GET.get('remote')  # 'yes' or 'no'
     salary_min = request.GET.get('salary_min')
     salary_max = request.GET.get('salary_max')
-    
+
     jobs = Job.objects.all()
-    
+
     if industry:
         jobs = jobs.filter(industry__icontains=industry)
     if location:
@@ -67,12 +67,12 @@ def search_jobs(request):
             jobs = jobs.filter(is_remote=True)
         elif remote.lower() == 'no':
             jobs = jobs.filter(is_remote=False)
-    
+
     if salary_min or salary_max:
         try:
             min_val = int(salary_min) if salary_min else None
             max_val = int(salary_max) if salary_max else None
-            
+
             if min_val is not None and min_val < 0:
                 min_val = None
             if max_val is not None and max_val < 0:
@@ -80,7 +80,7 @@ def search_jobs(request):
             if min_val is not None and max_val is not None and min_val > max_val:
                 min_val = None
                 max_val = None
-            
+
             if min_val is not None and max_val is not None:
                 jobs = jobs.filter(
                     salary_min__gte=min_val,
@@ -90,9 +90,9 @@ def search_jobs(request):
                 jobs = jobs.filter(salary_min__gte=min_val)
             elif max_val is not None:
                 jobs = jobs.filter(salary_max__lte=max_val)
-                
+
         except ValueError:
             pass
-    
+
     context = {'jobs': jobs}
     return render(request, 'jobs/job_list.html', context)

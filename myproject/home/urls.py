@@ -21,4 +21,4 @@ urlpatterns = [
     path('ajax/track-job-view/', views.ajax_track_job_view, name='track_job_view'),
     path('ajax/track-application/', views.ajax_track_application, name='track_application'),
     path('fit-analysis/<str:job_id>/', views.job_fit_analysis_page, name='job_fit_analysis'),
-] 
+]

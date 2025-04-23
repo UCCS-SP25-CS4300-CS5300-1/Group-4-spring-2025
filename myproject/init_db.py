@@ -18,4 +18,4 @@ conn = sqlite3.connect(DEV_DB_PATH)
 conn.close()
 print("Database created successfully!")
 
-print("Now run 'python manage.py migrate' to create the database schema.") 
+print("Now run 'python manage.py migrate' to create the database schema.")

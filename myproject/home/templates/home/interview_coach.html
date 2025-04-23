@@ -88,7 +88,7 @@
             border-radius: 8px;
             margin-bottom: 2rem;
         }
-        
+
         .job-info-header h5, .alert-secondary h5 {
             color: #4338ca;
             margin-bottom: 0.25rem;
@@ -120,7 +120,7 @@
             transition: background-color 0.2s ease-in-out;
             border-bottom: 1px solid #e5e7eb;
         }
-        
+
         .question-btn:not(.collapsed) {
              background-color: #eef2ff;
              color: #1d4ed8;
@@ -148,7 +148,7 @@
             border-radius: 8px;
             border: 1px solid #d1d5db;
         }
-        
+
         .response-form textarea:focus {
             border-color: #2563eb;
             box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
@@ -165,7 +165,7 @@
             background-color: #059669;
             color: white;
         }
-        
+
         .feedback-section {
             background-color: #f9fafb;
             border: 1px solid #e5e7eb;
@@ -184,7 +184,7 @@
             color: white;
             text-shadow: 1px 1px 1px rgba(0,0,0,0.3);
         }
-        
+
         .progress {
             background-color: #e5e7eb;
             border-radius: 6px;
@@ -203,7 +203,7 @@
             color: #10b981;
             margin-right: 0.75rem;
         }
-        
+
         .improvements-list li::before {
             content: '\f06a';
             font-family: 'Font Awesome 6 Free';
@@ -217,7 +217,7 @@
             margin-bottom: 0.5rem;
             color: #374151;
         }
-        
+
         .suggestions-section {
             background-color: #eef2ff;
             padding: 1rem;
@@ -228,12 +228,12 @@
         .suggestions-section h6 {
             color: #4338ca;
         }
-        
+
         .suggestions-text {
             color: #4b5563;
             font-size: 0.95rem;
         }
-        
+
         .card-footer {
             border-top: 1px solid #e5e7eb;
         }
@@ -363,10 +363,10 @@
             $.ajax({
                 url: questionsUrl,
                 type: "POST",
-                data: { 
+                data: {
                     'job_description': jobDescription,
                     'csrfmiddlewaretoken': csrfToken
-                 }, 
+                 },
                 headers: {
                     "X-Requested-With": "XMLHttpRequest",
                     "X-CSRFToken": csrfToken
@@ -435,7 +435,7 @@
                             accordion.append(questionHtml);
                         });
                         accordion.show();
-                        attachFormSubmitListeners(); 
+                        attachFormSubmitListeners();
                     } else {
                         accordion.html('<p class="text-center text-muted">Could not load questions.</p>');
                         accordion.show();
@@ -452,7 +452,7 @@
                 }
             });
         }
-        
+
         function attachFormSubmitListeners() {
             $('.response-form').off('submit').on('submit', function(e) {
                 e.preventDefault();
@@ -462,7 +462,7 @@
                  const feedbackSection = questionContainer.find('.feedback-section');
                  const submitBtn = form.find('button');
                  const originalBtnText = submitBtn.html();
-                 
+
                  submitBtn.html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...');
                  submitBtn.prop('disabled', true);
 
@@ -507,7 +507,7 @@
                          submitBtn.prop('disabled', false);
                          form.find('textarea').prop('readonly', true);
                          const questionBtn = questionContainer.closest('.collapse').prev().find('.question-btn');
-                         questionBtn.find('i.fa-check-circle').remove(); 
+                         questionBtn.find('i.fa-check-circle').remove();
                          questionBtn.prepend('<i class="fas fa-check-circle text-success me-2"></i>');
 
                          const nextCollapseEl = questionContainer.closest('.collapse').parent().next().find('.collapse')[0];
@@ -523,7 +523,7 @@
                          try {
                              const response = JSON.parse(xhr.responseText);
                              if (response.error) { errorMessage = response.error; }
-                         } catch (e) {} 
+                         } catch (e) {}
                          alert(errorMessage + " Please try again.");
                          submitBtn.html(originalBtnText);
                          submitBtn.prop('disabled', false);

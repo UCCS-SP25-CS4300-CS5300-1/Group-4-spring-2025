@@ -14,7 +14,7 @@ class CreateAdminTeamTest(TestCase):
 
     def test_create_admin_team_command_with_args(self):
         out = StringIO()
-        
+
         call_command(
             'create_admin_team',
             emails=['existing@example.com', 'new@example.com'],
@@ -44,7 +44,7 @@ class CreateAdminTeamTest(TestCase):
     def test_create_admin_team_idempotent(self):
         """Test that running the command multiple times doesn't cause issues"""
         out = StringIO()
-        
+
         call_command(
             'create_admin_team',
             emails=['existing@example.com'],
@@ -66,4 +66,4 @@ class CreateAdminTeamTest(TestCase):
 
     def tearDown(self):
         User.objects.all().delete()
-        Profile.objects.all().delete() 
+        Profile.objects.all().delete()

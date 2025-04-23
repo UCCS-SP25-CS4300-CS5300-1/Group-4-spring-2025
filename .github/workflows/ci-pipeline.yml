@@ -102,13 +102,13 @@ jobs:
                   pr_number = os.environ.get('PR_NUMBER')
                   repo = os.environ.get('REPO')
                   github_token = os.environ.get('GITHUB_TOKEN')
-                  
+
                   if(not all([pr_number, repo, github_token])):
                       raise ValueError("Missing required environment variables: PR_NUMBER, REPO, or GITHUB_TOKEN")
-                  
+
                   if(not os.environ.get('OPENAI_API_KEY')):
                       raise ValueError("Missing OpenAI API key")
-                  
+
                   openai.api_key = os.environ.get('OPENAI_API_KEY')
 
                   try:
@@ -144,11 +144,11 @@ jobs:
                       print("Review posted to PR")
                   except requests.exceptions.RequestException as e:
                       raise RuntimeError(f"Failed to post comment to GitHub: {type(e).__name__}")
-                      
+
               except Exception as e:
                   print(f"Error: {type(e).__name__}: {str(e)}")
                   return 1
-              
+
               return 0
 
           if(__name__ == "__main__"):

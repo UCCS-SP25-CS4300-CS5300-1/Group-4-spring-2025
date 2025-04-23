@@ -158,7 +158,7 @@ class InterviewServiceTests(TestCase):
         mock_post.assert_called_once()
         self.assertEqual(len(questions), 3)
         self.assertEqual(questions, ["Mock Question 1?", "Mock Question 2!", "Tell me about Mock 3."])
-    
+
     @patch('home.interview_service.requests.post')
     @patch.dict(os.environ, {"OPENAI_API_KEY": "fake_key"})
     def test_generate_questions_success_text(self, mock_post):
@@ -179,7 +179,7 @@ class InterviewServiceTests(TestCase):
         questions = InterviewService.generate_interview_questions("Job desc")
         mock_post.assert_not_called()
         self.assertEqual(questions, GENERIC_QUESTIONS)
-        
+
     @patch('home.interview_service.requests.post')
     @patch.dict(os.environ, {"OPENAI_API_KEY": "fake_key"})
     def test_generate_questions_api_http_error(self, mock_post):
@@ -188,16 +188,16 @@ class InterviewServiceTests(TestCase):
         mock_response.raise_for_status.side_effect = requests.exceptions.HTTPError("Server Error")
         mock_response.text = "Internal Server Error"
         mock_post.return_value = mock_response
-        
+
         questions = InterviewService.generate_interview_questions("Job desc")
         mock_post.assert_called_once()
         self.assertEqual(questions, GENERIC_QUESTIONS)
-        
+
     @patch('home.interview_service.requests.post')
     @patch.dict(os.environ, {"OPENAI_API_KEY": "fake_key"})
     def test_generate_questions_api_request_exception(self, mock_post):
         mock_post.side_effect = requests.exceptions.RequestException("Network Error")
-        
+
         questions = InterviewService.generate_interview_questions("Job desc")
         mock_post.assert_called_once()
         self.assertEqual(questions, GENERIC_QUESTIONS)
@@ -209,10 +209,10 @@ class InterviewServiceTests(TestCase):
         mock_response.status_code = 200
         mock_response.json.return_value = {'choices': [{'message': {'content': '[Invalid JSON:'}}]}
         mock_post.return_value = mock_response
-        
+
         with patch('json.loads', side_effect=json.JSONDecodeError("Mock error", "doc", 0)):
             questions = InterviewService.generate_interview_questions("Job desc")
-        
+
         mock_post.assert_called_once()
         self.assertEqual(questions, GENERIC_QUESTIONS)
 
@@ -246,21 +246,21 @@ class InterviewServiceTests(TestCase):
         mock_response.raise_for_status.side_effect = requests.exceptions.HTTPError("Server Error")
         mock_response.text = "Internal Server Error"
         mock_post.return_value = mock_response
-        
+
         feedback = InterviewService.evaluate_response("Q?", "My Answer")
         mock_post.assert_called_once()
         self.assertEqual(feedback, GENERIC_FEEDBACK)
-        
+
     @patch('home.interview_service.requests.post')
     @patch.dict(os.environ, {"OPENAI_API_KEY": "fake_key"})
     def test_evaluate_response_api_request_exception(self, mock_post):
         """Test fallback to generic feedback on requests exception."""
         mock_post.side_effect = requests.exceptions.RequestException("Network Error")
-        
+
         feedback = InterviewService.evaluate_response("Q?", "My Answer")
         mock_post.assert_called_once()
         self.assertEqual(feedback, GENERIC_FEEDBACK)
-        
+
     @patch('home.interview_service.requests.post')
     @patch.dict(os.environ, {"OPENAI_API_KEY": "fake_key"})
     def test_evaluate_response_malformed_json(self, mock_post):
@@ -269,11 +269,11 @@ class InterviewServiceTests(TestCase):
         mock_response.status_code = 200
         mock_response.json.return_value = MOCK_EVAL_MALFORMED_JSON
         mock_post.return_value = mock_response
-        
+
         feedback = InterviewService.evaluate_response("Q?", "My Answer")
         mock_post.assert_called_once()
         self.assertEqual(feedback, GENERIC_FEEDBACK)
-        
+
     @patch('home.interview_service.requests.post')
     @patch.dict(os.environ, {"OPENAI_API_KEY": "fake_key"})
     def test_evaluate_response_missing_keys(self, mock_post):
@@ -282,19 +282,19 @@ class InterviewServiceTests(TestCase):
         mock_response.status_code = 200
         mock_response.json.return_value = MOCK_EVAL_MISSING_KEYS
         mock_post.return_value = mock_response
-        
+
         feedback = InterviewService.evaluate_response("Q?", "My Answer")
         mock_post.assert_called_once()
         self.assertEqual(feedback, GENERIC_FEEDBACK)
-        
+
     @patch('home.interview_service.requests.post')
     @patch.dict(os.environ, {"OPENAI_API_KEY": "fake_key"})
     def test_evaluate_response_non_numeric_score(self, mock_post):
         """Test handling of non-numeric score, defaulting to 7."""
-        response_content = { 
-            "score": "Not A Number", 
-            "strengths": [], 
-            "areas_to_improve": [], 
+        response_content = {
+            "score": "Not A Number",
+            "strengths": [],
+            "areas_to_improve": [],
             "suggestions": "Test"
         }
         mock_response_data = {
@@ -304,7 +304,7 @@ class InterviewServiceTests(TestCase):
         mock_response.status_code = 200
         mock_response.json.return_value = mock_response_data
         mock_post.return_value = mock_response
-        
+
         feedback = InterviewService.evaluate_response("Q?", "My Answer")
         mock_post.assert_called_once()
         self.assertEqual(feedback['score'], 7) # Should default to 7
@@ -318,11 +318,11 @@ class InterviewServiceTests(TestCase):
         mock_response.status_code = 200
         mock_response.json.return_value = MOCK_EVAL_MALFORMED_JSON # Use the malformed mock
         mock_post.return_value = mock_response
-        
+
         # Patch json.loads specific to the call inside evaluate_response
         with patch('json.loads', side_effect=json.JSONDecodeError("Mock error", "doc", 0)):
             feedback = InterviewService.evaluate_response("Q?", "My Answer")
-            
+
         mock_post.assert_called_once()
         self.assertEqual(feedback, GENERIC_FEEDBACK)
 
@@ -334,11 +334,11 @@ class InterviewServiceTests(TestCase):
         mock_response.status_code = 200
         mock_response.json.return_value = {'choices': [{'message': {'content': 'Just plain text feedback.'}}]}
         mock_post.return_value = mock_response
-        
+
         feedback = InterviewService.evaluate_response("Q?", "My Answer")
         mock_post.assert_called_once()
         self.assertEqual(feedback, GENERIC_FEEDBACK)
-        
+
     @patch('home.interview_service.requests.post')
     @patch.dict(os.environ, {"OPENAI_API_KEY": "fake_key"})
     def test_evaluate_response_score_clamping(self, mock_post):
@@ -349,7 +349,7 @@ class InterviewServiceTests(TestCase):
         mock_post.return_value = mock_response_low
         feedback_low = InterviewService.evaluate_response("Q?", "Low Score Answer")
         self.assertEqual(feedback_low['score'], 1)
-        
+
         # Score too high
         content_high = json.dumps({"score": 15, "strengths": [], "areas_to_improve": [], "suggestions": ""})
         mock_response_high = MagicMock(status_code=200, json=lambda: {'choices': [{'message': {'content': content_high}}]})
@@ -362,4 +362,4 @@ class InterviewServiceTests(TestCase):
         mock_response_valid = MagicMock(status_code=200, json=lambda: {'choices': [{'message': {'content': content_valid}}]})
         mock_post.return_value = mock_response_valid
         feedback_valid = InterviewService.evaluate_response("Q?", "Valid Score Answer")
-        self.assertEqual(feedback_valid['score'], 5) 
+        self.assertEqual(feedback_valid['score'], 5)

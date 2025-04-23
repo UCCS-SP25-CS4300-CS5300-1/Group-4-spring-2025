@@ -24,7 +24,7 @@ class UserRegistrationFormTest(TestCase):
             'password2': 'StrongTestPass123',
         })
         self.assertTrue(form.is_valid())
-    
+
     def test_registration_form_invalid_data(self):
         form = UserRegistrationForm(data={
             'username': '',
@@ -33,7 +33,7 @@ class UserRegistrationFormTest(TestCase):
             'password2': 'StrongTestPass123',
         })
         self.assertFalse(form.is_valid())
-        
+
         form = UserRegistrationForm(data={
             'username': 'testuser',
             'email': 'test@example.com',
@@ -41,7 +41,7 @@ class UserRegistrationFormTest(TestCase):
             'password2': 'DifferentPass123',
         })
         self.assertFalse(form.is_valid())
-        
+
         form = UserRegistrationForm(data={
             'username': 'testuser',
             'email': 'invalid-email',
@@ -57,21 +57,21 @@ class UserLoginFormTest(TestCase):
             email='test@example.com',
             password='StrongTestPass123'
         )
-    
+
     def test_login_form_valid_data(self):
         form = UserLoginForm(data={
             'username': 'testuser',
             'password': 'StrongTestPass123',
         })
         self.assertTrue(form.is_valid())
-    
+
     def test_login_form_invalid_data(self):
         form = UserLoginForm(data={
             'username': 'testuser',
             'password': 'WrongPassword123',
         })
         self.assertFalse(form.is_valid())
-        
+
         form = UserLoginForm(data={
             'username': 'nonexistentuser',
             'password': 'StrongTestPass123',
@@ -87,13 +87,13 @@ class ResumeUploadFormTest(TestCase):
     def test_resume_upload_invalid_pdf(self):
         form = ResumeUploadForm(data={})
         form.files['resume'] = SimpleUploadedFile("resume.txt", b"lorem ipsum", content_type="text/plain")
-        self.assertFalse(form.is_valid())   
+        self.assertFalse(form.is_valid())
         self.assertEqual(form.errors['resume'], ['Only PDF and DOCX files are allowed.'])
 
     def test_resume_upload_no_file(self):
         form = ResumeUploadForm(data={})
-        self.assertFalse(form.is_valid())   
-        self.assertEqual(form.errors['resume'], ['This field is required.'])        
+        self.assertFalse(form.is_valid())
+        self.assertEqual(form.errors['resume'], ['This field is required.'])
 
 class UserViewsTest(TestCase):
     def setUp(self):
@@ -105,18 +105,18 @@ class UserViewsTest(TestCase):
         self.profile_url = reverse('profile')
         self.edit_profile_url = reverse('edit_profile')
         self.update_preferences_url = reverse('update_preferences')
-        
+
         self.user = User.objects.create_user(
             username='testuser',
             email='test@example.com',
             password='StrongTestPass123'
         )
-    
+
     def test_register_view_GET(self):
         response = self.client.get(self.register_url)
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'users/register.html')
-    
+
     def test_register_view_POST_valid(self):
         response = self.client.post(self.register_url, {
             'username': 'newuser',
@@ -127,7 +127,7 @@ class UserViewsTest(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertRedirects(response, self.profile_url)
         self.assertTrue(User.objects.filter(username='newuser').exists())
-    
+
     def test_register_view_POST_invalid(self):
         response = self.client.post(self.register_url, {
             'username': '',
@@ -138,12 +138,12 @@ class UserViewsTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'users/register.html')
         self.assertFalse(User.objects.filter(email='newuser@example.com').exists())
-    
+
     def test_login_view_GET(self):
         response = self.client.get(self.login_url)
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'users/login.html')
-    
+
     def test_login_view_POST_valid(self):
         response = self.client.post(self.login_url, {
             'username': 'testuser',
@@ -152,7 +152,7 @@ class UserViewsTest(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertRedirects(response, self.profile_url)
         self.assertTrue(response.wsgi_request.user.is_authenticated)
-    
+
     def test_login_view_POST_invalid(self):
         response = self.client.post(self.login_url, {
             'username': 'testuser',
@@ -161,13 +161,13 @@ class UserViewsTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'users/login.html')
         self.assertFalse(response.wsgi_request.user.is_authenticated)
-    
+
     def test_logout_view(self):
         self.client.login(username='testuser', password='StrongTestPass123')
         response = self.client.get(self.logout_url)
         self.assertEqual(response.status_code, 302)
         self.assertRedirects(response, self.home_url)
-        
+
         response = self.client.get(self.home_url)
         self.assertFalse(response.wsgi_request.user.is_authenticated)
 
@@ -179,7 +179,7 @@ class UserViewsTest(TestCase):
         self.assertEqual(response.context['user'], self.user)
         self.assertTrue('profile' in response.context)
         self.assertEqual(response.context['profile'], self.user.profile)
-        
+
     def test_profile_view_redirect_unauthenticated(self):
         response = self.client.get(self.profile_url)
         self.assertEqual(response.status_code, 302)
@@ -200,7 +200,7 @@ class UserViewsTest(TestCase):
         })
         self.assertEqual(response.status_code, 302)
         self.assertRedirects(response, self.home_url)
-        
+
         self.user.refresh_from_db()
         self.assertEqual(self.user.first_name, 'John')
         self.assertEqual(self.user.last_name, 'Doe')
@@ -209,7 +209,7 @@ class UserViewsTest(TestCase):
         self.client.login(username='testuser', password='StrongTestPass123')
         response = self.client.post(self.edit_profile_url, {
             'first_name': 'A' * 100,
-            'last_name': 'B' * 100  
+            'last_name': 'B' * 100
         })
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'users/edit_profile.html')
@@ -219,14 +219,14 @@ class UserViewsTest(TestCase):
         response = self.client.get(self.edit_profile_url)
         self.assertEqual(response.status_code, 302)
         self.assertTrue(response.url.startswith('/accounts/login/') or response.url.startswith('/users/login/'))
-        
+
     def test_update_preferences_GET(self):
         self.client.login(username='testuser', password='StrongTestPass123')
         response = self.client.get(self.update_preferences_url)
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'users/update_preferences.html')
         self.assertTrue('form' in response.context)
-            
+
     def test_update_preference_POST_valid(self):
         self.client.login(username='testuser', password='StrongTestPass123')
         response = self.client.post(self.update_preferences_url, {
@@ -237,7 +237,7 @@ class UserViewsTest(TestCase):
         })
         self.assertEqual(response.status_code, 302)
         self.assertRedirects(response, self.home_url)
-        
+
         self.user.refresh_from_db()
         self.assertEqual(self.user.profile.industry_preference, 'Computer Science')
         self.assertEqual(self.user.profile.location_preference, 'Colorado')
@@ -292,7 +292,7 @@ class ResumeViewTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "<h2>Error</h2>")
         self.assertIn("Error generating AI feedback: AI Error", response.content.decode())
-        
+
         resume.refresh_from_db()
 
     def test_delete_resume(self):
@@ -314,7 +314,7 @@ class ResumeViewTest(TestCase):
                 except Exception as e:
                     pass
         Resume.objects.all().delete()
-        User.objects.all().delete() 
+        User.objects.all().delete()
         Profile.objects.all().delete()
         if os.path.exists(settings.MEDIA_ROOT):
             shutil.rmtree(settings.MEDIA_ROOT)
@@ -323,23 +323,23 @@ class UserAuthenticationTest(TestCase):
     def setUp(self):
         self.client = Client()
         self.home_url = reverse('index')
-        
+
         self.user = User.objects.create_user(
             username='testuser',
             email='test@example.com',
             password='StrongTestPass123'
         )
-    
+
     def test_authenticated_user_sees_username(self):
         self.client.login(username='testuser', password='StrongTestPass123')
         response = self.client.get(self.home_url)
         self.assertContains(response, 'Hello, testuser')
-    
+
     def test_unauthenticated_user_sees_login_buttons(self):
         response = self.client.get(self.home_url)
         self.assertContains(response, 'Login')
         self.assertContains(response, 'Sign Up')
-        self.assertNotContains(response, 'Hello, testuser')      
+        self.assertNotContains(response, 'Hello, testuser')
 
 class UserModelTest(TestCase):
     def setUp(self):
@@ -348,20 +348,20 @@ class UserModelTest(TestCase):
             email='test@example.com',
             password='StrongTestPass123'
         )
-    
+
     def test_get_user_by_email_existing(self):
         user = get_user_by_email('test@example.com')
         self.assertEqual(user, self.user)
-    
+
     def test_get_user_by_email_nonexistent(self):
         user = get_user_by_email('nonexistent@example.com')
         self.assertIsNone(user)
-    
+
     def test_user_creation(self):
         self.assertEqual(self.user.username, 'testuser')
         self.assertEqual(self.user.email, 'test@example.com')
         self.assertTrue(self.user.check_password('StrongTestPass123'))
-    
+
     def test_user_string_representation(self):
         self.assertEqual(str(self.user), self.user.username)
 
@@ -377,14 +377,14 @@ class UserModelTest(TestCase):
 class ResumeModelTest(TestCase):
     def setUp(self):
         os.makedirs(settings.MEDIA_ROOT, exist_ok=True)
-        
+
         self.uploaded_files = []
-        
+
     def test_resume_upload(self):
         file = SimpleUploadedFile("some_resume.pdf", b"%PDF-1.4 lorem ipsum", content_type="application/pdf")
         resume = Resume.objects.create(resume=file)
         self.uploaded_files.append(resume)
-        
+
         self.assertTrue(resume.resume.name.startswith('resumes/some_resume'))
         self.assertTrue(resume.resume.name.endswith('.pdf'))
         self.assertTrue(os.path.exists(resume.resume.path))
@@ -394,11 +394,11 @@ class ResumeModelTest(TestCase):
     def test_resume_str_representation(self):
         file1 = SimpleUploadedFile("resume1.pdf", b"%PDF-1.4 test1", content_type="application/pdf")
         file2 = SimpleUploadedFile("resume2.pdf", b"%PDF-1.4 test2", content_type="application/pdf")
-        
+
         resume1 = Resume.objects.create(resume=file1)
         resume2 = Resume.objects.create(resume=file2)
         self.uploaded_files.extend([resume1, resume2])
-        
+
         self.assertEqual(str(resume1), "Resume 1")
         self.assertEqual(str(resume2), "Resume 2")
 
@@ -406,7 +406,7 @@ class ResumeModelTest(TestCase):
         file = SimpleUploadedFile("resume.pdf", b"%PDF-1.4 test", content_type="application/pdf")
         resume = Resume.objects.create(resume=file)
         self.uploaded_files.append(resume)
-        
+
         self.assertIsNotNone(resume.uploaded_at)
         self.assertTrue(resume.uploaded_at <= timezone.now())
 
@@ -418,7 +418,7 @@ class ResumeModelTest(TestCase):
                 except:
                     pass
         Resume.objects.all().delete()
-        
+
         try:
             shutil.rmtree(settings.MEDIA_ROOT)
         except:
@@ -429,7 +429,7 @@ class UserSignalsTest(TestCase):
         user = User(username='newuser', email='newuser@example.com')
         result = user_created_callback(user)
         self.assertEqual(result, "User newuser was created successfully")
-    
+
     def test_signal_on_user_creation(self):
         user = User.objects.create_user(
             username='signaluser',
@@ -443,11 +443,11 @@ class UserUrlsTest(TestCase):
     def test_login_url_resolves_to_login_view(self):
         url = reverse('login')
         self.assertEqual(resolve(url).func, login_view)
-    
+
     def test_register_url_resolves_to_register_view(self):
         url = reverse('register')
         self.assertEqual(resolve(url).func, register_view)
-    
+
     def test_logout_url_resolves_to_logout_view(self):
         url = reverse('logout')
         self.assertEqual(resolve(url).func, logout_view)
@@ -455,7 +455,7 @@ class UserUrlsTest(TestCase):
 class AdminPanelTest(TestCase):
     def setUp(self):
         os.makedirs(settings.MEDIA_ROOT, exist_ok=True)
-        
+
         self.client = Client()
         self.admin_user = User.objects.create_superuser(
             username='admin',
@@ -467,7 +467,7 @@ class AdminPanelTest(TestCase):
             email='regular@example.com',
             password='RegularPass123'
         )
-        
+
         self.client.login(username='admin', password='AdminPass123')
 
     def test_admin_can_access_admin_panel(self):
@@ -528,7 +528,7 @@ class AdminPanelTest(TestCase):
         Resume.objects.all().delete()
         User.objects.all().delete()
         Profile.objects.all().delete()
-        
+
         try:
             shutil.rmtree(settings.MEDIA_ROOT)
         except:
@@ -566,7 +566,7 @@ class UserAdminTest(TestCase):
     def test_remove_ai_whitelist_action(self):
         self.user1.profile.whitelisted_for_ai = True
         self.user1.profile.save()
-        
+
         response = self.client.post('/admin/auth/user/', {
             'action': 'remove_ai_whitelist',
             '_selected_action': [self.user1.id],
@@ -588,7 +588,7 @@ class UserAdminTest(TestCase):
 class ResumePrivacyTest(TestCase):
     def setUp(self):
         os.makedirs(settings.MEDIA_ROOT, exist_ok=True)
-        
+
         self.client = Client()
         self.user1 = User.objects.create_user(
             username='user1',
@@ -605,17 +605,17 @@ class ResumePrivacyTest(TestCase):
             email='admin@example.com',
             password='AdminPass123'
         )
-        
+
         self.resume_file = SimpleUploadedFile(
-            "test_resume.pdf", 
-            b"%PDF-1.4 test resume content", 
+            "test_resume.pdf",
+            b"%PDF-1.4 test resume content",
             content_type="application/pdf"
         )
         self.resume = Resume.objects.create(
             user=self.user1,
             resume=self.resume_file
         )
-        
+
         self.uploaded_files = [self.resume]
 
     def test_user_can_only_see_own_resume(self):
@@ -623,7 +623,7 @@ class ResumePrivacyTest(TestCase):
         response = self.client.get(reverse('view_resume', args=[self.resume.id]))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response['Content-Type'], 'application/pdf')
-        
+
         self.client.logout()
         self.client.login(username='user2', password='StrongTestPass123')
         response = self.client.get(reverse('view_resume', args=[self.resume.id]))
@@ -644,13 +644,13 @@ class ResumePrivacyTest(TestCase):
         user2_resume = Resume.objects.create(
             user=self.user2,
             resume=SimpleUploadedFile(
-                "user2_resume.pdf", 
-                b"%PDF-1.4 user2 resume content", 
+                "user2_resume.pdf",
+                b"%PDF-1.4 user2 resume content",
                 content_type="application/pdf"
             )
         )
         self.uploaded_files.append(user2_resume)
-        
+
         self.client.login(username='user1', password='StrongTestPass123')
         response = self.client.get(reverse('profile'))
         self.assertEqual(response.status_code, 200)
@@ -671,7 +671,7 @@ class ResumePrivacyTest(TestCase):
                     pass
         Resume.objects.all().delete()
         User.objects.all().delete()
-        
+
         try:
             shutil.rmtree(settings.MEDIA_ROOT)
         except:
@@ -686,16 +686,16 @@ class AIFeatureAccessTest(TestCase):
         self.resume_file = SimpleUploadedFile("resume.pdf", self.pdf_content, content_type="application/pdf")
 
         self.regular_user = User.objects.create_user(
-            username='regularuser', 
+            username='regularuser',
             email='regular@example.com',
             password='StrongTestPass123'
         )
         Profile.objects.get_or_create(user=self.regular_user)
         self.resume = Resume.objects.create(user=self.regular_user, resume=self.resume_file)
         self.uploaded_files.append(self.resume)
-        
+
         self.whitelisted_user = User.objects.create_user(
-            username='whitelisteduser', 
+            username='whitelisteduser',
             email='whitelisted@example.com',
             password='StrongTestPass123'
         )
@@ -704,9 +704,9 @@ class AIFeatureAccessTest(TestCase):
         profile.save()
         self.whitelisted_resume = Resume.objects.create(user=self.whitelisted_user, resume=self.resume_file)
         self.uploaded_files.append(self.whitelisted_resume)
-        
+
         self.admin_user = User.objects.create_superuser(
-            username='adminuser', 
+            username='adminuser',
             email='admin@example.com',
             password='StrongTestPass123'
         )
@@ -763,17 +763,17 @@ class AIFeatureAccessTest(TestCase):
 class SecureResumeViewTest(TestCase):
     def setUp(self):
         os.makedirs(settings.MEDIA_ROOT, exist_ok=True)
-        
+
         self.client = Client()
         self.user = User.objects.create_user(
             username='testuser',
             email='test@example.com',
             password='StrongTestPass123'
         )
-        
+
         self.resume_file = SimpleUploadedFile(
-            "test_resume.pdf", 
-            b"%PDF-1.4 test resume content", 
+            "test_resume.pdf",
+            b"%PDF-1.4 test resume content",
             content_type="application/pdf"
         )
         self.resume = Resume.objects.create(
@@ -783,13 +783,13 @@ class SecureResumeViewTest(TestCase):
 
     def test_direct_media_url_not_accessible(self):
         self.client.login(username='testuser', password='StrongTestPass123')
-        
+
         secure_response = self.client.get(reverse('view_resume', args=[self.resume.id]))
         self.assertEqual(secure_response.status_code, 200)
-        
+
     def test_nonexistent_resume_returns_404(self):
         self.client.login(username='testuser', password='StrongTestPass123')
-        
+
         response = self.client.get(reverse('view_resume', args=[9999]))
         self.assertEqual(response.status_code, 404)
 
@@ -797,23 +797,23 @@ class SecureResumeViewTest(TestCase):
     def test_resume_linked_to_user(self, mock_pdf_reader):
         mock_instance = mock_pdf_reader.return_value
         mock_instance.pages = [type('obj', (object,), {'extract_text': lambda: 'Sample resume text'})]
-        
+
         self.client.login(username='testuser', password='StrongTestPass123')
-        
+
         new_file = SimpleUploadedFile(
-            "new_resume.pdf", 
-            b"%PDF-1.4 new resume content", 
+            "new_resume.pdf",
+            b"%PDF-1.4 new resume content",
             content_type="application/pdf"
         )
-        
+
         response = self.client.post(
             reverse('upload_resume'),
             {'resume': new_file},
             follow=True
         )
-        
+
         self.assertEqual(response.status_code, 200)
-        
+
         latest_resume = Resume.objects.latest('uploaded_at')
         self.assertEqual(latest_resume.user, self.user)
 
@@ -826,7 +826,7 @@ class SecureResumeViewTest(TestCase):
                     pass
         User.objects.all().delete()
         Resume.objects.all().delete()
-        
+
         try:
             shutil.rmtree(settings.MEDIA_ROOT)
         except:

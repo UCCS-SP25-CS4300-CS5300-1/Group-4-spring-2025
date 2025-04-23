@@ -39,4 +39,4 @@ class JobFiltersTests(SimpleTestCase):
         self.assertEqual(format_field('Already Formatted'), 'Already Formatted')
 
     def test_format_field_multiple_words(self):
-        self.assertEqual(format_field('senior_software_engineer'), 'Senior Software Engineer') 
+        self.assertEqual(format_field('senior_software_engineer'), 'Senior Software Engineer')

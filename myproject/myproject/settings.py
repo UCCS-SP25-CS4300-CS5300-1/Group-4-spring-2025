@@ -157,22 +157,22 @@ LOGOUT_REDIRECT_URL = '/'
 if(not DEBUG):
     CSRF_COOKIE_SECURE = True
     SESSION_COOKIE_SECURE = True
-    
+
     CSRF_USE_SESSIONS = False
-    
+
     CSRF_COOKIE_HTTPONLY = False
-    
+
     CSRF_COOKIE_SAMESITE = 'Lax'
-    
+
     CSRF_TRUSTED_ORIGINS = [
         'https://group-4-spring-2025.fly.dev',
-        'https://applierpilot.com', 
+        'https://applierpilot.com',
         'https://www.applierpilot.com',
         'https://localhost:8000'
     ]
 
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-    
+
     if(not os.environ.get('DOCKER_TEST')):
         SECURE_SSL_REDIRECT = True
 

@@ -11,7 +11,7 @@ class JobicyService:
         """Build a unique cache key based on search parameters"""
         if params is None:
             params = {}
-        
+
         # Sort params to ensure consistent cache keys
         param_str = "&".join(f"{k}={v}" for k, v in sorted(params.items()))
         return f"{search_term.lower()}:{param_str}"
@@ -23,10 +23,10 @@ class JobicyService:
         Example URL: https://jobicy.com/api/v2/remote-jobs?count=50&tag=python
         """
         url = f"{JobicyService.BASE_URL}?count=50"
-        
+
         if search_term:
             url = f"{url}&tag={search_term}"
-            
+
         if params:
             for key, value in params.items():
                 url = f"{url}&{key}={value}"
@@ -35,7 +35,7 @@ class JobicyService:
             response = requests.get(url)
             response.raise_for_status()
             data = response.json()
-            
+
             if 'jobs' not in data:
                 print("No jobs field in response")
                 return []
@@ -63,11 +63,11 @@ class JobicyService:
                         'published_at': datetime.strptime(job['pubDate'], "%Y-%m-%d %H:%M:%S") if job.get('pubDate') else None,
                     }
                 )
-                
+
                 if(not created):
                     job_listing.search_key = cache_key
                     job_listing.save(update_fields=['search_key'])
-                
+
                 cached_jobs.append(job_listing)
 
             return cached_jobs
@@ -105,4 +105,4 @@ class JobicyService:
             return None
         except Exception as e:
             print(f"Error retrieving job {job_id}: {e}")
-            return None 
+            return None

@@ -427,7 +427,7 @@
                                        style="background-color: #d47474; border-color: #d47474; color: white;">
                                         <i class="fas fa-user-xmark"></i>
                                         Rejection Simulator
-                                    </a>                                    
+                                    </a>
                                 </div>
                                 <a href="{{ job.url }}" target="_blank" class="btn btn-outline-secondary btn-sm track-view" data-jobid="{{ job.job_id }}">
                                     <i class="fas fa-external-link-alt"></i>
@@ -480,11 +480,11 @@
                 event.preventDefault();
                 const jobId = this.dataset.jobid;
                 const targetUrl = this.href;
-                
+
                 if (jobId && targetUrl) {
                     trackJobView(jobId, targetUrl);
                 } else {
-                     window.location.href = targetUrl || '#'; 
+                     window.location.href = targetUrl || '#';
                 }
             });
         });

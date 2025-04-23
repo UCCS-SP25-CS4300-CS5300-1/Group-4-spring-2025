@@ -29,11 +29,11 @@ class Command(BaseCommand):
         if(not emails_to_process):
             self.stdout.write(self.style.WARNING('No emails provided and no default emails set'))
             return
-        
+
         ## get existing superusers
         existing_superusers = User.objects.filter(is_superuser=True)
         existing_superusers_emails = [user.email for user in existing_superusers]
-        
+
         for email in existing_superusers_emails:
             self.stdout.write(self.style.SUCCESS(f'Skipping existing superuser {email}'))
 
@@ -48,16 +48,16 @@ class Command(BaseCommand):
             except User.DoesNotExist:
                 base_username = email.split('@')[0]
                 username = base_username
-                
+
                 counter = 1
                 while User.objects.filter(username=username).exists():
                     username = f"{base_username}{counter}"
                     counter += 1
-                
+
                 user = User.objects.create_superuser(
                     username=username,
                     email=email,
-                    password='ChangeMe123!' 
+                    password='ChangeMe123!'
                 )
                 if(not hasattr(user, 'profile')):
                     Profile.objects.create(user=user)
@@ -65,4 +65,4 @@ class Command(BaseCommand):
                     self.style.SUCCESS(
                         f'Created new superuser {email} with username "{username}" and temporary password "ChangeMe123!"'
                     )
-                ) 
+                )
