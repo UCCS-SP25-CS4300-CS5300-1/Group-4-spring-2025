@@ -1,0 +1,468 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Application History - ApplierPilotAI</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'styles.css' %}">
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --primary-hover-color: #1d4ed8;
+            --text-color: #374151;
+            --text-light-color: #6b7280;
+            --border-color: #e5e7eb;
+            --background-color: #f9fafb;
+            --card-background-color: #ffffff;
+            --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --border-radius: 8px;
+        }
+
+        body {
+            background-color: var(--background-color);
+            color: var(--text-color);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+
+        .navbar {
+            background-color: var(--card-background-color);
+            border-bottom: 1px solid var(--border-color);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .navbar-brand {
+            color: var(--primary-color);
+            font-size: 1.5rem;
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .navbar-brand:hover {
+            color: var(--primary-hover-color);
+        }
+
+        .back-button {
+            color: var(--text-light-color);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            transition: background-color 0.2s, color 0.2s;
+        }
+
+        .back-button:hover {
+            background-color: #f3f4f6;
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+
+        .main-container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .content-section {
+            background-color: var(--card-background-color);
+            border-radius: var(--border-radius);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--card-shadow);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 1rem;
+            margin-bottom: 1.5rem;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .section-header h3 {
+            margin: 0;
+            font-size: 1.75rem;
+            font-weight: 600;
+            color: var(--text-color);
+        }
+
+        .filter-controls {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .dropdown-toggle {
+            min-width: 12rem;
+            text-align: left;
+            border-color: var(--border-color);
+            color: var(--text-color);
+        }
+        .dropdown-toggle:hover, .dropdown-toggle:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(37, 99, 235, 0.25);
+        }
+        .dropdown-menu {
+            border-radius: var(--border-radius);
+            box-shadow: var(--card-shadow);
+            border: 1px solid var(--border-color);
+        }
+        .dropdown-item {
+            padding: 0.5rem 1rem;
+        }
+        .dropdown-item:active {
+             background-color: var(--primary-color);
+             color: white;
+        }
+
+
+        .job-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .job-item {
+            background-color: var(--card-background-color);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            box-shadow: var(--card-shadow);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+
+        .job-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        .job-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .company-logo-wrapper {
+            flex-shrink: 0;
+            width: 48px;
+            height: 48px;
+            border-radius: 6px;
+            overflow: hidden;
+            background-color: #f3f4f6;
+        }
+
+        .company-logo {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .company-logo-placeholder {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+            background-color: #e5e7eb;
+            color: var(--text-light-color);
+            font-size: 1.5rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .job-title-group {
+            flex-grow: 1;
+            min-width: 0;
+        }
+
+        .job-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-color);
+            margin: 0 0 0.25rem 0;
+            line-height: 1.3;
+        }
+
+        .company-name {
+            font-size: 0.9rem;
+            color: var(--text-light-color);
+            margin: 0;
+        }
+
+        .job-details {
+             font-size: 0.9rem;
+             color: var(--text-light-color);
+             margin-bottom: 1rem;
+             line-height: 1.6;
+        }
+        .job-details strong {
+            color: var(--text-color);
+            font-weight: 500;
+        }
+
+        .job-description {
+            font-size: 0.9rem;
+            color: var(--text-light-color);
+            margin-bottom: 1.5rem;
+            line-height: 1.6;
+            flex-grow: 1;
+        }
+
+        .job-actions {
+            margin-top: auto;
+            text-align: right;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            border: none;
+            padding: 0.6rem 1.2rem;
+            border-radius: 6px;
+            color: white;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: background-color 0.2s;
+            white-space: nowrap;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-hover-color);
+            color: white;
+            text-decoration: none;
+        }
+
+        .no-jobs-message {
+            color: var(--text-light-color);
+            padding: 2rem;
+            text-align: center;
+            font-style: italic;
+        }
+
+        @media (max-width: 768px) {
+            .navbar {
+                padding: 1rem;
+            }
+            .main-container {
+                margin: 1rem auto;
+            }
+            .content-section {
+                padding: 1.5rem;
+            }
+            .section-header h3 {
+                font-size: 1.5rem;
+            }
+            .job-grid {
+                grid-template-columns: 1fr;
+            }
+             .section-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .filter-controls {
+                width: 100%;
+            }
+             .dropdown-toggle {
+                width: 100%;
+            }
+        }
+
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <a href="/users/profile/" class="back-button">
+            <i class="fas fa-arrow-left"></i>
+            Back to Profile
+        </a>
+        <a href="/" class="navbar-brand">ApplierPilotAI</a>
+    </nav>
+
+    <div class="main-container">
+        <div class="content-section">
+            <div class="section-header">
+                <h3 id="job-filter-header">AI Job Recommendations</h3>
+                <div>
+                    <p>{{ ai_response }}</p>
+                </div>
+
+            </div>
+        </div>
+
+<!--
+            <div id="applied-jobs-section">
+                {% if applied_jobs_list %}
+                    <ul class="job-grid">
+                        {% for job in applied_jobs_list %}
+                            <li class="job-item">
+                                <div>
+                                    <div class="job-header">
+                                        <div class="company-logo-wrapper">
+                                            {% if job.company_logo %}
+                                                <img src="{{ job.company_logo }}" alt="{{ job.company }} Logo" class="company-logo" onerror="this.onerror=null; this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                                <div class="company-logo-placeholder" style="display: none;">{{ job.company|slice:":1" }}</div>
+                                            {% else %}
+                                                 <img src="{% static 'images/company-placeholder.svg' %}" alt="Placeholder Logo" class="company-logo" style="display: none;">
+                                                 <div class="company-logo-placeholder">{{ job.company|slice:":1" }}</div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="job-title-group">
+                                            <h4 class="job-title">{{ job.title }}</h4>
+                                            <p class="company-name">{{ job.company }}</p>
+                                        </div>
+                                    </div>
+                                    <div class="job-details">
+                                        <strong>Location:</strong> {{ job.location|default:'N/A' }} <br>
+                                        <strong>Salary:</strong> {{ job.salary_display|default:'N/A' }} <br>
+                                        <strong>Type:</strong> {{ job.job_type|default:'N/A' }} <br>
+                                        <strong>Published:</strong> {{ job.published_at|date:"M d, Y"|default:'N/A' }}
+                                    </div>
+                                    <div class="job-description">
+                                        <strong>Description:</strong> {{ job.description|striptags|truncatewords:25|default:'No description available.' }}
+                                    </div>
+                                </div>
+                                <div class="job-actions">
+                                    <a href="{{ job.url }}" target="_blank" class="btn btn-primary">
+                                        <i class="fas fa-external-link-alt"></i> View Original
+                                    </a>
+                                </div>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="no-jobs-message">You haven't applied to any jobs yet.</p>
+                {% endif %}
+            </div>
+
+            <div id="viewed-jobs-section" style="display: none;">
+                {% if viewed_jobs_list %}
+                <ul class="job-grid">
+                    {% for job in viewed_jobs_list %}
+                        <li class="job-item">
+                             <div>
+                                <div class="job-header">
+                                     <div class="company-logo-wrapper">
+                                        {% if job.company_logo %}
+                                            <img src="{{ job.company_logo }}" alt="{{ job.company }} Logo" class="company-logo" onerror="this.onerror=null; this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                            <div class="company-logo-placeholder" style="display: none;">{{ job.company|slice:":1" }}</div>
+                                        {% else %}
+                                             <img src="{% static 'images/company-placeholder.svg' %}" alt="Placeholder Logo" class="company-logo" style="display: none;">
+                                             <div class="company-logo-placeholder">{{ job.company|slice:":1" }}</div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="job-title-group">
+                                        <h4 class="job-title">{{ job.title }}</h4>
+                                        <p class="company-name">{{ job.company }}</p>
+                                    </div>
+                                </div>
+                                <div class="job-details">
+                                    <strong>Location:</strong> {{ job.location|default:'N/A' }} <br>
+                                    <strong>Salary:</strong> {{ job.salary_display|default:'N/A' }} <br>
+                                    <strong>Type:</strong> {{ job.job_type|default:'N/A' }} <br>
+                                    <strong>Published:</strong> {{ job.published_at|date:"M d, Y"|default:'N/A' }}
+                                </div>
+                                <div class="job-description">
+                                    <strong>Description:</strong> {{ job.description|striptags|truncatewords:25|default:'No description available.' }}
+                                </div>
+                            </div>
+                            <div class="job-actions">
+                                <a href="{{ job.url }}" target="_blank" class="btn btn-primary">
+                                    <i class="fas fa-external-link-alt"></i> View Original
+                                </a>
+                            </div>
+                        </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                    <p class="no-jobs-message">You haven't viewed any jobs yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+-->
+        <!--
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const dropdownButton = document.getElementById('jobFilterDropdown');
+            const filterOptions = document.querySelectorAll('.filter-option');
+            const jobFilterHeader = document.getElementById('job-filter-header');
+
+            filterOptions.forEach(option => {
+                option.addEventListener('click', function(event) {
+                    event.preventDefault();
+                    const selectedValue = this.dataset.value;
+                    const selectedText = this.textContent;
+
+                    if (dropdownButton) {
+                        dropdownButton.textContent = selectedText;
+                    }
+
+                    updateJobList(selectedValue);
+                });
+            });
+
+            function initializeView() {
+                const initialFilterText = dropdownButton ? dropdownButton.textContent.trim() : 'Applied';
+                let initialValue = 'applied';
+                if (initialFilterText === 'Viewed') {
+                    initialValue = 'viewed';
+                }
+                updateJobList(initialValue);
+                if (dropdownButton) {
+                    dropdownButton.textContent = initialValue === 'applied' ? 'Applied' : 'Viewed';
+                }
+
+            }
+             initializeView();
+
+        });
+
+        function updateJobList(selectedValue) {
+            const appliedJobsSection = document.getElementById('applied-jobs-section');
+            const viewedJobsSection = document.getElementById('viewed-jobs-section');
+            const jobFilterHeader = document.getElementById('job-filter-header');
+
+            if (appliedJobsSection && viewedJobsSection && jobFilterHeader) {
+                if (selectedValue === 'applied') {
+                    appliedJobsSection.style.display = 'block';
+                    viewedJobsSection.style.display = 'none';
+                    jobFilterHeader.textContent = 'Jobs Applied';
+                } else if (selectedValue === 'viewed') {
+                    appliedJobsSection.style.display = 'none';
+                    viewedJobsSection.style.display = 'block';
+                    jobFilterHeader.textContent = 'Jobs Viewed';
+                }
+            } else {
+                console.error("One or more job sections or the header element was not found.");
+            }
+        }
+    </script>
+    -->
+    </div>
+</body>
+</html>
