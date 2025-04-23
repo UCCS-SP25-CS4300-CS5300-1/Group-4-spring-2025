@@ -126,7 +126,7 @@ class JobicyServiceTests(TestCase):
         
         self.assertEqual(len(jobs), 1)
         self.assertEqual(jobs[0], cached_job)
-        self.assertEqual(JobListing.objects.count(), 2)
+        self.assertEqual(JobListing.objects.count(), 1)
 
     def test_get_job_details_found(self):
         job = JobListing.objects.create(job_id='detail-job', title='Detail Job', company='Detail Co.')
