@@ -1,5 +1,4 @@
 import os
-import json
 import requests
 from typing import Dict, Optional
 import io
@@ -8,7 +7,6 @@ from django.conf import settings
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer
-from reportlab.lib.units import inch
 from reportlab.lib.enums import TA_CENTER
 import datetime
 

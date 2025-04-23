@@ -3,7 +3,6 @@ from django.shortcuts import render
 from home.cover_letter_service import CoverLetterService
 from .models import Job
 from users.models import Resume
-from django.db.models import Q
 
 
 def get_job_ai_recommendation(user):
