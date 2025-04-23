@@ -157,7 +157,7 @@ def ajax_generate_questions(request):
             return JsonResponse({'questions': questions})
         except Exception as e:
             logger.error(f"Error generating interview questions: {str(e)}")
-            return JsonResponse({'error': 'Unable to generate questions. Please try again later.'}, status=500)
+            return JsonResponse({'error': 'Failed to generate questions. Please try again.'}, status=500)
 
     return JsonResponse({'error': 'Invalid request method'}, status=405)
 
@@ -211,7 +211,7 @@ def apply_flow(request, job_id):
             resume_text = parse_resume(resume_file)
         except Exception as e:
             logger.error(f"Error extracting resume text: {str(e)}")
-            messages.error(request, "Unable to process your resume. Please try again later.")
+            messages.error(request, "Error extracting text from your resume")
 
     initial_data = {
         'job_description': job_description,
