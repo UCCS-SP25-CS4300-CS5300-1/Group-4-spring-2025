@@ -298,7 +298,7 @@ class ResumeViewTest(TestCase):
                     try:
                         file_path = os.path.join(root, name)
                         if os.path.exists(file_path):
-                            os.chmod(file_path, 0o777)  
+                            os.chmod(file_path, 0o600)  
                             os.unlink(file_path)
                     except (PermissionError, OSError):
                         pass
@@ -306,13 +306,13 @@ class ResumeViewTest(TestCase):
                     try:
                         dir_path = os.path.join(root, name)
                         if os.path.exists(dir_path):
-                            os.chmod(dir_path, 0o777) 
+                            os.chmod(dir_path, 0o700) 
                             os.rmdir(dir_path)
                     except (PermissionError, OSError):
                         pass
             try:
                 if os.path.exists(settings.MEDIA_ROOT):
-                    os.chmod(settings.MEDIA_ROOT, 0o777)  # Give full permissions
+                    os.chmod(settings.MEDIA_ROOT, 0o700)  # Restrict permissions
                     os.rmdir(settings.MEDIA_ROOT)
             except (PermissionError, OSError):
                 pass 
