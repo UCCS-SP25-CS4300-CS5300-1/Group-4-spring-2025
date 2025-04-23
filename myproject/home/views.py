@@ -156,7 +156,8 @@ def ajax_generate_questions(request):
             questions = InterviewService.generate_interview_questions(job_description)
             return JsonResponse({'questions': questions})
         except Exception as e:
-            return JsonResponse({'error': 'Failed to generate questions. Please try again.'}, status=500)
+            logger.error(f"Error generating interview questions: {str(e)}")
+            return JsonResponse({'error': 'Unable to generate questions. Please try again later.'}, status=500)
 
     return JsonResponse({'error': 'Invalid request method'}, status=405)
 
@@ -170,12 +171,15 @@ def ajax_evaluate_response(request):
         response = data.get('response', '')
         job_description = data.get('job_description', '')
 
-        # Validate input
         if not response:
             return JsonResponse({'error': 'Response is required'}, status=400)
 
-        feedback = InterviewService.evaluate_response(question, response, job_description)
-        return JsonResponse(feedback)
+        try:
+            feedback = InterviewService.evaluate_response(question, response, job_description)
+            return JsonResponse(feedback)
+        except Exception as e:
+            logger.error(f"Error evaluating interview response: {str(e)}")
+            return JsonResponse({'error': 'Unable to evaluate response. Please try again later.'}, status=500)
 
     return JsonResponse({'error': 'Invalid request'}, status=400)
 
@@ -206,7 +210,8 @@ def apply_flow(request, job_id):
             from users.views import parse_resume
             resume_text = parse_resume(resume_file)
         except Exception as e:
-            messages.error(request, f"Error extracting text from your resume: {e}")
+            logger.error(f"Error extracting resume text: {str(e)}")
+            messages.error(request, "Unable to process your resume. Please try again later.")
 
     initial_data = {
         'job_description': job_description,
@@ -259,7 +264,8 @@ def ajax_resume_feedback(request):
         except Resume.DoesNotExist:
             return JsonResponse({'error': 'Resume not found'}, status=404)
         except Exception as e:
-            return JsonResponse({'error': f'Error generating feedback: {str(e)}'}, status=500)
+            logger.error(f"Error generating resume feedback: {str(e)}")
+            return JsonResponse({'error': 'Unable to generate resume feedback. Please try again later.'}, status=500)
 
     return JsonResponse({'error': 'Invalid request'}, status=400)
 
@@ -313,9 +319,10 @@ def ajax_generate_cover_letter(request):
                         resume_file = latest_resume.resume
                         resume_text = CoverLetterService.extract_text_from_resume(resume_file)
                     except Exception as e:
-                        return JsonResponse({'error': f"Error extracting text from your resume: {e}"}, status=500)
+                        logger.error(f"Error extracting resume text: {str(e)}")
+                        return JsonResponse({'error': 'Unable to process your resume. Please try again later.'}, status=500)
                 else:
-                     return JsonResponse({'error': "Resume selected but no resume found."}, status=400)
+                     return JsonResponse({'error': 'Resume not found. Please upload a resume first.'}, status=400)
 
             try:
                 cover_letter_text = CoverLetterService.generate_cover_letter(
@@ -345,12 +352,11 @@ def ajax_generate_cover_letter(request):
                 })
 
             except Exception as e:
-                 return JsonResponse({'error': f"Error generating cover letter: {e}"}, status=500)
+                logger.error(f"Error generating cover letter: {str(e)}")
+                return JsonResponse({'error': 'Unable to generate cover letter. Please try again later.'}, status=500)
         else:
-            errors = form.errors.as_json()
-            return JsonResponse({'error': 'Invalid form data', 'details': errors}, status=400)
+            return JsonResponse({'error': 'Invalid form data'}, status=400)
 
-    # For non-AJAX or GET requests, return an error response
     return JsonResponse({'error': 'This endpoint only accepts AJAX POST requests'}, status=405)
 
 @login_required
