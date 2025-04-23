@@ -547,7 +547,7 @@ def ajax_job_outlook(request):
                 'fit_analysis': fit_analysis
             })
         except Exception as e:
-            return JsonResponse({'error': f'Error generating fit analysis: {str(e)}'}, status=500)
+            return JsonResponse({'error': f'Error generating fit analysis. Please try again later.'}, status=500)
 
     return JsonResponse({'error': 'Invalid request'}, status=400)
 
