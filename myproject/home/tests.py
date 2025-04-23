@@ -85,7 +85,7 @@ class DashboardViewTest(TestCase):
             location='Remote',
             description='Test job description',
             url='https://example.com/job1',
-            job_type='Full-time',
+            industry='Technology',
             published_at=timezone.now(),
             search_key='python'
         )
@@ -94,10 +94,10 @@ class DashboardViewTest(TestCase):
             job_id='test-job-2',
             title='Data Scientist',
             company='Another Company',
-            location='New York',
+            location='USA',
             description='Another test job description',
             url='https://example.com/job2',
-            job_type='Remote',
+            industry='Data Science',
             published_at=timezone.now(),
             search_key='data-science'
         )
@@ -129,11 +129,14 @@ class DashboardViewTest(TestCase):
         """Test that the dashboard displays search results"""
         self.client.login(username='testuser', password='StrongTestPass123')
 
-        # Mock the JobicyService.search_jobs method
         with patch('home.services.JobicyService.search_jobs') as mock_search:
             mock_search.return_value = [self.job1]
 
-            response = self.client.post(self.dashboard_url, {'search_term': 'python'})
+            response = self.client.post(self.dashboard_url, {
+                'search_term': 'python',
+                'location': 'usa',
+                'industry': 'technology'
+            })
 
             self.assertEqual(response.status_code, 200)
             self.assertTemplateUsed(response, 'home/dashboard.html')
@@ -146,10 +149,20 @@ class DashboardViewTest(TestCase):
             self.assertContains(response, 'Test Company')
             self.assertContains(response, 'Remote')
 
+            # Verify the API was called with correct parameters
+            mock_search.assert_called_once_with('python', {
+                'geo': 'usa',
+                'industry': 'technology'
+            })
+
     def test_dashboard_form_validation_empty_search(self):
         """Test that empty search term is handled properly"""
         self.client.login(username='testuser', password='StrongTestPass123')
-        response = self.client.post(self.dashboard_url, {'search_term': ''})
+        response = self.client.post(self.dashboard_url, {
+            'search_term': '',
+            'location': '',
+            'industry': ''
+        })
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'home/dashboard.html')
         self.assertTrue('form' in response.context)
@@ -168,11 +181,14 @@ class DashboardViewTest(TestCase):
         """Test that the dashboard shows Interview Coach button for job listings"""
         self.client.login(username='testuser', password='StrongTestPass123')
 
-        # mocking the JobicyService.search_jobs method
         with patch('home.services.JobicyService.search_jobs') as mock_search:
             mock_search.return_value = [self.job1]
 
-            response = self.client.post(self.dashboard_url, {'search_term': 'python'})
+            response = self.client.post(self.dashboard_url, {
+                'search_term': 'python',
+                'location': 'usa',
+                'industry': 'technology'
+            })
             self.assertContains(response, 'Interview Coach')
             self.assertContains(response, f'/interview-coach/{self.job1.job_id}/')
 

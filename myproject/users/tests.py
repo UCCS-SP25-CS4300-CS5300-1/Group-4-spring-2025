@@ -14,6 +14,7 @@ from .views import login_view, register_view, logout_view, resume_feedback
 from django.utils import timezone
 from unittest.mock import patch
 import shutil
+from django.core.files import File
 
 class UserRegistrationFormTest(TestCase):
     def test_registration_form_valid_data(self):
@@ -258,31 +259,86 @@ class UserViewsTest(TestCase):
 
 class ResumeViewTest(TestCase):
     def setUp(self):
-        os.makedirs(settings.MEDIA_ROOT, exist_ok=True)
         self.client = Client()
-        self.uploaded_files = []
         self.user = User.objects.create_user(
-            username='testresumeuser',
-            email='testresumeuser@example.com',
+            username='testuser',
+            email='test@example.com',
             password='StrongTestPass123'
         )
-        self.client.login(username='testresumeuser', password='StrongTestPass123')
-        self.resume_file_content = b"%PDF-1.4 test content"
-        self.resume_file = SimpleUploadedFile("resume.pdf", self.resume_file_content, content_type="application/pdf")
+        self.upload_url = reverse('upload_resume')
+        self.resume_feedback_url = reverse('resume_feedback')
+
+        settings.MEDIA_ROOT = os.path.join(settings.BASE_DIR, 'test_media')
+        os.makedirs(os.path.join(settings.MEDIA_ROOT, 'resumes'), exist_ok=True)
+
+        self.test_resume_path = os.path.join(settings.MEDIA_ROOT, 'resumes', 'test_resume.pdf')
+        self.resume_content = b"Test resume content"
+        with open(self.test_resume_path, 'wb') as f:
+            f.write(self.resume_content)
+
+    def tearDown(self):
+        for resume in Resume.objects.all():
+            if hasattr(resume, 'resume') and resume.resume:
+                try:
+                    resume.resume.close()
+                except:
+                    pass
+                try:
+                    if hasattr(resume.resume, 'file'):
+                        resume.resume.file.close()
+                except:
+                    pass
+            resume.delete()
+
+        try:
+            shutil.rmtree(settings.MEDIA_ROOT)
+        except (PermissionError, OSError):
+            for root, dirs, files in os.walk(settings.MEDIA_ROOT, topdown=False):
+                for name in files:
+                    try:
+                        file_path = os.path.join(root, name)
+                        if os.path.exists(file_path):
+                            os.chmod(file_path, 0o777)  
+                            os.unlink(file_path)
+                    except (PermissionError, OSError):
+                        pass
+                for name in dirs:
+                    try:
+                        dir_path = os.path.join(root, name)
+                        if os.path.exists(dir_path):
+                            os.chmod(dir_path, 0o777) 
+                            os.rmdir(dir_path)
+                    except (PermissionError, OSError):
+                        pass
+            try:
+                if os.path.exists(settings.MEDIA_ROOT):
+                    os.chmod(settings.MEDIA_ROOT, 0o777)  # Give full permissions
+                    os.rmdir(settings.MEDIA_ROOT)
+            except (PermissionError, OSError):
+                pass 
 
     def test_upload_resume_POST_valid(self):
-        response = self.client.post(reverse('upload_resume'), {'resume': self.resume_file})
+        self.client.login(username='testuser', password='StrongTestPass123')
+        with open(self.test_resume_path, 'rb') as resume_file:
+            response = self.client.post(self.upload_url, {'resume': resume_file})
+            
         self.assertEqual(response.status_code, 302)
         self.assertRedirects(response, reverse('profile'))
         self.assertTrue(Resume.objects.filter(user=self.user).exists())
-        self.uploaded_files.extend(Resume.objects.all())
 
     @patch('users.views.openai.chat.completions.create', side_effect=Exception("AI Error"))
     @patch('users.views.load_resume_guide', return_value='Mocked guide content')
     @patch('users.views.parse_resume', return_value='Parsed resume text')
     def test_resume_feedback_view_openai_exception(self, mock_parse, mock_load_guide, mock_openai_call):
-        resume = Resume.objects.create(user=self.user, resume=self.resume_file)
-        self.uploaded_files.append(resume)
+        self.client.login(username='testuser', password='StrongTestPass123')
+        
+        # Create resume using the test file
+        with open(self.test_resume_path, 'rb') as resume_file:
+            resume = Resume.objects.create(
+                user=self.user,
+                resume=File(resume_file, name='test_resume.pdf')
+            )
+
         self.user.profile.whitelisted_for_ai = True
         self.user.profile.save()
 
@@ -293,11 +349,15 @@ class ResumeViewTest(TestCase):
         self.assertContains(response, "<h2>Error</h2>")
         self.assertIn("Error generating AI feedback: AI Error", response.content.decode())
 
-        resume.refresh_from_db()
-
     def test_delete_resume(self):
-        resume = Resume.objects.create(user=self.user, resume=self.resume_file)
-        self.uploaded_files.append(resume)
+        self.client.login(username='testuser', password='StrongTestPass123')
+        
+        with open(self.test_resume_path, 'rb') as resume_file:
+            resume = Resume.objects.create(
+                user=self.user,
+                resume=File(resume_file, name='test_resume.pdf')
+            )
+
         self.assertTrue(Resume.objects.filter(user=self.user, id=resume.id).exists())
 
         delete_response = self.client.post(reverse('delete_resume'))
@@ -305,19 +365,6 @@ class ResumeViewTest(TestCase):
         self.assertEqual(delete_response.status_code, 302)
         self.assertRedirects(delete_response, reverse('profile'))
         self.assertFalse(Resume.objects.filter(user=self.user, id=resume.id).exists())
-
-    def tearDown(self):
-        for resume in self.uploaded_files:
-            if resume.resume and os.path.exists(resume.resume.path):
-                try:
-                    default_storage.delete(resume.resume.name)
-                except Exception as e:
-                    pass
-        Resume.objects.all().delete()
-        User.objects.all().delete()
-        Profile.objects.all().delete()
-        if os.path.exists(settings.MEDIA_ROOT):
-            shutil.rmtree(settings.MEDIA_ROOT)
 
 class UserAuthenticationTest(TestCase):
     def setUp(self):

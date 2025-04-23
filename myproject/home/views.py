@@ -9,8 +9,6 @@ from openai import APITimeoutError
 import logging
 
 from users.models import Resume
-from pypdf import PdfReader
-from docx import Document
 from home.models import JobListing, UserJobInteraction
 from .forms import SearchJobForm, CoverLetterForm
 from .services import JobicyService
@@ -18,8 +16,9 @@ from .interview_service import InterviewService
 from .cover_letter_service import CoverLetterService
 from django.contrib.auth.decorators import login_required
 
-from users.models import Profile, Resume
+from users.models import Resume
 
+logger = logging.getLogger(__name__)
 
 def index(request):
     context = {}
@@ -31,10 +30,8 @@ def index(request):
 def dashboard(request):
     initial_data = request.session.get('last_search_params', {})
     if not initial_data and hasattr(request.user, 'userprofile'):
-        initial_data['job_type'] = getattr(request.user.userprofile, 'default_job_type', '')
         initial_data['location'] = getattr(request.user.userprofile, 'default_location', '')
         initial_data['industry'] = getattr(request.user.userprofile, 'default_industry', '')
-        initial_data['job_level'] = getattr(request.user.userprofile, 'default_job_level', '')
         initial_data['search_term'] = initial_data.get('search_term', '')
 
     form = SearchJobForm(initial=initial_data)
@@ -46,42 +43,45 @@ def dashboard(request):
         form = SearchJobForm(request.POST)
         if form.is_valid():
             search_term = form.cleaned_data.get('search_term', '')
-            job_type = form.cleaned_data.get('job_type', '')
             location = form.cleaned_data.get('location', '')
             industry = form.cleaned_data.get('industry', '')
-            job_level = form.cleaned_data.get('job_level', '')
 
             request.session['last_search_params'] = {
                 'search_term': search_term,
-                'job_type': job_type,
                 'location': location,
                 'industry': industry,
-                'job_level': job_level,
             }
 
-            if job_type: params['jobType'] = job_type
-            if location: params['geo'] = location
-            if industry: params['jobIndustry'] = industry
-            if job_level: params['jobLevel'] = job_level
+            if location:
+                params['geo'] = location
+            if industry:
+                params['industry'] = industry
 
             if search_term or params:
                 job_list = JobicyService.search_jobs(search_term, params)
+            else:
+                logger.warning("Search attempted with no search term and no filters.")
+                job_list = []
+
         else:
+            logger.warning(f"Dashboard form invalid: {form.errors}")
             request.session.pop('last_search_params', None)
+            job_list = []
 
     elif request.method == "GET" and initial_data:
-        job_type = initial_data.get('job_type', '')
         location = initial_data.get('location', '')
         industry = initial_data.get('industry', '')
-        job_level = initial_data.get('job_level', '')
 
-        if job_type: params['jobType'] = job_type
-        if location: params['geo'] = location
-        if industry: params['jobIndustry'] = industry
-        if job_level: params['jobLevel'] = job_level
+        if location:
+            params['geo'] = location
+        if industry:
+            params['industry'] = industry
 
         if search_term or params:
              job_list = JobicyService.search_jobs(search_term, params)
+        else:
+             logger.debug("GET request with empty initial_data, not performing search.")
+             job_list = []
 
     context = {
         'form': form,

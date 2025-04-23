@@ -320,21 +320,13 @@
 
                     <h5>Filters</h5>
                     <div class="row g-3 mb-3">
-                        <div class="col-md-3">
-                            <label for="{{ form.job_type.id_for_label }}" class="form-label">Job Type</label>
-                            {{ form.job_type }}
-                        </div>
-                        <div class="col-md-3">
+                        <div class="col-md-6">
                             <label for="{{ form.location.id_for_label }}" class="form-label">Location</label>
                             {{ form.location }}
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-6">
                             <label for="{{ form.industry.id_for_label }}" class="form-label">Industry</label>
                             {{ form.industry }}
-                        </div>
-                        <div class="col-md-3">
-                            <label for="{{ form.job_level.id_for_label }}" class="form-label">Job Level</label>
-                            {{ form.job_level }}
                         </div>
                     </div>
                     <button type="submit" class="btn btn-primary w-100">
