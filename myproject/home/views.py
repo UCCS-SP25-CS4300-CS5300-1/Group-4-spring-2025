@@ -149,7 +149,7 @@ def interview_coach(request, job_id=None):
 @login_required
 def ajax_generate_questions(request):
     """API endpoint to generate interview questions asynchronously."""
-    if(request.method == "POST" and request.headers.get('X-Requested-With') == 'XMLHttpRequest'):
+    if (request.method == "POST" and request.headers.get('X-Requested-With') == 'XMLHttpRequest'):
         job_description = request.POST.get('job_description', '')
 
         try:

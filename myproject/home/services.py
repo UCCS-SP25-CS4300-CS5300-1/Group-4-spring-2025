@@ -98,10 +98,10 @@ class JobicyService:
     def search_jobs(search_term: str, params: Optional[Dict[str, Any]] = None) -> List[JobListing]:
         cache_key = JobicyService._build_cache_key(search_term, params)
         cached_jobs = JobListing.objects.filter(search_key=cache_key)
-        
+
         if cached_jobs.exists():
             return list(cached_jobs)
-            
+
         return JobicyService.fetch_and_cache_jobs(search_term, params)
 
     @staticmethod

@@ -26,7 +26,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         emails_to_process = options.get('emails') or self.team_emails
 
-        if(not emails_to_process):
+        if (not emails_to_process):
             self.stdout.write(self.style.WARNING('No emails provided and no default emails set'))
             return
 
@@ -40,7 +40,7 @@ class Command(BaseCommand):
         for email in emails_to_process:
             try:
                 user = User.objects.get(email=email)
-                if(not user.is_superuser):
+                if (not user.is_superuser):
                     user.is_superuser = True
                     user.is_staff = True
                     user.save()
@@ -59,7 +59,7 @@ class Command(BaseCommand):
                     email=email,
                     password='ChangeMe123!'
                 )
-                if(not hasattr(user, 'profile')):
+                if (not hasattr(user, 'profile')):
                     Profile.objects.create(user=user)
                 self.stdout.write(
                     self.style.SUCCESS(

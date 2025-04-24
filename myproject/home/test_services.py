@@ -110,7 +110,7 @@ class JobicyServiceTests(TestCase):
     def test_search_jobs_cache_hit(self, mock_get):
         search_term = "cached"
         params = {'geo': 'usa', 'industry': 'tech'}
-        
+
         cache_key = JobicyService._build_cache_key(search_term, params)
 
         cached_job = JobListing.objects.create(
@@ -123,7 +123,7 @@ class JobicyServiceTests(TestCase):
         jobs = JobicyService.search_jobs(search_term, params)
 
         mock_get.assert_not_called()
-        
+
         self.assertEqual(len(jobs), 1)
         self.assertEqual(jobs[0], cached_job)
         self.assertEqual(JobListing.objects.count(), 1)

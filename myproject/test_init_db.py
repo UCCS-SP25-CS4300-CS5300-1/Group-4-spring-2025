@@ -105,5 +105,5 @@ class TestInitDb(unittest.TestCase):
         mock_conn.close.assert_called_once()
         mock_print.assert_called()
 
-if(__name__ == '__main__'):
+if (__name__ == '__main__'):
     unittest.main()

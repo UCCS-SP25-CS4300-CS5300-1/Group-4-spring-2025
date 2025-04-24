@@ -2,7 +2,6 @@ from django.db import models
 from django.contrib.auth.models import User
 
 
-
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     avatar = models.ImageField(default='default.jpg', upload_to='avatars', null=True, blank=True)
@@ -13,16 +12,15 @@ class Profile(models.Model):
     remote_preference = models.BooleanField(default=False)
     salary_min_preference = models.IntegerField(null=True, blank=True, default=0)
 
-    #ai_recommendation = models.BooleanField(default=False)
-
     def __str__(self):
         return self.user.username
 
     def save(self, *args, **kwargs):
-        if(not self.pk):
-            if(self.user.is_superuser):
+        if (not self.pk):
+            if (self.user.is_superuser):
                 self.whitelisted_for_ai = True
         super().save(*args, **kwargs)
+
 
 def get_user_by_email(email):
     """

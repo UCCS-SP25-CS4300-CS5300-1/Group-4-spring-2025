@@ -16,6 +16,7 @@ from unittest.mock import patch
 import shutil
 from django.core.files import File
 
+
 class UserRegistrationFormTest(TestCase):
     def test_registration_form_valid_data(self):
         form = UserRegistrationForm(data={
@@ -298,7 +299,7 @@ class ResumeViewTest(TestCase):
                     try:
                         file_path = os.path.join(root, name)
                         if os.path.exists(file_path):
-                            os.chmod(file_path, 0o600)  
+                            os.chmod(file_path, 0o600)
                             os.unlink(file_path)
                     except (PermissionError, OSError):
                         pass
@@ -306,7 +307,7 @@ class ResumeViewTest(TestCase):
                     try:
                         dir_path = os.path.join(root, name)
                         if os.path.exists(dir_path):
-                            os.chmod(dir_path, 0o700) 
+                            os.chmod(dir_path, 0o700)
                             os.rmdir(dir_path)
                     except (PermissionError, OSError):
                         pass
@@ -315,13 +316,13 @@ class ResumeViewTest(TestCase):
                     os.chmod(settings.MEDIA_ROOT, 0o700)  # Restrict permissions
                     os.rmdir(settings.MEDIA_ROOT)
             except (PermissionError, OSError):
-                pass 
+                pass
 
     def test_upload_resume_POST_valid(self):
         self.client.login(username='testuser', password='StrongTestPass123')
         with open(self.test_resume_path, 'rb') as resume_file:
             response = self.client.post(self.upload_url, {'resume': resume_file})
-            
+
         self.assertEqual(response.status_code, 302)
         self.assertRedirects(response, reverse('profile'))
         self.assertTrue(Resume.objects.filter(user=self.user).exists())
@@ -331,7 +332,7 @@ class ResumeViewTest(TestCase):
     @patch('users.views.parse_resume', return_value='Parsed resume text')
     def test_resume_feedback_view_openai_exception(self, mock_parse, mock_load_guide, mock_openai_call):
         self.client.login(username='testuser', password='StrongTestPass123')
-        
+
         # Create resume using the test file
         with open(self.test_resume_path, 'rb') as resume_file:
             resume = Resume.objects.create(
@@ -351,7 +352,7 @@ class ResumeViewTest(TestCase):
 
     def test_delete_resume(self):
         self.client.login(username='testuser', password='StrongTestPass123')
-        
+
         with open(self.test_resume_path, 'rb') as resume_file:
             resume = Resume.objects.create(
                 user=self.user,
@@ -459,7 +460,7 @@ class ResumeModelTest(TestCase):
 
     def tearDown(self):
         for resume in self.uploaded_files:
-            if(resume.resume):
+            if (resume.resume):
                 try:
                     resume.resume.delete(save=False)
                 except:
@@ -567,7 +568,7 @@ class AdminPanelTest(TestCase):
 
     def tearDown(self):
         for resume in Resume.objects.all():
-            if(resume.resume):
+            if (resume.resume):
                 try:
                     resume.resume.delete(save=False)
                 except:
@@ -711,7 +712,7 @@ class ResumePrivacyTest(TestCase):
 
     def tearDown(self):
         for resume in self.uploaded_files:
-            if(resume.resume):
+            if (resume.resume):
                 try:
                     resume.resume.delete(save=False)
                 except:
@@ -866,7 +867,7 @@ class SecureResumeViewTest(TestCase):
 
     def tearDown(self):
         for resume in Resume.objects.all():
-            if(resume.resume):
+            if (resume.resume):
                 try:
                     resume.resume.delete(save=False)
                 except:

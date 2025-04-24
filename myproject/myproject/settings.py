@@ -133,7 +133,7 @@ STATICFILES_DIRS = [
 
 MEDIA_URL = 'media/'
 # Set MEDIA_ROOT differently based on environment
-if('test' in sys.argv):
+if ('test' in sys.argv):
     MEDIA_ROOT = BASE_DIR / 'test_media'
 else:
     MEDIA_ROOT = BASE_DIR / 'media'
@@ -154,7 +154,7 @@ LOGIN_URL = '/users/login/'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
 
-if(not DEBUG):
+if (not DEBUG):
     CSRF_COOKIE_SECURE = True
     SESSION_COOKIE_SECURE = True
 
@@ -173,7 +173,7 @@ if(not DEBUG):
 
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
-    if(not os.environ.get('DOCKER_TEST')):
+    if (not os.environ.get('DOCKER_TEST')):
         SECURE_SSL_REDIRECT = True
 
 LOGGING = {

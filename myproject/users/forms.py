@@ -16,7 +16,7 @@ class UserRegistrationForm(UserCreationForm):
     def save(self, commit=True):
         user = super().save(commit=False)
         user.email = self.cleaned_data['email']
-        if(commit):
+        if (commit):
             user.save()
         return user
 
@@ -43,13 +43,13 @@ class EditProfileForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        if(self.instance and self.instance.user):
+        if (self.instance and self.instance.user):
             self.fields['first_name'].initial = self.instance.user.first_name
             self.fields['last_name'].initial = self.instance.user.last_name
 
     def save(self, commit=True):
         profile = super().save(commit=False)
-        if(commit):
+        if (commit):
             profile.user.first_name = self.cleaned_data.get('first_name', '')
             profile.user.last_name = self.cleaned_data.get('last_name', '')
             profile.user.save()
