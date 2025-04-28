@@ -4,7 +4,7 @@ asgiref==3.8.1
 astroid==3.3.9
 Authlib==1.5.2
 bandit==1.8.3
-certifi==2025.1.31
+certifi==2025.4.26
 cffi==1.17.1
 chardet==5.2.0
 charset-normalizer==3.4.1
