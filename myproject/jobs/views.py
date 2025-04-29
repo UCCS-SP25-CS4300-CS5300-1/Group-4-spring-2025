@@ -1,10 +1,9 @@
 
 from .models import Job
-from django.shortcuts import render, get_object_or_404, redirect
-from home.forms import SearchJobForm
+from django.shortcuts import render
 from home.services import JobicyService
 from home.cover_letter_service import CoverLetterService
-from users.models import Profile, Resume
+from users.models import Resume
 
 
 def get_job_ai_recommendation(user):
