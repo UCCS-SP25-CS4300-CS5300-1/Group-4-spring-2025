@@ -69,7 +69,7 @@ sqlparse==0.5.3
 stevedore==5.4.1
 tomlkit==0.13.2
 tqdm==4.67.1
-typer==0.15.2
+typer==0.15.3
 typing-inspection==0.4.0
 typing_extensions==4.13.2
 tzdata==2025.2
