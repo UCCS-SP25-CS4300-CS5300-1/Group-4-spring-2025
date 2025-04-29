@@ -16,7 +16,7 @@ def create_user_profile(sender, instance, created, **kwargs):
     """
     Signal handler to create a user profile when a user is created
     """
-    if(created):
+    if (created):
         Profile.objects.get_or_create(user=instance)
 
 @receiver(post_save, sender=User)
@@ -24,7 +24,7 @@ def save_profile(sender, instance, **kwargs):
     """
     Signal handler to save a user profile when a user is saved
     """
-    if(hasattr(instance, 'profile')):
+    if (hasattr(instance, 'profile')):
         instance.profile.save()
     else:
         Profile.objects.get_or_create(user=instance)

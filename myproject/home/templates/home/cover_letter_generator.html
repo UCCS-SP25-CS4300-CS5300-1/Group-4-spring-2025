@@ -352,8 +352,8 @@
                 const form = $(this);
                 const generateButton = $('#generateButton');
                 const loadingContainer = $('#loadingContainer');
-                const errorContainer = $('.messages.mb-4'); 
-                errorContainer.empty(); 
+                const errorContainer = $('.messages.mb-4');
+                errorContainer.empty();
 
                 form.css('opacity', '0.5');
                 loadingContainer.show();
@@ -367,7 +367,7 @@
                     success: function(response) {
                         if (response.success && response.cover_letter_text) {
                             form.hide();
-                            
+
                             if (!$('#edit-container').length) {
                                 $('<div id="edit-container" class="mt-4">' +
                                   '<h5>Review and Edit Your Cover Letter:</h5>' +
@@ -376,20 +376,20 @@
                                   '<button class="btn btn-secondary" id="edit-back"><i class="fas fa-arrow-left me-1"></i> Back to Form</button>' +
                                   '<button class="btn btn-primary" id="generate-pdf"><i class="fas fa-file-download me-1"></i> Generate PDF</button>' +
                                   '</div></div>').insertAfter(form);
-                                
+
                                 $('#edit-back').on('click', function() {
                                     $('#edit-container').hide();
                                     form.css('opacity', '1').show();
                                 });
-                                
+
                                 $('#generate-pdf').on('click', function() {
                                     generatePdf($('#edit-cover-letter').val(), form.serialize());
                                 });
                             }
-                            
+
                             $('#edit-cover-letter').val(response.cover_letter_text);
                             $('#edit-container').show();
-                            
+
                             errorContainer.html('<div class="alert alert-success">Cover letter generated! Review and edit before creating PDF.</div>');
                         } else {
                             let errorMsg = response.error || 'An unexpected error occurred while generating the cover letter.';
@@ -428,7 +428,7 @@
             const errorContainer = $('.messages.mb-4');
             errorContainer.empty();
             loadingContainer.show();
-            
+
 
             const originalFormData = new URLSearchParams(formData);
             const fd = new FormData();
@@ -436,10 +436,10 @@
             for (const [key, value] of originalFormData.entries()) {
                 fd.append(key, value);
             }
-            
+
             fd.append('edited_cover_letter', coverLetterText);
             fd.append('generate_pdf', 'true');
-            
+
             $.ajax({
                 url: '/generate-cover-letter-pdf/',
                 type: 'POST',

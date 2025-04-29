@@ -48,10 +48,10 @@
             background-color: #f3f4f6;
             flex-shrink: 0;
         }
-        .company-logo-placeholder { 
-            display: flex; align-items: center; justify-content: center; 
-            background-color: #e5e7eb; color: #4b5563; 
-            font-size: 1.8rem; font-weight: 600; text-transform: uppercase; 
+        .company-logo-placeholder {
+            display: flex; align-items: center; justify-content: center;
+            background-color: #e5e7eb; color: #4b5563;
+            font-size: 1.8rem; font-weight: 600; text-transform: uppercase;
         }
         .job-title {
             font-size: 1.5rem;
@@ -63,18 +63,18 @@
             font-size: 1rem;
         }
         .job-meta span {
-            display: inline-flex; align-items: center; gap: 0.5rem; 
-            margin-right: 1rem; color: #4b5563; font-size: 0.9rem; 
+            display: inline-flex; align-items: center; gap: 0.5rem;
+            margin-right: 1rem; color: #4b5563; font-size: 0.9rem;
         }
         .job-meta i {
             color: #6b7280;
         }
-        
+
         .accordion-item {
             background-color: #fff;
             border: 1px solid #e5e7eb;
             border-radius: 8px !important;
-            margin-bottom: 1rem; 
+            margin-bottom: 1rem;
             box-shadow: 0 1px 3px rgba(0,0,0,0.05);
             overflow: hidden;
         }
@@ -111,18 +111,14 @@
         }
         .step-icon {
              width: 24px; height: 24px;
-             background-color: #dbeafe;
-             color: #2563eb;
+             background-color: #dbeafe; /* Light blue */
+             color: #2563eb; /* Blue */
              border-radius: 50%;
              display: inline-flex;
              align-items: center;
              justify-content: center;
              margin-right: 0.75rem;
              font-size: 0.9rem;
-        }
-        .accordion-button:not(.collapsed) .step-icon {
-            background-color: #2563eb;
-            color: white;
         }
         .final-submit-section {
             background-color: white;
@@ -147,7 +143,7 @@
     </nav>
 
     <div class="container mt-4 mb-5">
-        
+
         <div class="job-header-card">
             <div class="d-flex align-items-start gap-3 mb-3">
                 {% if job.company_logo %}
@@ -168,7 +164,7 @@
                     <i class="fas fa-external-link-alt"></i> View Posting
                 </a>
             </div>
-           
+
         </div>
 
         <h2 class="h4 mb-3 text-primary">Application Steps</h2>
@@ -177,20 +173,20 @@
 
             <div class="accordion-item">
                 <h2 class="accordion-header" id="headingOne">
-                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
+                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
                        <span class="step-icon"><i class="fas fa-file-alt"></i></span> Resume Tuning
                     </button>
                 </h2>
-                <div id="collapseOne" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#applicationStepsAccordion">
+                <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#applicationStepsAccordion">
                     <div class="accordion-body">
                         {% if has_resume %}
                             <div id="resumeFeedbackError" class="alert alert-danger alert-dismissible fade show" role="alert" style="display: none;">
                                 <span id="resumeFeedbackErrorMessage"></span>
                                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                             </div>
-                            
+
                             <p>Get AI-powered feedback on how well your resume matches the requirements for <strong>{{ job.title }}</strong> at <strong>{{ job.company }}</strong>.</p>
-                            
+
                             <div class="mb-3">
                                 <h5 class="mb-2">Your Current Resume</h5>
                                 <div class="d-flex align-items-center gap-2 mb-3">
@@ -200,7 +196,7 @@
                                         <i class="fas fa-eye me-1"></i> View
                                     </a>
                                 </div>
-                                
+
                                 {% if resume_text %}
                                 <div class="card mb-3">
                                     <div class="card-header bg-light">
@@ -212,11 +208,11 @@
                                 </div>
                                 {% endif %}
                             </div>
-                            
+
                             <button class="btn btn-primary" id="generateResumeFeedback">
                                 <i class="fas fa-magic me-1"></i> Get Resume Feedback
                             </button>
-                            
+
                             <div class="loading-container mt-4" id="resumeLoadingContainer" style="display: none;">
                                 <div class="spinner-border text-primary" role="status">
                                     <span class="visually-hidden">Loading...</span>
@@ -224,10 +220,10 @@
                                 <p class="mt-3">Analyzing your resume against the job description...</p>
                                 <p class="text-muted small">This may take a few moments</p>
                             </div>
-                            
+
                             <div id="resumeFeedbackResult" class="mt-4" style="display: none;">
                                 <h5>Resume Feedback Analysis</h5>
-                                
+
                                 <div class="card mb-3">
                                     <div class="card-header bg-primary text-white">
                                         <i class="fas fa-bullseye me-2"></i> Job-Specific Analysis
@@ -236,7 +232,7 @@
                                         <div id="jobSpecificFeedback"></div>
                                     </div>
                                 </div>
-                                
+
                                 <div class="card mb-3">
                                     <div class="card-header bg-info text-white">
                                         <i class="fas fa-file-alt me-2"></i> General Resume Feedback
@@ -245,7 +241,7 @@
                                         <div id="generalResumeFeedback"></div>
                                     </div>
                                 </div>
-                                
+
                                 <button class="btn btn-outline-primary" onclick="$('#resumeFeedbackResult').hide();">
                                     <i class="fas fa-chevron-up me-1"></i> Hide Feedback
                                 </button>
@@ -263,11 +259,11 @@
 
             <div class="accordion-item">
                 <h2 class="accordion-header" id="headingTwo">
-                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="true" aria-controls="collapseTwo">
                         <span class="step-icon"><i class="fas fa-envelope-open-text"></i></span> Cover Letter Draft
                     </button>
                 </h2>
-                <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-bs-parent="#applicationStepsAccordion">
+                <div id="collapseTwo" class="accordion-collapse collapse show" aria-labelledby="headingTwo" data-bs-parent="#applicationStepsAccordion">
                     <div class="accordion-body">
                         <div id="coverLetterError" class="alert alert-danger alert-dismissible fade show" role="alert" style="display: none;">
                             <span id="coverLetterErrorMessage"></span>
@@ -353,24 +349,24 @@
 
             <div class="accordion-item">
                 <h2 class="accordion-header" id="headingThree">
-                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="true" aria-controls="collapseThree">
                          <span class="step-icon"><i class="fas fa-binoculars"></i></span> Personal Fit Analysis
                     </button>
                 </h2>
-                <div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="headingThree" data-bs-parent="#applicationStepsAccordion">
+                <div id="collapseThree" class="accordion-collapse collapse show" aria-labelledby="headingThree" data-bs-parent="#applicationStepsAccordion">
                     <div class="accordion-body">
                         <p>Get an AI-driven assessment of how well your profile matches the specific requirements of this job posting.</p>
-                        
+
                         <div id="outlookError" class="alert alert-danger alert-dismissible fade show" role="alert" style="display: none;">
                             <span id="outlookErrorMessage"></span>
                             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                         </div>
-                        
+
                         {% if has_resume %}
                         <button class="btn btn-primary" id="generateOutlook">
                             <i class="fas fa-chart-line me-1"></i> Analyze My Fit for This Job
                         </button>
-                        
+
                         <div class="loading-container mt-4" id="outlookLoadingContainer" style="display: none;">
                             <div class="spinner-border text-primary" role="status">
                                 <span class="visually-hidden">Loading...</span>
@@ -378,10 +374,10 @@
                             <p class="mt-3">Analyzing your fit for {{ job.title }} at {{ job.company }}...</p>
                             <p class="text-muted small">This may take a few moments</p>
                         </div>
-                        
+
                         <div id="outlookResult" class="mt-4" style="display: none;">
                             <h5>Job Fit Analysis</h5>
-                            
+
                             <div class="card">
                                 <div class="card-header bg-primary text-white">
                                     <i class="fas fa-user-check me-2"></i> Your Match for {{ job.title }} at {{ job.company }}
@@ -390,7 +386,7 @@
                                     <div id="outlookAnalysis"></div>
                                 </div>
                             </div>
-                            
+
                             <button class="btn btn-outline-primary mt-3" onclick="$('#outlookResult').hide();">
                                 <i class="fas fa-chevron-up me-1"></i> Hide Analysis
                             </button>
@@ -408,9 +404,9 @@
 
          <div class="final-submit-section text-center mt-4">
              <p class="text-success mb-3 fw-bold">You've reviewed the steps, now go get that job!</p>
-             <button id="finalApplyButton" 
-                     class="btn btn-success btn-lg" 
-                     data-jobid="{{ job.job_id }}" 
+             <button id="finalApplyButton"
+                     class="btn btn-success btn-lg"
+                     data-jobid="{{ job.job_id }}"
                      data-joburl="{{ job.url }}">
                  <i class="fas fa-external-link-alt me-2"></i>Now you're ready to apply!
             </button>
@@ -436,7 +432,7 @@
                 link.download = filename;
                 document.body.appendChild(link);
                 link.click();
-                document.body.removeChild(link); 
+                document.body.removeChild(link);
                 window.URL.revokeObjectURL(link.href);
             } catch (e) {
                 console.error("Error decoding or downloading PDF:", e);
@@ -474,17 +470,17 @@
             const errorMessageSpan = $('#coverLetterErrorMessage');
             errorContainer.hide();
             loadingContainer.show();
-            
+
             const originalFormData = new URLSearchParams(formData);
             const fd = new FormData();
-            
+
             for (const [key, value] of originalFormData.entries()) {
                 fd.append(key, value);
             }
-            
+
             fd.append('edited_cover_letter', coverLetterText);
             fd.append('generate_pdf', 'true');
-            
+
             $.ajax({
                 url: "{% url 'generate_cover_letter_pdf' %}",
                 type: 'POST',
@@ -521,7 +517,7 @@
             if (!$('#downloadSuccessMessage').length) {
                 $('<div id="downloadSuccessMessage" class="alert alert-success" style="display:none; position:fixed; top:20px; right:20px; z-index:9999;"></div>').appendTo('body');
             }
-            
+
             $('#coverLetterForm_ajax').on('submit', function(e) {
                 e.preventDefault();
 
@@ -552,7 +548,7 @@
                         if (response.success && response.cover_letter_text) {
                             resultTextarea.val(response.cover_letter_text);
                             resultContainer.show();
-                            
+
                             if (!$('#downloadPdfButton').length) {
                                 $('<button id="downloadPdfButton" class="btn btn-primary btn-sm mt-2 ms-2"><i class="fas fa-file-download me-1"></i> Download as PDF</button>')
                                     .insertAfter('#coverLetterText_ajax')
@@ -561,10 +557,10 @@
                                     });
                             }
                         } else {
-                           
+
                             errorMessageSpan.text(response.error || 'An unexpected error occurred.');
                             errorContainer.show();
-                            form.show(); 
+                            form.show();
                         }
                     },
                     error: function(xhr, status, error) {
@@ -611,7 +607,7 @@
                 formData.append('resume_id', '{{ latest_resume.id|default:"" }}');
                 formData.append('job_description', '{{ job.description|escapejs }}');
                 formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
-                
+
                 $.ajax({
                     url: "{% url 'resume_feedback' %}",
                     type: "POST",
@@ -645,7 +641,7 @@
                     }
                 });
             });
-            
+
             $('#generateOutlook').on('click', function() {
                 const button = $(this);
                 const loadingContainer = $('#outlookLoadingContainer');
@@ -666,7 +662,7 @@
                 formData.append('industry', '{{ job.industry|default:""|escapejs }}');
                 formData.append('location', '{{ job.location|default:""|escapejs }}');
                 formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
-                
+
                 $.ajax({
                     url: "{% url 'job_outlook' %}",
                     type: "POST",
@@ -703,7 +699,7 @@
                 const button = $(this);
                 const jobId = button.data('jobid');
                 const jobUrl = button.data('joburl');
-                
+
                 if (!jobId || !jobUrl) {
                     console.error('Missing job ID or URL for final apply button');
                     alert('Could not process application tracking. Please try again.');
@@ -711,7 +707,7 @@
                 }
 
                 button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i> Processing...');
-                
+
                 console.log('Attempting to track application for job ID:', jobId);
 
                 $.ajax({
@@ -736,26 +732,26 @@
                     complete: function() {
                          setTimeout(function() {
                              button.prop("disabled", false).html("<i class=\"fas fa-external-link-alt me-2\"></i>Now you're ready to apply!");
-                         }, 1000); 
+                         }, 1000);
                     }
                 });
             });
             function markdownToHtml(markdown) {
                 if (!markdown) return '';
-                
+
                 let html = markdown
                     .replace(/^### (.*$)/gim, '<h5>$1</h5>')
                     .replace(/^## (.*$)/gim, '<h4>$1</h4>')
                     .replace(/^# (.*$)/gim, '<h3>$1</h3>')
-                    
+
                     .replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>')
                     .replace(/\*(.*?)\*/gim, '<em>$1</em>')
-                    
+
                     .replace(/^\d+\. (.*$)/gim, '<ol><li>$1</li></ol>')
                     .replace(/^- (.*$)/gim, '<ul><li>$1</li></ul>')
 
                     .replace(/\n\n/gim, '<br><br>');
-                
+
                 return html;
             }
         });

@@ -23,7 +23,7 @@ class JobFiltersTests(SimpleTestCase):
 
     def test_format_field_empty_or_none(self):
         self.assertEqual(format_field(''), '')
-        self.assertEqual(format_field(None), '') 
+        self.assertEqual(format_field(None), '')
 
     def test_format_field_non_string(self):
         self.assertEqual(format_field(123), 123)
@@ -33,11 +33,11 @@ class JobFiltersTests(SimpleTestCase):
     def test_format_field_malformed_list(self):
         self.assertEqual(format_field('["malformed_entity &amp; stuff'), 'Malformed Entity & Stuff')
         self.assertEqual(format_field('[Malformed Example]'), 'Malformed Example')
-        self.assertEqual(format_field('Just Text'), 'Just Text') 
+        self.assertEqual(format_field('Just Text'), 'Just Text')
         self.assertEqual(format_field('["[Double-Quoted]"]'), '[Double Quoted]')
 
     def test_format_field_already_formatted(self):
         self.assertEqual(format_field('Already Formatted'), 'Already Formatted')
 
     def test_format_field_multiple_words(self):
-        self.assertEqual(format_field('senior_software_engineer'), 'Senior Software Engineer') 
+        self.assertEqual(format_field('senior_software_engineer'), 'Senior Software Engineer')

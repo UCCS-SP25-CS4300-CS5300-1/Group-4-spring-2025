@@ -42,7 +42,7 @@ if [ -z "$OPENAI_API_KEY" ]; then
     echo -e "${BLUE}Please enter your OpenAI API key:${NC}"
     read -s OPENAI_API_KEY
     export OPENAI_API_KEY
-    
+
     if [ -z "$OPENAI_API_KEY" ]; then
         echo -e "${RED}No API key provided. Features that use OpenAI may not work properly.${NC}"
     else

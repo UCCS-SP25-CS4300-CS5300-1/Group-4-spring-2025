@@ -40,7 +40,7 @@
     </nav>
 
     <div class="container mt-4 mb-5">
-        
+
         {% if messages %}
             <div class="messages mb-3">
                 {% for message in messages %}
@@ -78,17 +78,17 @@
         <div class="analysis-section">
             <h2 class="h4 mb-3"><i class="fas fa-user-check me-2"></i>Personal Fit Analysis</h2>
             <p>Get an AI-driven assessment of how well your profile matches the specific requirements of this job posting.</p>
-            
+
             <div id="outlookError" class="alert alert-danger alert-dismissible fade show" role="alert" style="display: none;">
                 <span id="outlookErrorMessage"></span>
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
-            
+
             {% if has_resume %}
             <button class="btn btn-primary" id="generateOutlook">
                 <i class="fas fa-chart-line me-1"></i> Analyze My Fit for This Job
             </button>
-            
+
             <div class="loading-container mt-4" id="outlookLoadingContainer" style="display: none;">
                 <div class="spinner-border text-primary" role="status">
                     <span class="visually-hidden">Loading...</span>
@@ -96,10 +96,10 @@
                 <p class="mt-3">Analyzing your fit for {{ job.title }} at {{ job.company }}...</p>
                 <p class="text-muted small">This may take a few moments</p>
             </div>
-            
+
             <div id="outlookResult" class="mt-4" style="display: none;">
                 <h5>Job Fit Analysis</h5>
-                
+
                 <div class="card">
                     <div class="card-header bg-primary text-white">
                         <i class="fas fa-user-check me-2"></i> Your Match for {{ job.title }} at {{ job.company }}
@@ -108,7 +108,7 @@
                         <div id="outlookAnalysis"></div>
                     </div>
                 </div>
-                
+
                 <button class="btn btn-outline-primary mt-3" onclick="$('#outlookResult').hide();">
                     <i class="fas fa-chevron-up me-1"></i> Hide Analysis
                 </button>
@@ -162,7 +162,7 @@
                 formData.append('industry', '{{ job.industry|default:""|escapejs }}');
                 formData.append('location', '{{ job.location|default:""|escapejs }}');
                 formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
-                
+
                 $.ajax({
                     url: "{% url 'job_outlook' %}", // Endpoint remains the same
                     type: "POST",
@@ -198,4 +198,4 @@
         });
     </script>
 </body>
-</html> 
+</html>

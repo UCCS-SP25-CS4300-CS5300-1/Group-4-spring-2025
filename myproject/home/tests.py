@@ -85,7 +85,7 @@ class DashboardViewTest(TestCase):
             location='Remote',
             description='Test job description',
             url='https://example.com/job1',
-            job_type='Full-time',
+            industry='Technology',
             published_at=timezone.now(),
             search_key='python'
         )
@@ -94,10 +94,10 @@ class DashboardViewTest(TestCase):
             job_id='test-job-2',
             title='Data Scientist',
             company='Another Company',
-            location='New York',
+            location='USA',
             description='Another test job description',
             url='https://example.com/job2',
-            job_type='Remote',
+            industry='Data Science',
             published_at=timezone.now(),
             search_key='data-science'
         )
@@ -129,11 +129,14 @@ class DashboardViewTest(TestCase):
         """Test that the dashboard displays search results"""
         self.client.login(username='testuser', password='StrongTestPass123')
 
-        # Mock the JobicyService.search_jobs method
         with patch('home.services.JobicyService.search_jobs') as mock_search:
             mock_search.return_value = [self.job1]
 
-            response = self.client.post(self.dashboard_url, {'search_term': 'python'})
+            response = self.client.post(self.dashboard_url, {
+                'search_term': 'python',
+                'location': 'usa',
+                'industry': 'technology'
+            })
 
             self.assertEqual(response.status_code, 200)
             self.assertTemplateUsed(response, 'home/dashboard.html')
@@ -146,10 +149,20 @@ class DashboardViewTest(TestCase):
             self.assertContains(response, 'Test Company')
             self.assertContains(response, 'Remote')
 
+            # Verify the API was called with correct parameters
+            mock_search.assert_called_once_with('python', {
+                'geo': 'usa',
+                'industry': 'technology'
+            })
+
     def test_dashboard_form_validation_empty_search(self):
         """Test that empty search term is handled properly"""
         self.client.login(username='testuser', password='StrongTestPass123')
-        response = self.client.post(self.dashboard_url, {'search_term': ''})
+        response = self.client.post(self.dashboard_url, {
+            'search_term': '',
+            'location': '',
+            'industry': ''
+        })
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'home/dashboard.html')
         self.assertTrue('form' in response.context)
@@ -168,11 +181,14 @@ class DashboardViewTest(TestCase):
         """Test that the dashboard shows Interview Coach button for job listings"""
         self.client.login(username='testuser', password='StrongTestPass123')
 
-        # mocking the JobicyService.search_jobs method
         with patch('home.services.JobicyService.search_jobs') as mock_search:
             mock_search.return_value = [self.job1]
 
-            response = self.client.post(self.dashboard_url, {'search_term': 'python'})
+            response = self.client.post(self.dashboard_url, {
+                'search_term': 'python',
+                'location': 'usa',
+                'industry': 'technology'
+            })
             self.assertContains(response, 'Interview Coach')
             self.assertContains(response, f'/interview-coach/{self.job1.job_id}/')
 
@@ -337,19 +353,19 @@ class InterviewCoachViewTest(TestCase):
         with patch('home.interview_service.InterviewService.generate_interview_questions') as mock_generate:
             mock_generate.return_value = ["Generic Q1", "Generic Q2"]
             response = self.client.post(generate_url, {}, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
-            
+
             self.assertEqual(response.status_code, 200)
             self.assertEqual(response.json(), {'questions': ["Generic Q1", "Generic Q2"]})
-            mock_generate.assert_called_once_with("") 
+            mock_generate.assert_called_once_with("")
 
         with patch('home.interview_service.InterviewService.generate_interview_questions') as mock_generate:
             mock_generate.return_value = ["Job Q1", "Job Q2"]
             response = self.client.post(generate_url, {'job_description': self.job.description}, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
-            
+
             self.assertEqual(response.status_code, 200)
             self.assertEqual(response.json(), {'questions': ["Job Q1", "Job Q2"]})
             mock_generate.assert_called_once_with(self.job.description)
-            
+
     def test_ajax_generate_questions_error(self):
         """Test error handling in the question generation API."""
         self.client.login(username='testuser', password='StrongTestPass123')
@@ -358,7 +374,7 @@ class InterviewCoachViewTest(TestCase):
         with patch('home.interview_service.InterviewService.generate_interview_questions') as mock_generate:
             mock_generate.side_effect = Exception("AI Service Down") # Simulate an error
             response = self.client.post(generate_url, {}, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
-            
+
             self.assertEqual(response.status_code, 500)
             self.assertEqual(response.json(), {'error': 'Failed to generate questions. Please try again.'})
 
@@ -370,14 +386,14 @@ class InterviewServiceTest(TestCase):
     def test_generate_interview_questions_fallback(self, mock_get_key):
         """Test that generate_interview_questions returns fallback questions when API key is not found"""
         from home.interview_service import InterviewService
-        
+
 
         questions = InterviewService.generate_interview_questions("Test job description")
-        
+
         self.assertTrue(len(questions) > 0)
         self.assertTrue(isinstance(questions, list))
         self.assertTrue(all(isinstance(q, str) for q in questions))
-        
+
 
         self.assertIn("Tell me about yourself and why you're interested in this position.", questions[0])
 
@@ -386,24 +402,24 @@ class InterviewServiceTest(TestCase):
     def test_evaluate_response_fallback(self, mock_get_key):
         """Test that evaluate_response returns fallback feedback when API key is not found"""
         from home.interview_service import InterviewService
-        
+
 
         feedback = InterviewService.evaluate_response(
             "Tell me about yourself.",
             "I am a Python developer with 5 years of experience.",
             "Python Developer job description"
         )
-        
+
         self.assertIn('score', feedback)
         self.assertIn('strengths', feedback)
         self.assertIn('areas_to_improve', feedback)
         self.assertIn('suggestions', feedback)
-        
+
         self.assertTrue(1 <= feedback['score'] <= 10)
-        
+
         self.assertTrue(len(feedback['strengths']) > 0)
         self.assertTrue(len(feedback['areas_to_improve']) > 0)
-        
+
         self.assertTrue(isinstance(feedback['suggestions'], str))
 
 
@@ -740,28 +756,28 @@ class ResumeFeedbackTest(TestCase):
 
     def test_apply_flow_with_resume(self):
         self.client.login(username='testuser', password='StrongTestPass123')
-        
+
         with patch('home.views.JobicyService.get_job_details') as mock_get_job_details, \
              patch('users.views.parse_resume', return_value="Parsed resume content"):
-            
+
             mock_get_job_details.return_value = self.job
-            
+
             response = self.client.get(self.apply_flow_url)
             self.assertEqual(response.status_code, 200)
             self.assertTemplateUsed(response, 'home/apply_flow.html')
             self.assertTrue('resume_text' in response.context)
             self.assertEqual(response.context['resume_text'], "Parsed resume content")
-            
+
             self.assertContains(response, 'Get Resume Feedback')
             self.assertContains(response, f'formData.append(\'resume_id\', \'{self.resume.id}\')')
 
     def test_ajax_resume_feedback_success(self):
         self.client.login(username='testuser', password='StrongTestPass123')
-        
+
         with patch('users.views.parse_resume', return_value="Parsed resume content"), \
              patch('users.views.get_resume_feedback', return_value="General resume feedback"), \
              patch('home.views.get_job_specific_feedback', return_value="Job-specific feedback"):
-            
+
             response = self.client.post(
                 self.resume_feedback_url,
                 {
@@ -770,7 +786,7 @@ class ResumeFeedbackTest(TestCase):
                 },
                 HTTP_X_REQUESTED_WITH='XMLHttpRequest'
             )
-            
+
             self.assertEqual(response.status_code, 200)
             data = response.json()
             self.assertTrue(data['success'])
@@ -779,7 +795,7 @@ class ResumeFeedbackTest(TestCase):
 
     def test_ajax_resume_feedback_no_resume(self):
         self.client.login(username='testuser', password='StrongTestPass123')
-        
+
         response = self.client.post(
             self.resume_feedback_url,
             {
@@ -787,14 +803,14 @@ class ResumeFeedbackTest(TestCase):
             },
             HTTP_X_REQUESTED_WITH='XMLHttpRequest'
         )
-        
+
         self.assertEqual(response.status_code, 400)
         data = response.json()
         self.assertEqual(data['error'], 'No resume selected')
 
     def test_ajax_resume_feedback_invalid_resume(self):
         self.client.login(username='testuser', password='StrongTestPass123')
-        
+
         response = self.client.post(
             self.resume_feedback_url,
             {
@@ -803,14 +819,14 @@ class ResumeFeedbackTest(TestCase):
             },
             HTTP_X_REQUESTED_WITH='XMLHttpRequest'
         )
-        
+
         self.assertEqual(response.status_code, 404)
         data = response.json()
         self.assertEqual(data['error'], 'Resume not found')
 
     def test_ajax_resume_feedback_not_ajax(self):
         self.client.login(username='testuser', password='StrongTestPass123')
-        
+
         response = self.client.post(
             self.resume_feedback_url,
             {
@@ -818,33 +834,35 @@ class ResumeFeedbackTest(TestCase):
                 'job_description': self.job.description
             }
         )
-        
+
         self.assertEqual(response.status_code, 400)
         data = response.json()
         self.assertEqual(data['error'], 'Invalid request')
 
     def test_get_job_specific_feedback(self):
         from home.views import get_job_specific_feedback
-        
+
         with patch('openai.chat.completions.create') as mock_openai:
             mock_openai.return_value.choices = [MagicMock(message=MagicMock(content="Mocked feedback"))]
-            
+
             result = get_job_specific_feedback("Resume text", "Job description")
-            self.assertEqual(result, "Mocked feedback")
-            
+            self.assertEqual(result, "<p>Mocked feedback</p>")
+
             mock_openai.assert_called_once()
             call_args = mock_openai.call_args[1]
             self.assertEqual(call_args['model'], "gpt-4o-mini")
             self.assertEqual(len(call_args['messages']), 2)
             self.assertIn("Resume", call_args['messages'][1]['content'])
             self.assertIn("Job Description", call_args['messages'][1]['content'])
-            
+
         with patch('os.environ.get', return_value=None):
             result = get_job_specific_feedback("Resume text", "Job description")
             self.assertIn("requires an OpenAI API key", result)
-        
+            self.assertTrue(result.startswith("<h2>Error</h2>"), "Error message should start with H2")
+
         with patch('openai.chat.completions.create', side_effect=Exception("API error")):
             result = get_job_specific_feedback("Resume text", "Job description")
+            self.assertTrue(result.startswith("<h2>Error</h2>"), "Error message should start with H2")
             self.assertIn("Unable to generate job-specific feedback", result)
             self.assertIn("API error", result)
 
@@ -883,18 +901,18 @@ class ApplyFlowViewTest(TestCase):
 
     def test_apply_flow_authenticated_user(self):
         self.client.login(username='testuser', password='StrongTestPass123')
-        
+
         with patch('home.views.JobicyService.get_job_details') as mock_get_job_details:
             mock_get_job_details.return_value = self.job
-            
+
             response = self.client.get(self.apply_flow_url)
             self.assertEqual(response.status_code, 200)
             self.assertTemplateUsed(response, 'home/apply_flow.html')
-            
+
             self.assertEqual(response.context['job'], self.job)
             self.assertEqual(response.context['latest_resume'], self.resume)
             self.assertTrue(response.context['has_resume'])
-            
+
             form = response.context['form']
             self.assertEqual(form.initial['job_description'], self.job.description)
             self.assertEqual(form.initial['company_name'], self.job.company)
@@ -904,15 +922,15 @@ class ApplyFlowViewTest(TestCase):
 
     def test_apply_flow_invalid_job_id(self):
         self.client.login(username='testuser', password='StrongTestPass123')
-        
+
         with patch('home.views.JobicyService.get_job_details', return_value=None), \
              patch('home.views.render') as mock_render:
-            
+
             mock_render.return_value = HttpResponse(status=200)
-            
+
             invalid_url = reverse('apply_flow', args=['invalid-job-id'])
             response = self.client.get(invalid_url)
-            
+
             mock_render.assert_called_once()
             args, kwargs = mock_render.call_args
             self.assertEqual(args[1], 'home/apply_flow_error.html')
@@ -920,25 +938,25 @@ class ApplyFlowViewTest(TestCase):
 
     def test_apply_flow_with_resume_error(self):
         self.client.login(username='testuser', password='StrongTestPass123')
-        
+
         with patch('home.views.JobicyService.get_job_details') as mock_get_job_details, \
              patch('users.views.parse_resume', side_effect=Exception("Resume parsing error")):
-            
+
             mock_get_job_details.return_value = self.job
-            
+
             response = self.client.get(self.apply_flow_url)
             self.assertEqual(response.status_code, 200)
-            
+
             messages = list(response.context['messages'])
             self.assertTrue(any("Error extracting text from your resume" in str(m) for m in messages))
             self.assertIsNone(response.context['resume_text'])
 
     def test_job_outlook_success(self):
         self.client.login(username='testuser', password='StrongTestPass123')
-        
+
         with patch('home.views.get_job_fit_analysis', return_value="Sample job fit analysis"), \
              patch('users.views.parse_resume', return_value="Resume content"):
-            
+
             response = self.client.post(
                 reverse('job_outlook'),
                 {
@@ -949,7 +967,7 @@ class ApplyFlowViewTest(TestCase):
                 },
                 HTTP_X_REQUESTED_WITH='XMLHttpRequest'
             )
-            
+
             self.assertEqual(response.status_code, 200)
             data = response.json()
             self.assertTrue(data['success'])
@@ -957,7 +975,7 @@ class ApplyFlowViewTest(TestCase):
 
     def test_job_outlook_missing_title(self):
         self.client.login(username='testuser', password='StrongTestPass123')
-        
+
         response = self.client.post(
             reverse('job_outlook'),
             {
@@ -967,19 +985,19 @@ class ApplyFlowViewTest(TestCase):
             },
             HTTP_X_REQUESTED_WITH='XMLHttpRequest'
         )
-        
+
         self.assertEqual(response.status_code, 400)
         data = response.json()
         self.assertEqual(data['error'], 'No job title provided')
 
     def test_job_outlook_with_resume(self):
         self.client.login(username='testuser', password='StrongTestPass123')
-        
+
         with patch('users.views.parse_resume', return_value="Resume content"), \
              patch('home.views.get_job_fit_analysis') as mock_analysis:
-            
+
             mock_analysis.return_value = "Analysis with resume data"
-            
+
             response = self.client.post(
                 reverse('job_outlook'),
                 {
@@ -988,7 +1006,7 @@ class ApplyFlowViewTest(TestCase):
                 },
                 HTTP_X_REQUESTED_WITH='XMLHttpRequest'
             )
-            
+
             self.assertEqual(response.status_code, 200)
             call_args = mock_analysis.call_args[1]
             self.assertEqual(call_args['resume_text'], "Resume content")
@@ -996,10 +1014,10 @@ class ApplyFlowViewTest(TestCase):
 
     def test_rejection_simulator_success(self):
         self.client.login(username='testuser', password='StrongTestPass123')
-        
+
         with patch('home.views.generate_rejection_reasons', return_value="Sample rejection reasons"), \
              patch('users.views.parse_resume', return_value="Resume content"):
-            
+
             response = self.client.post(
                 reverse('rejection_generator'),
                 {
@@ -1010,15 +1028,15 @@ class ApplyFlowViewTest(TestCase):
                 },
                 HTTP_X_REQUESTED_WITH='XMLHttpRequest'
             )
-            
+
             self.assertEqual(response.status_code, 200)
             data = response.json()
             self.assertTrue(data['success'])
-            self.assertEqual(data['rejection_reasons'], "Sample rejection reasons")        
+            self.assertEqual(data['rejection_reasons'], "Sample rejection reasons")
 
     def test_rejection_simulator_missing_title(self):
         self.client.login(username='testuser', password='StrongTestPass123')
-        
+
         response = self.client.post(
             reverse('rejection_generator'),
             {
@@ -1028,19 +1046,19 @@ class ApplyFlowViewTest(TestCase):
             },
             HTTP_X_REQUESTED_WITH='XMLHttpRequest'
         )
-        
+
         self.assertEqual(response.status_code, 400)
         data = response.json()
-        self.assertEqual(data['error'], 'No job title provided')      
+        self.assertEqual(data['error'], 'No job title provided')
 
     def test_rejection_simulator_with_resume(self):
         self.client.login(username='testuser', password='StrongTestPass123')
-        
+
         with patch('users.views.parse_resume', return_value="Resume content"), \
              patch('home.views.generate_rejection_reasons') as mock_analysis:
-            
+
             mock_analysis.return_value = "Analysis with resume data"
-            
+
             response = self.client.post(
                 reverse('rejection_generator'),
                 {
@@ -1049,20 +1067,20 @@ class ApplyFlowViewTest(TestCase):
                 },
                 HTTP_X_REQUESTED_WITH='XMLHttpRequest'
             )
-            
+
             self.assertEqual(response.status_code, 200)
             call_args = mock_analysis.call_args[1]
             self.assertEqual(call_args['resume_text'], "Resume content")
-            self.assertEqual(call_args['job_title'], "Python Developer")   
+            self.assertEqual(call_args['job_title'], "Python Developer")
 
     def test_rejection_simulator_with_no_resume(self):
         self.client.login(username='testuser', password='StrongTestPass123')
-        
+
         with patch('users.views.parse_resume', return_value=None), \
              patch('home.views.generate_rejection_reasons') as mock_analysis:
-            
+
             mock_analysis.return_value = "Analysis without resume data"
-            
+
             response = self.client.post(
                 reverse('rejection_generator'),
                 {
@@ -1071,27 +1089,27 @@ class ApplyFlowViewTest(TestCase):
                 },
                 HTTP_X_REQUESTED_WITH='XMLHttpRequest'
             )
-            
+
             self.assertEqual(response.status_code, 200)
             call_args = mock_analysis.call_args[1]
             self.assertEqual(call_args['resume_text'], None)
-            self.assertEqual(call_args['job_title'], "Python Developer")               
+            self.assertEqual(call_args['job_title'], "Python Developer")
 
 class JobTrackingTest(TestCase):
     def setUp(self):
         self.client = Client()
         self.user = User.objects.create_user(
-            username='testuser', 
+            username='testuser',
             password='StrongTestPass123'
         )
         self.job1 = JobListing.objects.create(
-            job_id='track-job-1', 
-            title='Job 1', 
+            job_id='track-job-1',
+            title='Job 1',
             company='Company A'
         )
         self.job2 = JobListing.objects.create(
-            job_id='track-job-2', 
-            title='Job 2', 
+            job_id='track-job-2',
+            title='Job 2',
             company='Company B'
         )
         self.track_view_url = reverse('track_job_view')
@@ -1101,8 +1119,8 @@ class JobTrackingTest(TestCase):
 
     def test_track_job_view_success(self):
         response = self.client.post(
-            self.track_view_url, 
-            {'job_id': self.job1.job_id}, 
+            self.track_view_url,
+            {'job_id': self.job1.job_id},
             HTTP_X_REQUESTED_WITH='XMLHttpRequest'
         )
         self.assertEqual(response.status_code, 200)
@@ -1110,16 +1128,16 @@ class JobTrackingTest(TestCase):
         self.assertTrue(data['success'])
         self.assertTrue(data['created'])
         self.assertTrue(UserJobInteraction.objects.filter(
-            user=self.user, 
-            job=self.job1, 
+            user=self.user,
+            job=self.job1,
             interaction_type='viewed'
         ).exists())
 
     def test_track_job_view_twice(self):
         self.client.post(self.track_view_url, {'job_id': self.job1.job_id}, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         response = self.client.post(
-            self.track_view_url, 
-            {'job_id': self.job1.job_id}, 
+            self.track_view_url,
+            {'job_id': self.job1.job_id},
             HTTP_X_REQUESTED_WITH='XMLHttpRequest'
         )
         self.assertEqual(response.status_code, 200)
@@ -1130,16 +1148,16 @@ class JobTrackingTest(TestCase):
 
     def test_track_job_view_invalid_job(self):
         response = self.client.post(
-            self.track_view_url, 
-            {'job_id': 'invalid-job-id'}, 
+            self.track_view_url,
+            {'job_id': 'invalid-job-id'},
             HTTP_X_REQUESTED_WITH='XMLHttpRequest'
         )
         self.assertEqual(response.status_code, 404)
 
     def test_track_application_success(self):
         response = self.client.post(
-            self.track_apply_url, 
-            {'job_id': self.job1.job_id}, 
+            self.track_apply_url,
+            {'job_id': self.job1.job_id},
             HTTP_X_REQUESTED_WITH='XMLHttpRequest'
         )
         self.assertEqual(response.status_code, 200)
@@ -1155,9 +1173,9 @@ class JobTrackingTest(TestCase):
 
         response = self.client.get(self.applications_url)
         self.assertEqual(response.status_code, 200)
-        
+
         self.assertIn(self.job2, response.context['applied_jobs_list'])
         self.assertNotIn(self.job1, response.context['applied_jobs_list'])
-        
+
         self.assertIn(self.job1, response.context['viewed_jobs_list'])
         self.assertNotIn(self.job2, response.context['viewed_jobs_list'], "Applied job should not appear in the viewed list.")

@@ -17,7 +17,7 @@
             margin-right: 10px;
             transition: all 0.3s ease;
         }
-        
+
         .admin-btn:hover {
             background-color: #e9ecef;
             color: #1d4ed8;
@@ -66,7 +66,7 @@
             </div>
         </div>
     </header>
-    
+
     {% if messages %}
     <div class="messages-container">
         {% for message in messages %}
@@ -76,7 +76,7 @@
         {% endfor %}
     </div>
     {% endif %}
-    
+
     <main>
         <section id="features" class="features">
             <h2>AI-Powered Application Tools</h2>
@@ -171,7 +171,7 @@
                 mobileWarning.style.display = 'none';
             }
         }
-        
+
         // Check on load and on resize
         window.addEventListener('load', checkScreenSize);
         window.addEventListener('resize', checkScreenSize);

@@ -8,7 +8,7 @@
 
 <form method="post" class="auth-form">
     {% csrf_token %}
-    
+
     {% if form.errors %}
     <div class="form-errors">
         {% for field in form %}
@@ -21,13 +21,13 @@
         {% endfor %}
     </div>
     {% endif %}
-    
+
     {{ form|crispy }}
-    
+
     <button type="submit" class="btn">Sign Up</button>
 </form>
 
 <div class="auth-links">
     <p>Already have an account? <a href="{% url 'login' %}">Log In</a></p>
 </div>
-{% endblock %} 
+{% endblock %}

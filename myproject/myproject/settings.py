@@ -133,10 +133,10 @@ STATICFILES_DIRS = [
 
 MEDIA_URL = 'media/'
 # Set MEDIA_ROOT differently based on environment
-if('test' in sys.argv):
+if ('test' in sys.argv):
     MEDIA_ROOT = BASE_DIR / 'test_media'
 else:
-    MEDIA_ROOT = Path('/app/database/media')
+    MEDIA_ROOT = BASE_DIR / 'media'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
@@ -154,26 +154,26 @@ LOGIN_URL = '/users/login/'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
 
-if(not DEBUG):
+if (not DEBUG):
     CSRF_COOKIE_SECURE = True
     SESSION_COOKIE_SECURE = True
-    
+
     CSRF_USE_SESSIONS = False
-    
+
     CSRF_COOKIE_HTTPONLY = False
-    
+
     CSRF_COOKIE_SAMESITE = 'Lax'
-    
+
     CSRF_TRUSTED_ORIGINS = [
         'https://group-4-spring-2025.fly.dev',
-        'https://applierpilot.com', 
+        'https://applierpilot.com',
         'https://www.applierpilot.com',
         'https://localhost:8000'
     ]
 
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-    
-    if(not os.environ.get('DOCKER_TEST')):
+
+    if (not os.environ.get('DOCKER_TEST')):
         SECURE_SSL_REDIRECT = True
 
 LOGGING = {

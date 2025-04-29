@@ -31,4 +31,4 @@ class DeploymentTests(TestCase):
         import sys
         from myproject.wsgi import application
         project_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        self.assertIn(project_path, sys.path) 
+        self.assertIn(project_path, sys.path)

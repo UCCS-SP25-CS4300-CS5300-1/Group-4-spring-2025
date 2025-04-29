@@ -2,7 +2,7 @@ FROM python:3.9-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
-ENV PRODUCTION=1             
+ENV PRODUCTION=1
 
 WORKDIR /app
 
@@ -52,4 +52,4 @@ RUN echo '#!/bin/bash\n\
 RUN chmod +x /app/entrypoint.sh
 
 ENTRYPOINT ["/app/entrypoint.sh"]
-CMD ["gunicorn", "myproject.wsgi:application", "--bind", "0.0.0.0:8000", "--access-logfile", "-"] 
+CMD ["gunicorn", "myproject.wsgi:application", "--bind", "0.0.0.0:8000", "--access-logfile", "-"]

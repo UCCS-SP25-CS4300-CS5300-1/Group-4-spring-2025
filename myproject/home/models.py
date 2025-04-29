@@ -12,7 +12,7 @@ class Application(models.Model):
     type = models.CharField(max_length=100)
     progress = models.CharField(max_length=100, default="Searched For")
     created_at = models.DateTimeField(auto_now_add=True)
-    
+
     def __str__(self):
         return f"{self.job_title} at {self.company}"
 
@@ -34,7 +34,7 @@ class JobListing(models.Model):
     published_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     # Cache-related fields
     search_key = models.CharField(max_length=255, db_index=True, blank=True)
 
@@ -63,7 +63,7 @@ class UserJobInteraction(models.Model):
         ('viewed', 'Viewed'),
         ('applied', 'Applied'),
     )
-    
+
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='job_interactions')
     job = models.ForeignKey(JobListing, on_delete=models.CASCADE, related_name='user_interactions')
     interaction_type = models.CharField(max_length=10, choices=INTERACTION_TYPES)

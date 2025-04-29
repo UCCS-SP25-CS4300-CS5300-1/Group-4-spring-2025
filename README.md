@@ -54,7 +54,7 @@ To run tests with coverage reporting:
 ./run_tests_with_coverage.sh
 ```
 
-This will generate a coverage report showing what percentage of the code is covered by tests. 
+This will generate a coverage report showing what percentage of the code is covered by tests.
 
 The report will be available in HTML format at `myproject/htmlcov/index.html`.
 

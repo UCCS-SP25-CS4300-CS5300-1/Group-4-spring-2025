@@ -59,7 +59,7 @@ class ResumeAdmin(admin.ModelAdmin):
     ordering = ('-uploaded_at',)
 
     def get_resume_link(self, obj):
-        if(obj.resume):
+        if (obj.resume):
             return format_html('<a href="{}" target="_blank">View Resume</a>', obj.resume.url)
         return '-'
     get_resume_link.short_description = 'Resume'

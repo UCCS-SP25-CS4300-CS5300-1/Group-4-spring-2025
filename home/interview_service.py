@@ -42,4 +42,4 @@ class InterviewService:
             print(f"Error parsing JSON: {str(e)}")
             return "generic_feedback"
 
-        return generic_questions 
+        return generic_questions

@@ -6,7 +6,7 @@
 {% block content %}
 <div class="profile-container">
     <h2 class="text-center mb-4">My Profile</h2>
-    
+
     <div class="profile-section">
         <div class="profile-header">
             <h3>Basic Information</h3>
@@ -18,7 +18,7 @@
             <p><strong>Username:</strong> {{ user.username }}</p>
             <p><strong>Full Name:</strong> {{ user.first_name }} {{ user.last_name }}</p>
             <p><strong>Email:</strong> {{ user.email }}</p>
-            <p><strong>AI Access Status:</strong> 
+            <p><strong>AI Access Status:</strong>
                 {% if profile.whitelisted_for_ai %}
                     <span class="badge bg-success">Whitelisted</span>
                 {% else %}
@@ -32,7 +32,7 @@
             </p>
         </div>
     </div>
-    
+
     <div class="profile-section">
         <div class="profile-header">
             <h3>Job Search Preferences</h3>
@@ -48,12 +48,14 @@
         </div>
     </div>
 
-    
     <div class="profile-section">
         <div class="profile-header">
             <h3>Resume</h3>
-            <div class="resume-actions">                
+            <div class="resume-actions">
                 {% if latest_resume %}
+                    <a href="{% url 'resume_feedback' latest_resume.id %}" class="btn-sm btn-outline-primary">
+                        <i class="fas fa-sync-alt"></i> Feedback
+                    </a>
                     <a href="{% url 'view_resume' latest_resume.id %}" class="btn-sm btn-outline-success" target="_blank">
                         <i class="fas fa-download"></i> View
                     </a>
@@ -62,9 +64,9 @@
                     <i class="fas fa-upload"></i> {% if latest_resume %}Update{% else %}Upload{% endif %}
                 </a>
                 {% if latest_resume %}
-                <a href="{% url 'delete_resume' %}" class="btn-sm btn-outline-danger">
-                    <i class="fas fa-trash"></i> Delete
-                </a>            
+                    <a href="{% url 'delete_resume' %}" class="btn-sm btn-outline-danger">
+                        <i class="fas fa-trash"></i> Delete
+                    </a>
                 {% endif %}
             </div>
         </div>
@@ -76,7 +78,7 @@
             {% endif %}
         </div>
     </div>
-    
+
     <div class="navigation-options mt-4">
         <a href="/" class="btn btn-secondary"><i class="fas fa-home"></i> Home</a>
         <a href="{% url 'dashboard' %}" class="btn btn-primary"><i class="fas fa-briefcase"></i> Job Dashboard</a>
@@ -90,7 +92,7 @@
     .profile-container {
         padding: 0 15px;
     }
-    
+
     .profile-section {
         background-color: #f8f9fa;
         border-radius: 8px;
@@ -98,7 +100,7 @@
         margin-bottom: 20px;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     }
-    
+
     .profile-header {
         display: flex;
         justify-content: space-between;
@@ -107,25 +109,27 @@
         padding-bottom: 10px;
         margin-bottom: 15px;
     }
-    
+
     .profile-header h3 {
         margin: 0;
         font-size: 18px;
         color: #2563eb;
     }
-    
+
     .profile-info p {
         margin-bottom: 8px;
     }
 
     .resume-actions {
         align-items: center;
+        display: inline-flex;
+        gap: 0.25rem;
     }
 
     .resume-actions .btn-sm {
         margin-left: 0.25rem;
     }
-    
+
     .btn-sm {
         padding: 0.25rem 0.5rem;
         font-size: 0.875rem;
@@ -135,22 +139,22 @@
         align-items: center;
         gap: 5px;
     }
-    
+
     .btn-outline-primary {
         color: #2563eb;
         border: 1px solid #2563eb;
     }
-    
+
     .btn-outline-primary:hover {
         background-color: #2563eb;
         color: white;
     }
-    
+
     .btn-outline-success {
         color: #10b981;
         border: 1px solid #10b981;
     }
-    
+
     .btn-outline-success:hover {
         background-color: #10b981;
         color: white;
@@ -160,19 +164,19 @@
         color: #8f0404;
         border: 1px solid #8f0404;
     }
-    
+
     .btn-outline-danger:hover {
         background-color: #8f0404;
         color: white;
     }
-    
+
     .navigation-options {
         display: flex;
         flex-wrap: wrap;
         gap: 10px;
         justify-content: center;
     }
-    
+
     .navigation-options .btn {
         display: inline-flex;
         align-items: center;
@@ -180,9 +184,9 @@
         padding: 8px 15px;
         font-size: 14px;
     }
-    
+
     .auth-container {
         max-width: 900px !important;
     }
 </style>
-{% endblock %} 
+{% endblock %}
