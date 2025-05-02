@@ -1,3 +1,7 @@
+"""
+This file contains the code to initialize the database.
+"""
+
 import os
 import sqlite3
 from pathlib import Path

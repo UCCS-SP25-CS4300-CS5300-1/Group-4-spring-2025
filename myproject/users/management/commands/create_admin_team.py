@@ -1,8 +1,16 @@
+"""
+This file contains the management command to create admin accounts for the team members.
+"""
 from django.core.management.base import BaseCommand
 from django.contrib.auth.models import User
-from users.models import Profile
+from users.models import Profile # pylint: disable=import-error
+
 
 class Command(BaseCommand):
+    """
+    This class contains the management command to create admin accounts for the team members.
+    """
+
     help = 'Creates admin accounts for the team members'
 
     def __init__(self, *args, **kwargs):
@@ -26,30 +34,29 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         emails_to_process = options.get('emails') or self.team_emails
 
-        if (not emails_to_process):
-            self.stdout.write(self.style.WARNING('No emails provided and no default emails set'))
+        if not emails_to_process:
+            self.stdout.write(self.style.WARNING('No emails provided and no default emails set'))  # pylint: disable=no-member
             return
 
-        ## get existing superusers
         existing_superusers = User.objects.filter(is_superuser=True)
         existing_superusers_emails = [user.email for user in existing_superusers]
 
         for email in existing_superusers_emails:
-            self.stdout.write(self.style.SUCCESS(f'Skipping existing superuser {email}'))
+            self.stdout.write(self.style.SUCCESS(f'Skipping existing superuser {email}'))  # pylint: disable=no-member
 
         for email in emails_to_process:
             try:
                 user = User.objects.get(email=email)
-                if (not user.is_superuser):
+                if not user.is_superuser:
                     user.is_superuser = True
                     user.is_staff = True
                     user.save()
-                    self.stdout.write(self.style.SUCCESS(f'Made existing user {email} a superuser'))
-            except User.DoesNotExist:
+                    self.stdout.write(self.style.SUCCESS(f'Made existing user {email} a superuser'))  # pylint: disable=no-member
+            except User.DoesNotExist:  # pylint: disable=no-member
                 base_username = email.split('@')[0]
                 username = base_username
-
                 counter = 1
+
                 while User.objects.filter(username=username).exists():
                     username = f"{base_username}{counter}"
                     counter += 1
@@ -59,10 +66,13 @@ class Command(BaseCommand):
                     email=email,
                     password='ChangeMe123!'
                 )
-                if (not hasattr(user, 'profile')):
+
+                if not hasattr(user, 'profile'):
                     Profile.objects.create(user=user)
+
                 self.stdout.write(
-                    self.style.SUCCESS(
-                        f'Created new superuser {email} with username "{username}" and temporary password "ChangeMe123!"'
+                    self.style.SUCCESS(  # pylint: disable=no-member
+                        f'Created new superuser {email} with username "{username}" '
+                        f'and temporary password "ChangeMe123!"'
                     )
                 )

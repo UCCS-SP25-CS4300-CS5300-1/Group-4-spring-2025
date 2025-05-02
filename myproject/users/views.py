@@ -1,17 +1,13 @@
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.models import User
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, authenticate, logout
 from django.contrib import messages
-from django.views import generic
 from pypdf import PdfReader
-from docx2pdf import convert
 from docx import Document
-from django.http import FileResponse, Http404, JsonResponse
+from django.http import FileResponse, Http404
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.conf import settings
 
-from jobs.models import Job
 from .forms import (UserRegistrationForm, UserLoginForm, EditProfileForm,
                     ResumeUploadForm, EditPreferenceForm)
 from .models import Profile, Resume

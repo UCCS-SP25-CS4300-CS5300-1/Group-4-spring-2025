@@ -1,3 +1,7 @@
+"""
+This file contains the filters for the jobs app.
+"""
+
 from django import template
 import html
 import ast
@@ -6,6 +10,10 @@ register = template.Library()
 
 @register.filter(name='format_field')
 def format_field(value):
+    """
+    This function formats the field value.
+    """
+
     if value is None:
         return None
 
@@ -28,3 +36,4 @@ def format_field(value):
         return processed_value
     else:
         return processed_value
+    
