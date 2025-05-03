@@ -1,11 +1,17 @@
-from django.test import TestCase
+"""
+This file contains the tests for the home app.
+"""
+
 from unittest.mock import patch, MagicMock
-import requests
-from django.utils import timezone
 from datetime import datetime
 
-from home.services import JobicyService
-from home.models import JobListing
+from django.test import TestCase
+from django.utils import timezone
+
+import requests
+
+from home.services import JobicyService # pylint: disable=import-error,no-name-in-module
+from home.models import JobListing # pylint: disable=import-error,no-name-in-module
 
 MOCK_API_RESPONSE = {
     "jobs": [
@@ -39,9 +45,14 @@ MOCK_API_RESPONSE = {
 }
 
 class JobicyServiceTests(TestCase):
-
+    """
+    This class contains the tests for the JobicyService class.
+    """
     @patch('home.services.requests.get')
     def test_search_jobs_api_success(self, mock_get):
+        """
+        This test searches for jobs from the Jobicy API.
+        """
         mock_response = MagicMock()
         mock_response.raise_for_status.return_value = None
         mock_response.json.return_value = MOCK_API_RESPONSE
@@ -49,7 +60,7 @@ class JobicyServiceTests(TestCase):
 
         search_term = "python"
         params = {'geo': 'usa', 'industry': 'tech'}
-        cache_key = JobicyService._build_cache_key(search_term, params)
+        cache_key = JobicyService._build_cache_key(search_term, params) # pylint: disable=protected-access
 
         self.assertEqual(JobListing.objects.count(), 0)
 
@@ -73,6 +84,9 @@ class JobicyServiceTests(TestCase):
 
     @patch('home.services.requests.get')
     def test_search_jobs_api_no_jobs_field(self, mock_get):
+        """
+        This test searches for jobs from the Jobicy API when the 'jobs' field is not present.
+        """
         mock_response = MagicMock()
         mock_response.raise_for_status.return_value = None
         mock_response.json.return_value = {"some_other_field": []}
@@ -86,6 +100,9 @@ class JobicyServiceTests(TestCase):
 
     @patch('home.services.requests.get')
     def test_search_jobs_api_http_error(self, mock_get):
+        """
+        This test searches for jobs from the Jobicy API when the API returns an HTTP error.
+        """
         mock_response = MagicMock()
         mock_response.raise_for_status.side_effect = requests.exceptions.HTTPError("API Down")
         mock_get.return_value = mock_response
@@ -98,6 +115,9 @@ class JobicyServiceTests(TestCase):
 
     @patch('home.services.requests.get')
     def test_search_jobs_api_request_exception(self, mock_get):
+        """
+        This test searches for jobs from the Jobicy API when the API returns a request exception.
+        """
         mock_get.side_effect = requests.exceptions.RequestException("Network Error")
 
         jobs = JobicyService.search_jobs("go", None)
@@ -108,10 +128,13 @@ class JobicyServiceTests(TestCase):
 
     @patch('home.services.requests.get')
     def test_search_jobs_cache_hit(self, mock_get):
+        """
+        This test searches for jobs from the Jobicy API when the cache hits.
+        """
         search_term = "cached"
         params = {'geo': 'usa', 'industry': 'tech'}
 
-        cache_key = JobicyService._build_cache_key(search_term, params)
+        cache_key = JobicyService._build_cache_key(search_term, params) # pylint: disable=protected-access
 
         cached_job = JobListing.objects.create(
             job_id='cached-job-1',
@@ -129,20 +152,30 @@ class JobicyServiceTests(TestCase):
         self.assertEqual(JobListing.objects.count(), 1)
 
     def test_get_job_details_found(self):
-        job = JobListing.objects.create(job_id='detail-job', title='Detail Job', company='Detail Co.')
+        """
+        This test gets job details from the Jobicy API when the job exists.
+        """
+        job = JobListing.objects.create(job_id='detail-job', title='Detail Job',
+                                        company='Detail Co.')
         retrieved_job = JobicyService.get_job_details(job.job_id)
         self.assertEqual(retrieved_job, job)
 
     def test_get_job_details_not_found(self):
+        """
+        This test gets job details from the Jobicy API when the job does not exist.
+        """
         retrieved_job = JobicyService.get_job_details('non-existent-id')
         self.assertIsNone(retrieved_job)
 
     def test_build_cache_key(self):
-        key1 = JobicyService._build_cache_key("Python", {"geo": "usa", "industry": "tech"})
-        key2 = JobicyService._build_cache_key("python", {"industry": "tech", "geo": "usa"})
-        key3 = JobicyService._build_cache_key("Python", {"geo": "remote"})
-        key4 = JobicyService._build_cache_key("Java", {"geo": "usa", "industry": "tech"})
-        key5 = JobicyService._build_cache_key("python", None)
+        """
+        This test builds the cache key for the Jobicy API.
+        """
+        key1 = JobicyService._build_cache_key("Python", {"geo": "usa", "industry": "tech"}) # pylint: disable=protected-access
+        key2 = JobicyService._build_cache_key("python", {"industry": "tech", "geo": "usa"}) # pylint: disable=protected-access
+        key3 = JobicyService._build_cache_key("Python", {"geo": "remote"}) # pylint: disable=protected-access
+        key4 = JobicyService._build_cache_key("Java", {"geo": "usa", "industry": "tech"}) # pylint: disable=protected-access
+        key5 = JobicyService._build_cache_key("python", None) # pylint: disable=protected-access
 
         self.assertEqual(key1, "python:geo=usa&industry=tech")
         self.assertEqual(key1, key2)

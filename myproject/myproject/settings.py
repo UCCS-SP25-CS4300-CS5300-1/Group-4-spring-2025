@@ -25,9 +25,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure--*9gky9w%c4c%zw@q90zx-_yiex1@oqy^$!l(m7r9$%x5e5e^z'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True if not 'PRODUCTION' in os.environ or 'DJANGO_DEBUG' in os.environ else False
+DEBUG = bool(not 'PRODUCTION' in os.environ or 'DJANGO_DEBUG' in os.environ)
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '.fly.dev', '0.0.0.0', 'group-4-spring-2025.fly.dev', 'applierpilot.com', 'www.applierpilot.com', 'editor-aziz-5.devedu.io']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '.fly.dev', '0.0.0.0',
+                 'group-4-spring-2025.fly.dev', 'applierpilot.com',
+                 'www.applierpilot.com', 'editor-aziz-5.devedu.io']
 
 
 # Application definition
@@ -84,8 +86,11 @@ WSGI_APPLICATION = 'myproject.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': os.environ.get('DJANGO_DB_ENGINE', 'django.db.backends.sqlite3'),
-        'NAME': os.environ.get('DJANGO_DB_NAME', os.path.join('/app/database', 'db.sqlite3') if 'PRODUCTION' in os.environ else BASE_DIR / 'db.sqlite3'),
+        'ENGINE': os.environ.get('DJANGO_DB_ENGINE',
+                                 'django.db.backends.sqlite3'),
+        'NAME': os.environ.get('DJANGO_DB_NAME',
+                               os.path.join('/app/database', 'db.sqlite3')
+                               if 'PRODUCTION' in os.environ else BASE_DIR / 'db.sqlite3'),
     }
 }
 
@@ -133,7 +138,7 @@ STATICFILES_DIRS = [
 
 MEDIA_URL = 'media/'
 # Set MEDIA_ROOT differently based on environment
-if ('test' in sys.argv):
+if 'test' in sys.argv:
     MEDIA_ROOT = BASE_DIR / 'test_media'
 else:
     MEDIA_ROOT = BASE_DIR / 'media'
@@ -154,7 +159,7 @@ LOGIN_URL = '/users/login/'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
 
-if (not DEBUG):
+if not DEBUG:
     CSRF_COOKIE_SECURE = True
     SESSION_COOKIE_SECURE = True
 
@@ -173,7 +178,7 @@ if (not DEBUG):
 
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
-    if (not os.environ.get('DOCKER_TEST')):
+    if not os.environ.get('DOCKER_TEST'):
         SECURE_SSL_REDIRECT = True
 
 LOGGING = {

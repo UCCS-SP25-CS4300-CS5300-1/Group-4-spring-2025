@@ -1,7 +1,15 @@
+"""
+This file contains the models for the jobs app.
+"""
+
 from django.db import models
 
-# Create your models here.
+
 class Job(models.Model):
+    """
+    This class contains the model for the jobs app.
+    """
+
     title = models.CharField(max_length=255)
     description = models.TextField()
     industry = models.CharField(max_length=100, blank=True, null=True)
@@ -10,5 +18,5 @@ class Job(models.Model):
     salary_min = models.IntegerField(blank=True, null=True)
     salary_max = models.IntegerField(blank=True, null=True)
 
-    def __str__(self):
-        return self.title
+    def __str__(self) -> str:
+        return str(self.title)

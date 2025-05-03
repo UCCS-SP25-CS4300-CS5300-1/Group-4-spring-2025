@@ -1,3 +1,7 @@
+"""
+This file contains the forms for the home app.
+"""
+
 from django import forms
 from django.core.exceptions import ValidationError
 
@@ -13,6 +17,7 @@ LOCATION_CHOICES = [
 ]
 
 class SearchJobForm(forms.Form):
+    """Form for searching jobs"""
     search_term = forms.CharField(
         max_length=100,
         required=False,

@@ -1,15 +1,26 @@
-import requests
+"""
+This file contains the services for the home app.
+"""
 from datetime import datetime
 from typing import List, Optional, Dict, Any
-from .models import JobListing
-from django.utils import timezone
 import urllib.parse
 
+from django.utils import timezone
+import requests
+
+from .models import JobListing
+
 class JobicyService:
+    """
+    This class contains the services for the Jobicy API.
+    """
     BASE_URL = "https://jobicy.com/api/v2/remote-jobs"
 
     @staticmethod
     def _build_cache_key(search_term: str, params: Optional[Dict[str, Any]] = None) -> str:
+        """
+        This function builds the cache key for the Jobicy API.
+        """
         if params is None:
             params = {}
 
@@ -17,7 +28,11 @@ class JobicyService:
         return f"{search_term.lower()}:{param_str}"
 
     @staticmethod
-    def fetch_and_cache_jobs(search_term: str, params: Optional[Dict[str, Any]] = None) -> List[JobListing]:
+    def fetch_and_cache_jobs(search_term: str, # pylint: disable=too-many-branches,too-many-locals
+                             params: Optional[Dict[str, Any]] = None) -> List[JobListing]:
+        """
+        This function fetches and caches the jobs from the Jobicy API.
+        """
         url = f"{JobicyService.BASE_URL}?count=50"
         api_params = {}
 
@@ -41,7 +56,7 @@ class JobicyService:
             url = f"{url}&{key}={urllib.parse.quote(str(value))}"
 
         try:
-            response = requests.get(url)
+            response = requests.get(url, timeout=10)
             response.raise_for_status()
             data = response.json()
 
@@ -61,7 +76,7 @@ class JobicyService:
                     except ValueError:
                         pass
 
-                job_listing, created = JobListing.objects.get_or_create(
+                job_listing, created = JobListing.objects.get_or_create( ## pylint: disable=no-member
                     job_id=job['id'],
                     defaults={
                         'title': job.get('jobTitle'),
@@ -96,8 +111,11 @@ class JobicyService:
 
     @staticmethod
     def search_jobs(search_term: str, params: Optional[Dict[str, Any]] = None) -> List[JobListing]:
+        """
+        This function searches for jobs from the Jobicy API.
+        """
         cache_key = JobicyService._build_cache_key(search_term, params)
-        cached_jobs = JobListing.objects.filter(search_key=cache_key)
+        cached_jobs = JobListing.objects.filter(search_key=cache_key) ## pylint: disable=no-member
 
         if cached_jobs.exists():
             return list(cached_jobs)
@@ -106,9 +124,10 @@ class JobicyService:
 
     @staticmethod
     def get_job_details(job_id: int) -> Optional[JobListing]:
+        """
+        This function gets the job details from the Jobicy API.
+        """
         try:
-            return JobListing.objects.get(job_id=job_id)
-        except JobListing.DoesNotExist:
-            return None
-        except Exception:
+            return JobListing.objects.get(job_id=job_id) ## pylint: disable=no-member
+        except JobListing.DoesNotExist: # pylint: disable=no-member
             return None

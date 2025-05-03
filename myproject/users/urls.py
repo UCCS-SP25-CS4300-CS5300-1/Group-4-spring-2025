@@ -1,3 +1,7 @@
+"""
+This file contains the urls for the users app.
+"""
+
 from django.urls import path
 from django.contrib.auth import views as auth_views
 from . import views
