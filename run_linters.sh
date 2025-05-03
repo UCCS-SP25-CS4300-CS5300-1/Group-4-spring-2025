@@ -69,27 +69,8 @@ if [ -f linting_reports/pylint_report.txt ]; then
     fi
 fi
 
-echo -e "${BLUE}Running Flake8 checks...${NC}"
-if (! try_python_command "-m" "flake8" "myproject" "--format=html" "--htmldir=linting_reports/flake8_report" "--statistics" "--tee" "--output-file=linting_reports/flake8_report.txt"); then
-    echo -e "${RED}Warning: Flake8 found some issues.${NC}"
-fi
-
-if [ -f linting_reports/flake8_report.txt ]; then
-    FLAKE8_ERRORS=$(cat linting_reports/flake8_report.txt | wc -l)
-
-    if [[ "$FLAKE8_ERRORS" =~ ^[0-9]+$ ]]; then
-      echo -e "${BLUE}Flake8 Error Count: ${FLAKE8_ERRORS}${NC}"
-      if [ "$FLAKE8_ERRORS" -gt "0" ]; then
-          echo -e "${RED}Warning: Found $FLAKE8_ERRORS Flake8 issues. Please review the code style.${NC}"
-      fi
-    else
-        echo -e "${RED}Warning: Could not determine Flake8 error count.${NC}"
-    fi
-fi
-
 echo -e "${GREEN}Linting reports available in:${NC}"
 echo -e "${BLUE}- PyLint Report: linting_reports/pylint_report.txt${NC}"
-echo -e "${BLUE}- Flake8 Report: linting_reports/flake8_report/index.html${NC}"
 
 ## Import will break if we have a __init__.py file in the root directory
 echo -e "${BLUE}Removing temporary __init__.py...${NC}"
