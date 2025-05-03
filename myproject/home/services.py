@@ -1,3 +1,6 @@
+"""
+This file contains the services for the home app.
+"""
 import requests
 from datetime import datetime
 from typing import List, Optional, Dict, Any
@@ -6,10 +9,16 @@ from django.utils import timezone
 import urllib.parse
 
 class JobicyService:
+    """
+    This class contains the services for the Jobicy API.
+    """
     BASE_URL = "https://jobicy.com/api/v2/remote-jobs"
 
     @staticmethod
     def _build_cache_key(search_term: str, params: Optional[Dict[str, Any]] = None) -> str:
+        """
+        This function builds the cache key for the Jobicy API.
+        """
         if params is None:
             params = {}
 
@@ -17,7 +26,11 @@ class JobicyService:
         return f"{search_term.lower()}:{param_str}"
 
     @staticmethod
-    def fetch_and_cache_jobs(search_term: str, params: Optional[Dict[str, Any]] = None) -> List[JobListing]:
+    def fetch_and_cache_jobs(search_term: str,
+                             params: Optional[Dict[str, Any]] = None) -> List[JobListing]:
+        """
+        This function fetches and caches the jobs from the Jobicy API.
+        """
         url = f"{JobicyService.BASE_URL}?count=50"
         api_params = {}
 

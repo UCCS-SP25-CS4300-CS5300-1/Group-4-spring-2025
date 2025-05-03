@@ -62,7 +62,7 @@ class CoverLetterService:
                 print("OpenAI API key not found. Using template cover letter.")
                 return template_letter
 
-            prompt = f"""Please write a professional 
+            prompt = f"""Please write a professional
             cover letter for a job application based on this information:
 
 JOB DESCRIPTION:
@@ -86,7 +86,7 @@ Address: {user_info.get('address', '')}
 Based on my resume and the job description, craft a tailored cover letter highlighting the most relevant skills and experiences.
 """
             else:
-                prompt += """I don't have my resume to share, so 
+                prompt += """I don't have my resume to share, so
                 please create a general but 
                 persuasive cover letter with placeholders where 
                 I should add my specific experiences.
@@ -111,9 +111,9 @@ FORMAT:
             data = {
                 "model": "gpt-4o",
                 "messages": [
-                    {"role": "system",
-                     "content": "You are an expert at writing compelling, professional cover letters."},
-                    {"role": "user", "content": prompt}
+                {"role": "system",
+                "content": "You are an expert at writing compelling, professional cover letters."},
+                {"role": "user", "content": prompt}
                 ],
                 "temperature": 0.7,
                 "max_tokens": 1500

@@ -2,13 +2,14 @@
 This file contains the tests for the myproject app.
 """
 
+import os
+import sys
+
 from django.test import TestCase
 from django.core.asgi import get_asgi_application
 from django.core.wsgi import get_wsgi_application
 from django.core.handlers.asgi import ASGIHandler
 from django.core.handlers.wsgi import WSGIHandler
-import os
-import sys
 
 class DeploymentTests(TestCase):
     """
@@ -18,7 +19,7 @@ class DeploymentTests(TestCase):
     def test_asgi_import(self):
         """Test that ASGI application can be imported."""
         try:
-            from myproject.asgi import application
+            from myproject.asgi import application # pylint: disable=import-outside-toplevel
             self.assertIsNotNone(application)
             self.assertIsInstance(application, ASGIHandler)
             self.assertIsInstance(get_asgi_application(), ASGIHandler)
@@ -28,7 +29,7 @@ class DeploymentTests(TestCase):
     def test_wsgi_import(self):
         """Test that WSGI application can be imported."""
         try:
-            from myproject.wsgi import application
+            from myproject.wsgi import application # pylint: disable=import-outside-toplevel
             self.assertIsNotNone(application)
             self.assertIsInstance(application, WSGIHandler)
             self.assertIsInstance(get_wsgi_application(), WSGIHandler)

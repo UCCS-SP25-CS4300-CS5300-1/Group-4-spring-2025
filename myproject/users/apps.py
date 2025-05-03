@@ -13,4 +13,4 @@ class UsersConfig(AppConfig):
     name = 'users'
 
     def ready(self):
-        import users.signals # pylint: disable=import-error,unused-import
+        import users.signals # pylint: disable=import-error,unused-import,import-outside-toplevel

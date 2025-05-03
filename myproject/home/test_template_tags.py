@@ -40,7 +40,7 @@ class JobFiltersTests(SimpleTestCase):
         """
         This function tests the format_field function with a string with an entity.
         """
-        self.assertEqual(format_field('Software &amp; IT'), 
+        self.assertEqual(format_field('Software &amp; IT'),
                          'Software & It') # Note: title() behavior
         self.assertEqual(format_field('R&amp;D'), 'R&D') # title() keeps capitals after non-letter
 

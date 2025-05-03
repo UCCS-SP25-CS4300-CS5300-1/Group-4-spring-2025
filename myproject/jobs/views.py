@@ -1,18 +1,18 @@
-
-from .models import Job
+"""
+This file contains the views for the jobs app.
+"""
+import os
+from dotenv import load_dotenv
+import openai
 from django.shortcuts import render
-from home.services import JobicyService
-from home.cover_letter_service import CoverLetterService
-from users.models import Resume
-
+from users.models import Resume # pylint: disable=import-error,no-name-in-module
+from home.services import JobicyService # pylint: disable=import-error,no-name-in-module
+from home.cover_letter_service import CoverLetterService # pylint: disable=import-error,no-name-in-module
+from .models import Job # pylint: disable=import-error,no-name-in-module
 
 def get_job_ai_recommendation(user):
     """Get feedback comparing resume to job description."""
     try:
-        import openai
-        from dotenv import load_dotenv
-
-        import os
         load_dotenv()
         if os.getenv("OPENAI_API_KEY"):
             openai.api_key = os.getenv('OPENAI_API_KEY')
@@ -25,28 +25,47 @@ def get_job_ai_recommendation(user):
 
         if has_resume:
             resume_text = CoverLetterService.extract_text_from_resume(latest_resume)
-            user_content = f"Resume: \n{resume_text}\n\nIndustry: \n{user.profile.industry_preference}\n\nSalary: \n{user.profile.salary_min_preference}\n"
+            user_content = f"Resume: \n{resume_text}"
+            user_content += f"\n\nIndustry: \n{user.profile.industry_preference}"
+            user_content += f"\n\nSalary: \n{user.profile.salary_min_preference}\n"
         else:
-            user_content = f"Industry: \n{user.profile.industry_preference}\n\nSalary: \n{user.profile.salary_min_preference}\n"
-
+            user_content = f"Industry: \n{user.profile.industry_preference}"
+            user_content += f"\n\nSalary: \n{user.profile.salary_min_preference}\n"
 
         response = openai.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
-                {"role": "system",
-                 "content": "You output a single search term of one of a few words for a job based on the information submitted. The information is a resume or if there's no resume, just the industry and salary."},
-                {"role": "user",
-                 "content": f"\n{user_content}\n\nOutput just the search term. Don't output my name or anything else besides the search term."}
+                {
+                    "role": "system",
+                    "content": 
+                        "You output a single search term "
+                        "of one of a few words for a job "
+                        "based on the information submitted. "
+                        "The information is a resume or if "
+                        "there's no resume, just the industry "
+                        "and salary."
+                },
+                {
+                    "role": "user", 
+                    "content": 
+                        f"\n{user_content}\n\n"
+                        "Output just the search term. "
+                        "Don't output my name or anything "
+                        "else besides the search term."
+                }
             ],
         )
 
 
         return response.choices[0].message.content
-    except Exception as e:
+    except Exception as e: # pylint: disable=broad-exception-caught
         return f"Unable to generate job-specific feedback: {str(e)}"
 
 
 def recommendations(request):
+    """
+    This function returns the recommendations for the user.
+    """
     user = request.user
     params = {}
     context = {}
@@ -54,8 +73,13 @@ def recommendations(request):
     job_list = []
     latest_resume = Resume.objects.filter(user=user).order_by('-uploaded_at').first()
 
-    if latest_resume is None and user.profile.industry_preference == '' and user.profile.salary_min_preference == '':
-        no_information_provided_string = "We need more information about your skills and preferences. Please consider uploading a resume or updating your profile to include industry or salary"
+    if latest_resume is None and user.profile.industry_preference == '' and \
+        user.profile.salary_min_preference == '':
+        no_information_provided_string = "We need more information about your"
+        no_information_provided_string += "skills and preferences. "
+        no_information_provided_string += "Please consider uploading a resume or"
+        no_information_provided_string += "updating your profile "
+        no_information_provided_string += "to include industry or salary"
         context = {'no_information:': no_information_provided_string}
     else:
         ai_response = get_job_ai_recommendation(user)
@@ -66,13 +90,16 @@ def recommendations(request):
     return render(request, 'jobs/ai_recommendations.html', context)
 
 def search_jobs(request):
+    """
+    This function searches for jobs based on the user's preferences.
+    """
     industry = request.GET.get('industry')
     location = request.GET.get('location')
     remote = request.GET.get('remote')  # 'yes' or 'no'
     salary_min = request.GET.get('salary_min')
     salary_max = request.GET.get('salary_max')
 
-    jobs = Job.objects.all()
+    jobs = Job.objects.all() # pylint: disable=no-member
 
     if industry:
         jobs = jobs.filter(industry__icontains=industry)
@@ -109,6 +136,7 @@ def search_jobs(request):
 
         except ValueError:
             pass
+
 
     context = {'jobs': jobs}
     return render(request, 'jobs/job_list.html', context)

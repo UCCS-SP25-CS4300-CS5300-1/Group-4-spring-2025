@@ -22,11 +22,11 @@ class Profile(models.Model):
     objects = models.Manager()
 
     def __str__(self):
-        return self.user.username
+        return self.user.username # pylint: disable=no-member
 
     def save(self, *args, **kwargs):
         if not self.pk:
-            if self.user.is_superuser:
+            if self.user.is_superuser: # pylint: disable=no-member
                 self.whitelisted_for_ai = True
         super().save(*args, **kwargs)
 
@@ -37,7 +37,7 @@ def get_user_by_email(email):
     """
     try:
         return User.objects.get(email=email)
-    except User.DoesNotExist:
+    except User.DoesNotExist: # pylint: disable=no-member
         return None
 
 class Resume(models.Model):
@@ -50,4 +50,4 @@ class Resume(models.Model):
     ai_feedback = models.TextField(blank=True, null=True)
 
     def __str__(self):
-        return f"Resume"
+        return f"Resume {self.id}"

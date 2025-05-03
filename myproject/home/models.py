@@ -29,7 +29,7 @@ class JobListing(models.Model):
     # Cache-related fields
     search_key = models.CharField(max_length=255, db_index=True, blank=True)
 
-    class Meta:
+    class Meta: # pylint: disable=too-few-public-methods
         """
         This class contains the meta data for the job listing.
         """
@@ -51,9 +51,9 @@ class JobListing(models.Model):
         """
         if self.salary_min and self.salary_max:
             return f"{self.salary_min:,.0f} - {self.salary_max:,.0f} {self.salary_currency}"
-        elif self.salary_min:
+        if self.salary_min:
             return f"From {self.salary_min:,.0f} {self.salary_currency}"
-        elif self.salary_max:
+        if self.salary_max:
             return f"Up to {self.salary_max:,.0f} {self.salary_currency}"
         return None
 
@@ -69,9 +69,12 @@ class UserJobInteraction(models.Model):
     interaction_type = models.CharField(max_length=10, choices=INTERACTION_TYPES)
     timestamp = models.DateTimeField(auto_now_add=True)
 
-    class Meta:
+    class Meta: # pylint: disable=too-few-public-methods
+        """
+        This class contains the meta data for the user job interaction.
+        """
         unique_together = ('user', 'job', 'interaction_type')
         ordering = ['-timestamp']
 
     def __str__(self):
-        return f"{self.user.username} - {self.get_interaction_type_display()} - {self.job.title}"
+        return f"{self.user.username} - {self.get_interaction_type_display()} - {self.job.title}" # pylint: disable=no-member

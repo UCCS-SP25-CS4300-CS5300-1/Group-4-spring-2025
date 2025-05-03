@@ -1,3 +1,7 @@
+"""
+This file contains the tests for the init_db.py file.
+"""
+
 import unittest
 from unittest.mock import patch, MagicMock
 import os
@@ -5,7 +9,12 @@ import sqlite3
 import tempfile
 import shutil
 
+from pathlib import Path
+
 class TestInitDb(unittest.TestCase):
+    """
+    This class contains the tests for the init_db.py file.
+    """
     def setUp(self):
         self.test_dir = tempfile.mkdtemp()
 
@@ -22,13 +31,8 @@ class TestInitDb(unittest.TestCase):
         mock_connect.return_value = mock_conn
 
         ## This simulates what happens when init_db.py is run
-        from pathlib import Path
-        BASE_DIR = Path(self.test_dir)
-        DEV_DB_PATH = BASE_DIR / 'db.sqlite3'
-        PROD_DB_PATH = Path('/app/database/db.sqlite3')
-
-        ## Dev mode (no DEBUG env var)
-        db_path = DEV_DB_PATH
+        BASE_DIR = Path(self.test_dir) # pylint: disable=invalid-name
+        DEV_DB_PATH = BASE_DIR / 'db.sqlite3' # pylint: disable=invalid-name
 
         os.makedirs(os.path.dirname(DEV_DB_PATH), exist_ok=True)
         conn = sqlite3.connect(DEV_DB_PATH)
@@ -51,15 +55,12 @@ class TestInitDb(unittest.TestCase):
         mock_conn = MagicMock()
         mock_connect.return_value = mock_conn
 
-        from pathlib import Path
-        BASE_DIR = Path(self.test_dir)
-        DEV_DB_PATH = BASE_DIR / 'db.sqlite3'
-        PROD_DB_PATH = Path('/app/database/db.sqlite3')
+        BASE_DIR = Path(self.test_dir) # pylint: disable=invalid-name
+        DEV_DB_PATH = BASE_DIR / 'db.sqlite3' # pylint: disable=invalid-name
 
         ## Debug mode (DEBUG env var present)
-        DEBUG = 'DEBUG' in os.environ
+        DEBUG = 'DEBUG' in os.environ # pylint: disable=invalid-name
         self.assertTrue(DEBUG)
-        db_path = DEV_DB_PATH if DEBUG else PROD_DB_PATH
 
         os.makedirs(os.path.dirname(DEV_DB_PATH), exist_ok=True)
         conn = sqlite3.connect(DEV_DB_PATH)
@@ -84,14 +85,11 @@ class TestInitDb(unittest.TestCase):
         mock_conn = MagicMock()
         mock_connect.return_value = mock_conn
 
-        from pathlib import Path
-        BASE_DIR = Path(self.test_dir)
-        DEV_DB_PATH = BASE_DIR / 'db.sqlite3'
-        PROD_DB_PATH = Path('/app/database/db.sqlite3')
+        BASE_DIR = Path(self.test_dir) # pylint: disable=invalid-name
+        DEV_DB_PATH = BASE_DIR / 'db.sqlite3' # pylint: disable=invalid-name
 
-        DEBUG = 'DEBUG' in os.environ
+        DEBUG = 'DEBUG' in os.environ # pylint: disable=invalid-name
         self.assertFalse(DEBUG)
-        db_path = DEV_DB_PATH if DEBUG else PROD_DB_PATH
 
         os.makedirs(os.path.dirname(DEV_DB_PATH), exist_ok=True)
         conn = sqlite3.connect(DEV_DB_PATH)
@@ -105,5 +103,5 @@ class TestInitDb(unittest.TestCase):
         mock_conn.close.assert_called_once()
         mock_print.assert_called()
 
-if (__name__ == '__main__'):
+if __name__ == '__main__':
     unittest.main()

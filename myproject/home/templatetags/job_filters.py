@@ -2,9 +2,10 @@
 This file contains the filters for the jobs app.
 """
 
-from django import template
 import html
 import ast
+
+from django import template
 
 register = template.Library()
 
@@ -33,7 +34,5 @@ def format_field(value):
         processed_value = html.unescape(processed_value)
         if processed_value:
             processed_value = processed_value.replace('_', ' ').replace('-', ' ').title()
-        return processed_value
-    else:
-        return processed_value
-    
+
+    return processed_value

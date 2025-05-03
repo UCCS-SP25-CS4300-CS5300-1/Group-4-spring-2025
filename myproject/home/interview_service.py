@@ -28,7 +28,11 @@ class InterviewService:
         return api_key
 
     @staticmethod
-    def _parse_questions_from_text(content: str, num_questions: int, generic_questions: list) -> List[str]:
+    def _parse_questions_from_text(content: str, num_questions: int,
+                                   generic_questions: list) -> List[str]:
+        """
+        This function parses the questions from the text.
+        """
         questions = []
         marker_found = False
         list_marker_regex = re.compile(r"^\s*(?:\d+[\.\)]|[-*])\s*")
@@ -60,9 +64,19 @@ class InterviewService:
                 return GENERIC_QUESTIONS
 
             if job_description:
-                prompt = f"Generate {num_questions} specific interview questions for a candidate applying to the following job:\n\n{job_description}\n\nOnly include the questions, with no numbering or additional text. Format as a JSON array."
+                prompt = (
+                    f"Generate {num_questions} specific interview questions "
+                    f"for a candidate applying to the following job:\n\n"
+                    f"{job_description}\n\n"
+                    "Only include the questions, with no numbering or additional text. "
+                    "Format as a JSON array."
+                )
             else:
-                prompt = f"Generate {num_questions} general job interview questions. Only include the questions, with no numbering or additional text. Format as a JSON array."
+                prompt = (
+                    f"Generate {num_questions} general job interview questions. "
+                    "Only include the questions, with no numbering or additional text. "
+                    "Format as a JSON array."
+                )
 
             headers = {
                 "Content-Type": "application/json",
@@ -73,7 +87,10 @@ class InterviewService:
                 "model": "gpt-4o",
                 "messages": [
                     {"role": "system",
-                     "content": "You are an expert interviewer helping to generate relevant job interview questions based on a job description."},
+                     "content": "You are an expert interviewer "
+                               "helping to generate relevant "
+                               "job interview questions "
+                               "based on a job description."},
                     {"role": "user", "content": prompt}
                 ],
                 "temperature": 0.7,
@@ -96,15 +113,22 @@ class InterviewService:
                         end = content.rfind(']') + 1
                         json_content = content[start:end]
                         questions = json.loads(json_content)
-                        if isinstance(questions, list) and all(isinstance(q, str) for q in questions):
+                        if isinstance(questions, list) \
+                        and all(isinstance(q, str) for q in questions):
                             return questions[:num_questions]
                         else:
-                            return InterviewService._parse_questions_from_text(content, num_questions, GENERIC_QUESTIONS)
+                            return InterviewService._parse_questions_from_text(content, 
+                                                                               num_questions, 
+                                                                               GENERIC_QUESTIONS)
                     else:
-                        return InterviewService._parse_questions_from_text(content, num_questions, GENERIC_QUESTIONS)
+                        return InterviewService._parse_questions_from_text(content, 
+                                                                           num_questions, 
+                                                                           GENERIC_QUESTIONS)
 
                 except json.JSONDecodeError:
-                    return InterviewService._parse_questions_from_text(content, num_questions, GENERIC_QUESTIONS)
+                    return InterviewService._parse_questions_from_text(content, 
+                                                                       num_questions, 
+                                                                       GENERIC_QUESTIONS)
 
             return GENERIC_QUESTIONS
 
@@ -112,7 +136,12 @@ class InterviewService:
             return GENERIC_QUESTIONS
 
     @staticmethod
-    def evaluate_response(question: str, response: str, job_description: Optional[str] = None) -> Dict[str, Any]:
+    def evaluate_response(question: str, 
+                          response: str, 
+                          job_description: Optional[str] = None) -> Dict[str, Any]:
+        """
+        This function evaluates the response to the question.
+        """
         generic_feedback = {
             "score": 7,
             "strengths": [
@@ -123,7 +152,9 @@ class InterviewService:
                 "Could provide more specific examples",
                 "Consider addressing how your skills match the job requirements"
             ],
-            "suggestions": "Try to be more specific about your experiences and how they relate to the job requirements. Quantify your achievements when possible."
+            "suggestions": "Try to be more specific about your experiences "
+                           "and how they relate to the job requirements. "
+                           "Quantify your achievements when possible."
         }
 
         try:
