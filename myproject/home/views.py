@@ -1,22 +1,27 @@
+"""
+This module contains the views for the home page.
+"""
+import base64
+import os
+import logging
+
+from django.contrib.auth.decorators import login_required
+from openai import APITimeoutError
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse, HttpResponse
 from django.contrib import messages
-import base64
 import markdown
-import openai
-import os
 from openai import APITimeoutError
-import logging
+import openai
 
-from users.models import Resume
 from home.models import JobListing, UserJobInteraction
-from .forms import SearchJobForm, CoverLetterForm
-from .services import JobicyService
-from .interview_service import InterviewService
-from .cover_letter_service import CoverLetterService
-from django.contrib.auth.decorators import login_required
-
 from users.models import Resume
+from users.models import Resume
+
+from .forms import SearchJobForm, CoverLetterForm # pylint: disable=import-error,no-name-in-module
+from .services import JobicyService # pylint: disable=import-error,no-name-in-module
+from .interview_service import InterviewService # pylint: disable=import-error,no-name-in-module
+from .cover_letter_service import CoverLetterService # pylint: disable=import-error,no-name-in-module
 
 logger = logging.getLogger(__name__)
 

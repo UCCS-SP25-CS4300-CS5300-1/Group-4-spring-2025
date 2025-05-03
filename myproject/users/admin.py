@@ -45,35 +45,36 @@ class CustomUserAdmin(BaseUserAdmin):
             return '-'
     get_ai_status.short_description = 'AI Access'
 
-    def make_active(self, request, queryset):
+    def make_active(self, request, queryset): # pylint: disable=unused-argument
         """
         This function marks the selected users as active.
         """
+
         queryset.update(is_active=True)
     make_active.short_description = "Mark selected users as active"
 
-    def make_inactive(self, request, queryset):
+    def make_inactive(self, request, queryset): # pylint: disable=unused-argument
         """
         This function marks the selected users as inactive.
         """
         queryset.update(is_active=False)
     make_inactive.short_description = "Mark selected users as inactive"
 
-    def make_staff(self, request, queryset):
+    def make_staff(self, request, queryset): # pylint: disable=unused-argument
         """
         This function gives staff privileges to the selected users.
         """
         queryset.update(is_staff=True)
     make_staff.short_description = "Give staff privileges to selected users"
 
-    def remove_staff(self, request, queryset):
+    def remove_staff(self, request, queryset): # pylint: disable=unused-argument
         """
         This function removes staff privileges from the selected users.
         """
         queryset.update(is_staff=False)
     remove_staff.short_description = "Remove staff privileges from selected users"
 
-    def whitelist_for_ai(self, request, queryset):
+    def whitelist_for_ai(self, request, queryset): # pylint: disable=unused-argument
         """
         This function grants AI access to the selected users.
         """
@@ -81,7 +82,7 @@ class CustomUserAdmin(BaseUserAdmin):
             Profile.objects.filter(user=user).update(whitelisted_for_ai=True)
     whitelist_for_ai.short_description = "Grant AI access to selected users"
 
-    def remove_ai_whitelist(self, request, queryset):
+    def remove_ai_whitelist(self, request, queryset): # pylint: disable=unused-argument
         """
         This function removes AI access from the selected users.
         """

@@ -50,4 +50,4 @@ class Resume(models.Model):
     ai_feedback = models.TextField(blank=True, null=True)
 
     def __str__(self):
-        return f"Resume {self.id}"
+        return f"Resume {self.id}" # pylint: disable=no-member

@@ -1,3 +1,7 @@
+"""
+This module contains the InterviewService class, which is used to generate interview questions
+and evaluate candidate responses.
+"""
 import os
 import json
 import re
@@ -14,10 +18,17 @@ GENERIC_QUESTIONS = [
 ]
 
 class InterviewService:
+    """
+    This class contains the InterviewService class, which is used to generate interview questions
+    and evaluate candidate responses.
+    """
     API_URL = "https://api.openai.com/v1/chat/completions"
 
     @staticmethod
     def get_api_key():
+        """
+        This method gets the API key from the environment variable.
+        """
         api_key = os.environ.get('OPENAI_API_KEY')
 
 
@@ -31,14 +42,13 @@ class InterviewService:
     def _parse_questions_from_text(content: str, num_questions: int,
                                    generic_questions: list) -> List[str]:
         """
-        This function parses the questions from the text.
+        This method parses the questions from the text.
         """
         questions = []
         marker_found = False
         list_marker_regex = re.compile(r"^\s*(?:\d+[\.\)]|[-*])\s*")
 
-        lines = content.split('\n')
-        for line in lines:
+        for line in content.split('\n'):
             line = line.strip()
             if line and not line.startswith(('Here', 'These', 'The following', '```', '[', '{')):
                 clean_line = list_marker_regex.sub('', line).strip()
@@ -48,15 +58,16 @@ class InterviewService:
                     questions.append(clean_line)
 
         if not questions or (questions and not marker_found):
-             if len(questions) == 1 and not marker_found:
-                 return questions[:num_questions]
-             else:
-                 return generic_questions
-        else:
-             return questions[:num_questions]
+            return questions[:num_questions] if len(questions) == 1 \
+                and not marker_found else generic_questions
+
+        return questions[:num_questions]
 
     @staticmethod
     def generate_interview_questions(job_description: str, num_questions: int = 5) -> List[str]:
+        """
+        This method generates interview questions.
+        """
         try:
             api_key = InterviewService.get_api_key()
 
@@ -100,7 +111,8 @@ class InterviewService:
             response = requests.post(
                 InterviewService.API_URL,
                 headers=headers,
-                json=data
+                json=data,
+                timeout=10
             )
 
             if response.status_code == 200:
@@ -116,28 +128,20 @@ class InterviewService:
                         if isinstance(questions, list) \
                         and all(isinstance(q, str) for q in questions):
                             return questions[:num_questions]
-                        else:
-                            return InterviewService._parse_questions_from_text(content, 
-                                                                               num_questions, 
+
+                        return InterviewService._parse_questions_from_text(content,
+                                                                               num_questions,
                                                                                GENERIC_QUESTIONS)
-                    else:
-                        return InterviewService._parse_questions_from_text(content, 
-                                                                           num_questions, 
-                                                                           GENERIC_QUESTIONS)
-
                 except json.JSONDecodeError:
-                    return InterviewService._parse_questions_from_text(content, 
-                                                                       num_questions, 
+                    return InterviewService._parse_questions_from_text(content,
+                                                                       num_questions,
                                                                        GENERIC_QUESTIONS)
-
             return GENERIC_QUESTIONS
-
-        except Exception as e:
+        except Exception: # pylint: disable=broad-exception-caught
             return GENERIC_QUESTIONS
-
     @staticmethod
-    def evaluate_response(question: str, 
-                          response: str, 
+    def evaluate_response(question: str, # pylint: disable=too-many-locals
+                          response: str,
                           job_description: Optional[str] = None) -> Dict[str, Any]:
         """
         This function evaluates the response to the question.
@@ -157,7 +161,7 @@ class InterviewService:
                            "Quantify your achievements when possible."
         }
 
-        try:
+        try: # pylint: disable=too-many-nested-blocks
             api_key = InterviewService.get_api_key()
 
             if not api_key:
@@ -168,7 +172,12 @@ class InterviewService:
                 context += f"Job Description: {job_description}\n\n"
             context += f"Candidate Response: {response}\n\n"
 
-            prompt = context + "Evaluate this interview response. Provide: 1) a score from 1-10, 2) a list of strengths, 3) a list of areas to improve, and 4) concrete suggestions for improvement. Format your response as a JSON object with keys: 'score', 'strengths' (array), 'areas_to_improve' (array), and 'suggestions' (string)."
+            prompt = context + "Evaluate this interview response. \
+            Provide: 1) a score from 1-10, 2) a list of strengths, \
+            3) a list of areas to improve, and 4) concrete suggestions \
+            for improvement. Format your response as a JSON object with \
+            keys: 'score', 'strengths' (array), 'areas_to_improve' (array), \
+            and 'suggestions' (string)."
 
             headers = {
                 "Content-Type": "application/json",
@@ -178,7 +187,8 @@ class InterviewService:
             data = {
                 "model": "gpt-4o",
                 "messages": [
-                    {"role": "system", "content": "You are an expert interview coach evaluating candidate responses."},
+                    {"role": "system", "content": "You are an expert \
+                     interview coach evaluating candidate responses."},
                     {"role": "user", "content": prompt}
                 ],
                 "temperature": 0.7,
@@ -188,7 +198,8 @@ class InterviewService:
             response = requests.post(
                 InterviewService.API_URL,
                 headers=headers,
-                json=data
+                json=data,
+                timeout=10
             )
 
             if response.status_code == 200:
@@ -214,13 +225,13 @@ class InterviewService:
                             feedback['score'] = 7
 
                         return feedback
-                    else:
-                        return generic_feedback
 
-                except json.JSONDecodeError as e:
                     return generic_feedback
+
+                except json.JSONDecodeError:
+                    pass
 
             return generic_feedback
 
-        except Exception as e:
+        except Exception: # pylint: disable=broad-exception-caught
             return generic_feedback

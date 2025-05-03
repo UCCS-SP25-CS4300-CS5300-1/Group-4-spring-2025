@@ -1,32 +1,41 @@
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth import login, authenticate, logout
-from django.contrib import messages
-from pypdf import PdfReader
-from docx import Document
-from django.http import FileResponse, Http404
-from django.utils.http import url_has_allowed_host_and_scheme
+"""
+This module contains the views for the users app.
+"""
+
+import os
+
 from django.conf import settings
+from django.contrib import messages
+from django.contrib.auth import login, authenticate, logout
+from django.contrib.auth.decorators import login_required
+from django.http import FileResponse, Http404
+from django.shortcuts import render, redirect, get_object_or_404
+from django.utils.http import url_has_allowed_host_and_scheme
+from docx import Document
+from openai import APITimeoutError
+import openai
+from pypdf import PdfReader
+import markdown
 
 from .forms import (UserRegistrationForm, UserLoginForm, EditProfileForm,
                     ResumeUploadForm, EditPreferenceForm)
 from .models import Profile, Resume
-import os
-import openai
-import markdown
-from openai import APITimeoutError
+
 RESUME_GUIDE_TEXT = None
 
-if (os.environ.get('OPENAI_API_KEY')):
+if os.environ.get('OPENAI_API_KEY'):
     openai.api_key = os.environ.get('OPENAI_API_KEY')
 else:
     openai.api_key = 'sk-proj-1234567890'
 
 
 def register_view(request):
-    if (request.method == 'POST'):
+    """
+    This view allows users to register.
+    """
+    if request.method == 'POST':
         form = UserRegistrationForm(request.POST)
-        if (form.is_valid()):
+        if form.is_valid():
             user = form.save()
             login(request, user)
             messages.success(request, f"Account created for {user.username}!")
@@ -38,14 +47,17 @@ def register_view(request):
 
 
 def login_view(request):
-    if (request.method == 'POST'):
+    """
+    This view allows users to login.
+    """
+    if request.method == 'POST':
         form = UserLoginForm(request, data=request.POST)
-        if (form.is_valid()):
+        if form.is_valid():
             username = form.cleaned_data.get('username')
             password = form.cleaned_data.get('password')
             user = authenticate(username=username, password=password)
-            if (user is not None):
-                if (not hasattr(user, 'profile')):
+            if user is not None:
+                if not hasattr(user, 'profile'):
                     Profile.objects.create(user=user)
 
                 login(request, user)
@@ -63,6 +75,9 @@ def login_view(request):
 
 
 def logout_view(request):
+    """
+    This view allows users to logout.
+    """
     logout(request)
     messages.info(request, "You have successfully logged out.")
     return redirect('index')
@@ -70,7 +85,10 @@ def logout_view(request):
 
 @login_required
 def update_user(request):
-    if (not hasattr(request.user, 'profile')):
+    """
+    This view allows users to update their profile.
+    """
+    if not hasattr(request.user, 'profile'):
         profile = Profile.objects.create(user=request.user)
     else:
         profile = request.user.profile
@@ -91,20 +109,15 @@ def update_user(request):
 
 @login_required
 def upload_resume(request):
-    if (not hasattr(request.user, 'profile')):
-        profile = Profile.objects.create(user=request.user)
-    else:
-        profile = request.user.profile
-
+    """
+    This view allows users to upload their resumes.
+    """
     if request.method == 'POST':
         resume_form = ResumeUploadForm(request.POST, request.FILES)
 
         if resume_form.is_valid():
             resume_instance = resume_form.save(commit=False)
             resume_instance.user = request.user
-
-            file = resume_instance.resume
-            filename = file.name.lower()
 
             resume_instance.save()
             messages.success(request,
@@ -121,20 +134,25 @@ def upload_resume(request):
 
 @login_required
 def delete_resume(request):
+    """
+    This view allows users to delete their uploaded resumes.
+    """
     try:
-        resumes = Resume.objects.filter(user=request.user)
+        resumes = Resume.objects.filter(user=request.user) # pylint: disable=no-member
         for resume in resumes:
             resume.resume.delete()
             resume.delete()
         messages.info(request, "You have removed your resume.")
-    except Resume.DoesNotExist:
+    except Resume.DoesNotExist: # pylint: disable=no-member
         messages.error(request, "You don't have a resume to delete.")
 
     return redirect('profile')
 
 
 def parse_resume(file):
-
+    """
+    This function parses a resume file and returns the text.
+    """
     file_path = file.path
     filename = file.name.lower()
 
@@ -151,14 +169,17 @@ def parse_resume(file):
             text = "\n".join([p.text for p in doc.paragraphs])
         else:
             text = "Unsupported file type"
-    except Exception as e:
+    except Exception as e: # pylint: disable=broad-exception-caught
         text = f"Error parsing file: {e}"
 
     return text.strip()
 
 
 def load_resume_guide():
-    global RESUME_GUIDE_TEXT
+    """
+    This function loads the resume guide from the file.
+    """
+    global RESUME_GUIDE_TEXT # pylint: disable=global-statement
 
     if RESUME_GUIDE_TEXT is not None:
         return RESUME_GUIDE_TEXT
@@ -173,13 +194,16 @@ def load_resume_guide():
                 page_text = page.extract_text()
                 if page_text:
                     text += page_text + '\n'
-        RESUME_GUIDE_TEXT = text.strip()
+        RESUME_GUIDE_TEXT = text.strip() # pylint: disable=global-statement
         return RESUME_GUIDE_TEXT
-    except Exception as e:
+    except Exception as e: # pylint: disable=broad-exception-caught
         return f"Error loading resume guide: {e}"
 
 
 def get_resume_feedback(resume_text):
+    """
+    This function generates AI feedback for a resume.
+    """
     guide_text = load_resume_guide()
     if "Error loading resume guide:" in guide_text:
         return "Could not generate feedback due to a configuration issue (unable to load guide)."
@@ -189,24 +213,42 @@ def get_resume_feedback(resume_text):
             return "Could not generate feedback: OpenAI API key not configured."
 
         openai.api_key = os.environ.get('OPENAI_API_KEY')
+        system_message = {
+            "role": "system",
+            "content": "You are a helpful resume reviewer. Review the following resume and "
+                       "provide constructive feedback. Focus on general advice, formatting, "
+                       "keyword optimization, and job relevance."
+        }
+        guide_message = {
+            "role": "user",
+            "content": f"Here are some helpful guidelines to follow when \
+                  giving the feedback:\n\n{guide_text}"
+        }
+        resume_message = {
+            "role": "user",
+            "content": f"Please review this resume:\n\n{resume_text}"
+        }
         response = openai.chat.completions.create(
             model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": "You are a helpful resume reviewer. Review the following resume and provide constructive feedback. Focus on general advice, formatting, keyword optimization, and job relevance."},
-                {"role": "user", "content": f"Here are some helpful guidelines to follow when giving the feedback:\n\n{guide_text}"},
-                {"role": "user", "content": f"Please review this resume:\n\n{resume_text}"}
-            ],
+            messages=[system_message, guide_message, resume_message],
             timeout=60.0,
         )
         return markdown.markdown(response.choices[0].message.content)
-    except APITimeoutError as e:
-        return markdown.markdown("## Error\n\nError generating AI feedback: The request to the AI service timed out after 60 seconds. This might be due to a long resume or temporary high load on the AI service. Please try again later.")
-    except Exception as ex:
+    except APITimeoutError:
+        return markdown.markdown(
+            "## Error\n\nError generating AI feedback: The request to the AI service "
+            "timed out after 60 seconds. This might be due to a long resume or temporary "
+            "high load on the AI service. Please try again later."
+        )
+    except Exception as ex: # pylint: disable=broad-exception-caught
         return markdown.markdown(f"## Error\n\nError generating AI feedback: {ex}")
 
 
 @login_required
 def resume_feedback(request, resume_id):
+    """
+    This view allows users to view their resume feedback.
+    """
     resume = get_object_or_404(Resume, id=resume_id, user=request.user)
     profile = request.user.profile
     feedback_html = ""
@@ -214,25 +256,30 @@ def resume_feedback(request, resume_id):
 
     try:
         if not (request.user.is_superuser or profile.whitelisted_for_ai):
-            error_message = markdown.markdown("## Eligibility\n\nYou are not currently eligible for AI feedback. Please contact support if you believe this is an error.")
+            error_message = \
+markdown.markdown("## Eligibility\n\nYou are not currently eligible for AI feedback. \
+                  Please contact support if you believe this is an error.")
         else:
             if resume.ai_feedback:
                 feedback_html = resume.ai_feedback
             else:
                 resume_text = parse_resume(resume.resume)
                 if "Error parsing file:" in resume_text or "Unsupported file type" in resume_text:
-                    error_message = markdown.markdown(f"## Error\n\nCould not parse resume file: {resume_text}")
+                    error_message = \
+                    markdown.markdown(f"## Error\n\nCould not parse resume file: {resume_text}")
                 else:
                     feedback_html = get_resume_feedback(resume_text)
-                    if feedback_html.startswith("## Error") or "Could not generate feedback" in feedback_html:
+                    if feedback_html.startswith("## Error") or \
+                    "Could not generate feedback" in feedback_html:
                         error_message = feedback_html
                         feedback_html = ""
                     else:
                         resume.ai_feedback = feedback_html
                         resume.save()
 
-    except Exception as e:
-        error_message = markdown.markdown(f"## Error\n\nAn unexpected server error occurred while generating feedback: {str(e)}")
+    except Exception as e: # pylint: disable=broad-exception-caught
+        error_message = markdown.markdown(f"## Error\n\nAn unexpected server error \
+                                          occurred while generating feedback: {str(e)}")
 
     context = {
         'resume': resume,
@@ -244,12 +291,15 @@ def resume_feedback(request, resume_id):
 
 @login_required
 def profile_view(request):
-    if (not hasattr(request.user, 'profile')):
-        profile = Profile.objects.create(user=request.user)
+    """
+    This view allows users to view their profile.
+    """
+    if not hasattr(request.user, 'profile'):
+        profile = Profile.objects.create(user=request.user) # pylint: disable=no-member
     else:
         profile = request.user.profile
 
-    latest_resume = Resume.objects.filter(user=request.user).order_by('-uploaded_at').first()
+    latest_resume = Resume.objects.filter(user=request.user).order_by('-uploaded_at').first() # pylint: disable=no-member
 
     context = {
         'user': request.user,
@@ -262,7 +312,10 @@ def profile_view(request):
 
 @login_required
 def update_preferences(request):
-    if (not hasattr(request.user, 'profile')):
+    """
+    This view allows users to update their preferences.
+    """
+    if not hasattr(request.user, 'profile'):
         profile = Profile.objects.create(user=request.user)
     else:
         profile = request.user.profile
@@ -271,12 +324,15 @@ def update_preferences(request):
         profile_form = EditPreferenceForm(request.POST, instance=profile)
 
         if profile_form.is_valid():
-            if 'remote_preference' in request.POST and request.POST['remote_preference'] == 'True':
+            if 'remote_preference' in request.POST and \
+            request.POST['remote_preference'] == 'True':
                 profile_form.instance.remote_preference = True
 
-            if 'salary_min_preference' in request.POST and request.POST['salary_min_preference']:
+            if 'salary_min_preference' in request.POST and \
+            request.POST['salary_min_preference']:
                 try:
-                    profile_form.instance.salary_min_preference = int(request.POST['salary_min_preference'])
+                    profile_form.instance.salary_min_preference = \
+                        int(request.POST['salary_min_preference'])
                 except ValueError:
                     pass
 
@@ -291,19 +347,24 @@ def update_preferences(request):
 
 @login_required
 def view_resume(request, resume_id):
+    """
+    This view allows users to view their uploaded resumes.
+    """
     resume = get_object_or_404(Resume, id=resume_id)
 
-    if (resume.user != request.user and not request.user.is_superuser):
+    if resume.user != request.user and not request.user.is_superuser:
         raise Http404("Resume not found")
 
     try:
         filename = resume.resume.name.lower()
-        content_type = 'application/pdf' if filename.endswith('.pdf') else 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-        response = FileResponse(open(resume.resume.path, 'rb'), content_type=content_type)
+        content_type = 'application/pdf' if filename.endswith('.pdf') \
+else 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        response = FileResponse(open(resume.resume.path, 'rb'), content_type=content_type) # pylint: disable=consider-using-with
 
         disposition = 'inline' if filename.endswith('.pdf') else 'attachment'
-        response['Content-Disposition'] = f'{disposition}; filename="{os.path.basename(resume.resume.name)}"'
+        response['Content-Disposition'] = f'{disposition}; \
+            filename="{os.path.basename(resume.resume.name)}"'
 
         return response
-    except FileNotFoundError:
-        raise Http404("Resume file not found")
+    except FileNotFoundError: # pylint: disable=raise-missing-from
+        raise Http404("Resume file not found") # pylint: disable=raise-missing-from

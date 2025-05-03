@@ -89,7 +89,7 @@ def recommendations(request):
 
     return render(request, 'jobs/ai_recommendations.html', context)
 
-def search_jobs(request):
+def search_jobs(request): ## pylint: disable=too-many-branches
     """
     This function searches for jobs based on the user's preferences.
     """
