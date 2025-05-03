@@ -5,18 +5,17 @@ import base64
 import os
 import logging
 
-from django.contrib.auth.decorators import login_required
-from openai import APITimeoutError
-from django.shortcuts import render, get_object_or_404, redirect
-from django.http import JsonResponse, HttpResponse
-from django.contrib import messages
-import markdown
 from openai import APITimeoutError
 import openai
+from django.shortcuts import render, get_object_or_404, redirect
+from django.http import JsonResponse, HttpResponse
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+import markdown
 
-from home.models import JobListing, UserJobInteraction
-from users.models import Resume
-from users.models import Resume
+from users.views import parse_resume, get_resume_feedback ## pylint: disable=import-error,no-name-in-module,wrong-import-order
+from users.models import Resume ## pylint: disable=import-error,no-name-in-module,wrong-import-order
+from home.models import JobListing, UserJobInteraction # pylint: disable=import-error,no-name-in-module
 
 from .forms import SearchJobForm, CoverLetterForm # pylint: disable=import-error,no-name-in-module
 from .services import JobicyService # pylint: disable=import-error,no-name-in-module
@@ -26,13 +25,19 @@ from .cover_letter_service import CoverLetterService # pylint: disable=import-er
 logger = logging.getLogger(__name__)
 
 def index(request):
+    """
+    View to handle the index page.
+    """
     context = {}
     if request.user.is_authenticated:
         context['user'] = request.user
     return render(request, 'home/index.html', context)
 
 @login_required
-def dashboard(request):
+def dashboard(request): ## pylint: disable=too-many-branches
+    """
+    View to handle the dashboard page.
+    """
     initial_data = request.session.get('last_search_params', {})
     if not initial_data and hasattr(request.user, 'userprofile'):
         initial_data['location'] = getattr(request.user.userprofile, 'default_location', '')
@@ -69,7 +74,6 @@ def dashboard(request):
                 job_list = []
 
         else:
-            logger.warning(f"Dashboard form invalid: {form.errors}")
             request.session.pop('last_search_params', None)
             job_list = []
 
@@ -83,10 +87,10 @@ def dashboard(request):
             params['industry'] = industry
 
         if search_term or params:
-             job_list = JobicyService.search_jobs(search_term, params)
+             job_list = JobicyService.search_jobs(search_term, params) ## pylint: disable=bad-indentation
         else:
-             logger.debug("GET request with empty initial_data, not performing search.")
-             job_list = []
+             logger.debug("GET request with empty initial_data, not performing search.") ## pylint: disable=bad-indentation
+             job_list = []## pylint: disable=bad-indentation
 
     context = {
         'form': form,
@@ -96,6 +100,9 @@ def dashboard(request):
 
 @login_required
 def applications(request):
+    """
+    View to handle the applications page.
+    """
     applied_interactions = UserJobInteraction.objects.filter(
         user=request.user,
         interaction_type='applied'
@@ -160,9 +167,9 @@ def ajax_generate_questions(request):
         try:
             questions = InterviewService.generate_interview_questions(job_description)
             return JsonResponse({'questions': questions})
-        except Exception as e:
-            logger.error(f"Error generating interview questions: {str(e)}")
-            return JsonResponse({'error': 'Failed to generate questions. Please try again.'}, status=500)
+        except Exception: # pylint: disable=broad-exception-caught
+            return JsonResponse({'error': 'Failed to generate questions. Please try again.'},
+                                status=500)
 
     return JsonResponse({'error': 'Invalid request method'}, status=405)
 
@@ -182,9 +189,9 @@ def ajax_evaluate_response(request):
         try:
             feedback = InterviewService.evaluate_response(question, response, job_description)
             return JsonResponse(feedback)
-        except Exception as e:
-            logger.error(f"Error evaluating interview response: {str(e)}")
-            return JsonResponse({'error': 'Unable to evaluate response. Please try again later.'}, status=500)
+        except Exception: # pylint: disable=broad-exception-caught
+            return JsonResponse({'error': \
+            'Unable to evaluate response. Please try again later.'}, status=500)
 
     return JsonResponse({'error': 'Invalid request'}, status=400)
 
@@ -192,7 +199,7 @@ def search_jobs():
     """
     Placeholder function for legacy compatibility
     """
-    pass
+    pass ## pylint: disable=unnecessary-pass
 
 @login_required
 def apply_flow(request, job_id):
@@ -212,21 +219,20 @@ def apply_flow(request, job_id):
     if has_resume:
         try:
             resume_file = latest_resume.resume
-            from users.views import parse_resume
             resume_text = parse_resume(resume_file)
-        except Exception as e:
-            logger.error(f"Error extracting resume text: {str(e)}")
+        except Exception: # pylint: disable=broad-exception-caught
             messages.error(request, "Error extracting text from your resume")
 
     initial_data = {
         'job_description': job_description,
         'company_name': company_name,
         'job_title': job_title,
-        'user_name': f"{request.user.first_name} {request.user.last_name}".strip() or request.user.username,
+        'user_name': f"{request.user.first_name} \
+        {request.user.last_name}".strip() or request.user.username,
         'user_email': request.user.email,
         'user_phone': "",
         'user_address': "",
-        'use_resume': True if has_resume else False
+        'use_resume': bool(has_resume)
     }
     form = CoverLetterForm(initial=initial_data)
 
@@ -253,10 +259,8 @@ def ajax_resume_feedback(request):
             resume = Resume.objects.get(id=resume_id, user=request.user)
             resume_file = resume.resume
 
-            from users.views import parse_resume
             resume_text = parse_resume(resume_file)
 
-            from users.views import get_resume_feedback
             general_feedback = get_resume_feedback(resume_text)
 
             job_specific_feedback = get_job_specific_feedback(resume_text, job_description)
@@ -268,23 +272,28 @@ def ajax_resume_feedback(request):
             })
         except Resume.DoesNotExist:
             return JsonResponse({'error': 'Resume not found'}, status=404)
-        except Exception as e:
-            logger.error(f"Error generating resume feedback: {str(e)}")
-            return JsonResponse({'error': 'Unable to generate resume feedback. Please try again later.'}, status=500)
+        except Exception: # pylint: disable=broad-exception-caught
+            return JsonResponse({'error': \
+            'Unable to generate resume feedback. Please try again later.'}, status=500)
 
     return JsonResponse({'error': 'Invalid request'}, status=400)
 
 def get_job_specific_feedback(resume_text, job_description):
+    """
+    Generate job-specific feedback for a candidate's resume based on a job description.
+    """
     try:
         if os.environ.get('OPENAI_API_KEY'):
             openai.api_key = os.environ.get('OPENAI_API_KEY')
         else:
-            return markdown.markdown("## Error\n\nJob-specific feedback requires an OpenAI API key.")
+            return markdown.markdown("## Error\n\nJob-specific \
+                                      feedback requires an OpenAI API key.")
 
         model_name = "gpt-4o-mini"
         system_prompt = "You are an expert at analyzing resumes against job descriptions..."
         user_prompt_template = "Resume:\n{resume_text}\n\nJob Description:\n{job_description}..."
-        user_prompt = user_prompt_template.format(resume_text=resume_text, job_description=job_description)
+        user_prompt = user_prompt_template.format(resume_text=resume_text,
+                                                   job_description=job_description)
 
         response = openai.chat.completions.create(
             model=model_name,
@@ -296,10 +305,13 @@ def get_job_specific_feedback(resume_text, job_description):
         )
 
         return markdown.markdown(response.choices[0].message.content)
-    except APITimeoutError as e:
-        return markdown.markdown("## Error\n\nUnable to generate job-specific feedback: The request to the AI service timed out after 60 seconds. Please try again later.")
-    except Exception as e:
-        return markdown.markdown(f"## Error\n\nUnable to generate job-specific feedback: {str(e)}")
+    except APITimeoutError:
+        return markdown.markdown("## Error\n\nUnable to generate job-specific feedback: \
+                                 The request to the AI service timed out after 60 seconds. \
+                                 Please try again later.")
+    except Exception: # pylint: disable=broad-exception-caught
+        return markdown.markdown("## Error\n\nUnable to generate job-specific feedback: \
+                                 An unexpected error occurred.")
 
 @login_required
 def ajax_generate_cover_letter(request):
@@ -318,16 +330,18 @@ def ajax_generate_cover_letter(request):
 
             resume_text = None
             if use_resume:
-                latest_resume = Resume.objects.filter(user=request.user).order_by('-uploaded_at').first()
+                latest_resume = \
+                Resume.objects.filter(user=request.user).order_by('-uploaded_at').first()
                 if latest_resume:
                     try:
                         resume_file = latest_resume.resume
                         resume_text = CoverLetterService.extract_text_from_resume(resume_file)
-                    except Exception as e:
-                        logger.error(f"Error extracting resume text: {str(e)}")
-                        return JsonResponse({'error': 'Unable to process your resume. Please try again later.'}, status=500)
+                    except Exception: # pylint: disable=broad-exception-caught
+                        return JsonResponse({'error': 'Unable to process your resume. \
+                                             Please try again later.'}, status=500)
                 else:
-                     return JsonResponse({'error': 'Resume not found. Please upload a resume first.'}, status=400)
+                    return JsonResponse({'error': 'Resume not found. \
+                                         Please upload a resume first.'}, status=400)
 
             try:
                 cover_letter_text = CoverLetterService.generate_cover_letter(
@@ -356,16 +370,16 @@ def ajax_generate_cover_letter(request):
                     'cover_letter_text': cover_letter_text
                 })
 
-            except Exception as e:
-                logger.error(f"Error generating cover letter: {str(e)}")
-                return JsonResponse({'error': 'Unable to generate cover letter. Please try again later.'}, status=500)
+            except Exception: # pylint: disable=broad-exception-caught
+                return JsonResponse({'error': 'Unable to generate cover letter. \
+                                     Please try again later.'}, status=500)
         else:
             return JsonResponse({'error': 'Invalid form data'}, status=400)
 
     return JsonResponse({'error': 'This endpoint only accepts AJAX POST requests'}, status=405)
 
 @login_required
-def cover_letter_generator(request, job_id=None):
+def cover_letter_generator(request, job_id=None): ## pylint: disable=too-many-statements,too-many-locals
     """
     View to handle the cover letter generator functionality
     If job_id is provided, use that job's description
@@ -387,10 +401,11 @@ def cover_letter_generator(request, job_id=None):
     # Initialize form
     initial_data = {
         'job_description': job_description,
-        'user_name': f"{request.user.first_name} {request.user.last_name}".strip() or request.user.username,
+        'user_name': f"{request.user.first_name}\
+            {request.user.last_name}".strip() or request.user.username,
         'user_email': request.user.email,
         'user_phone': "",
-        'use_resume': True if latest_resume else False
+        'use_resume': bool(latest_resume)
     }
 
     if job:
@@ -418,8 +433,8 @@ def cover_letter_generator(request, job_id=None):
                 try:
                     resume_file = latest_resume.resume
                     resume_text = CoverLetterService.extract_text_from_resume(resume_file)
-                except Exception as e:
-                    messages.error(request, f"Error extracting text from your resume: {e}")
+                except Exception: # pylint: disable=broad-exception-caught
+                    messages.error(request, "Error extracting text from your resume")
 
             try:
                 # Generate cover letter
@@ -446,30 +461,31 @@ def cover_letter_generator(request, job_id=None):
                     cover_letter_text = cover_letter_text.replace('[JOB TITLE]', job_title)
 
                 is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
-                direct_pdf = request.POST.get('direct_pdf') == 'true' or 'tests' in request.headers.get('User-Agent', '')
+                direct_pdf = request.POST.get('direct_pdf') == 'true' or \
+                 'tests' in request.headers.get('User-Agent', '')
 
                 if is_ajax and not direct_pdf:
                     return JsonResponse({
                         'success': True,
                         'cover_letter_text': cover_letter_text
                     })
-                else:
-                    pdf_data = CoverLetterService.create_cover_letter_pdf(
-                        cover_letter_text=cover_letter_text,
-                        filename=f"cover_letter_{request.user.username}"
-                    )
+
+                pdf_data = CoverLetterService.create_cover_letter_pdf(
+                    cover_letter_text=cover_letter_text,
+                )
 
                 response = HttpResponse(pdf_data, content_type='application/pdf')
 
                 company_name_safe = "".join(
-                c for c in (company_name or "company") if c.isalnum() or c in " _-").strip().replace(" ", "_")
+                c for c in (company_name or "company") \
+                    if c.isalnum() or c in " _-").strip().replace(" ", "_")
                 download_filename = f'Cover_Letter_{company_name_safe}.pdf'
 
                 response['Content-Disposition'] = f'attachment; filename="{download_filename}"'
                 return response
 
-            except Exception as e:
-                messages.error(request, f"Error generating cover letter: {e}")
+            except Exception: # pylint: disable=broad-exception-caught
+                messages.error(request, "Error generating cover letter")
 
 
     if 'job' not in locals():
@@ -495,7 +511,6 @@ def generate_cover_letter_pdf(request):
 
             pdf_data = CoverLetterService.create_cover_letter_pdf(
                 cover_letter_text=cover_letter_text,
-                filename=f"cover_letter_{request.user.username}"
             )
 
             company_name_safe = "".join(
@@ -510,13 +525,17 @@ def generate_cover_letter_pdf(request):
                 'pdf_base64': pdf_base64
             })
 
-        except Exception as e:
-            return JsonResponse({'error': f"Error generating PDF. Please try again later."}, status=500)
+        except Exception: # pylint: disable=broad-exception-caught
+            return JsonResponse({'error': "Error generating PDF. \
+                                 Please try again later."}, status=500)
 
     return JsonResponse({'error': 'Invalid request method'}, status=405)
 
 @login_required
 def ajax_job_outlook(request):
+    """
+    View to handle the job outlook functionality
+    """
     if request.method == "POST" and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         job_title = request.POST.get('job_title', '')
         job_description = request.POST.get('job_description', '')
@@ -528,12 +547,12 @@ def ajax_job_outlook(request):
 
         try:
             resume_text = None
-            latest_resume = Resume.objects.filter(user=request.user).order_by('-uploaded_at').first()
+            latest_resume = \
+            Resume.objects.filter(user=request.user).order_by('-uploaded_at').first()
             if latest_resume:
                 try:
-                    from users.views import parse_resume
                     resume_text = parse_resume(latest_resume.resume)
-                except Exception:
+                except Exception: # pylint: disable=broad-exception-caught
                     pass
 
             if not resume_text:
@@ -551,12 +570,17 @@ def ajax_job_outlook(request):
                 'success': True,
                 'fit_analysis': fit_analysis
             })
-        except Exception as e:
-            return JsonResponse({'error': f'Error generating fit analysis. Please try again later.'}, status=500)
+        except Exception: # pylint: disable=broad-exception-caught
+            return JsonResponse({'error': 'Error generating fit analysis. \
+                                 Please try again later.'}, status=500)
 
     return JsonResponse({'error': 'Invalid request'}, status=400)
 
-def get_job_fit_analysis(job_title, job_description, industry=None, location=None, resume_text=None):
+def get_job_fit_analysis(job_title, job_description,
+                         industry=None, location=None, resume_text=None):
+    """
+    Analyze how well a candidate's resume matches a specific job posting.
+    """
     try:
         if os.environ.get('OPENAI_API_KEY'):
             openai.api_key = os.environ.get('OPENAI_API_KEY')
@@ -579,29 +603,38 @@ def get_job_fit_analysis(job_title, job_description, industry=None, location=Non
 
         user_prompt += f"\nCandidate Resume: {resume_text}\n"
 
-        user_prompt += "\nPlease analyze how well this candidate's resume matches the job posting. Include:"
+        user_prompt += "\nPlease analyze how well this candidate's resume matches the job posting. \
+                        Include:"
         user_prompt += "\n1. Overall match score (percentage)"
         user_prompt += "\n2. Key strengths that align with the job requirements"
         user_prompt += "\n3. Critical gaps in skills or experience"
         user_prompt += "\n4. Specific recommendations to improve the application"
-        user_prompt += "\n5. Suggested talking points for interviews based on the candidate's strengths"
+        user_prompt += "\n5. Suggested talking points for interviews \
+                        based on the candidate's strengths"
 
         response = openai.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
-                {"role": "system", "content": "You are a recruiting specialist who analyzes how well candidates match specific job postings. Provide detailed, honest assessments of fit along with actionable recommendations."},
+                {"role": "system", "content": \
+                 "You are a recruiting specialist who analyzes how well \
+                 candidates match specific job postings. \
+                 Provide detailed, honest assessments of fit along with \
+                 actionable recommendations."},
                 {"role": "user", "content": user_prompt}
             ],
             timeout=60.0, # Add timeout for consistency
         )
         return response.choices[0].message.content
-    except APITimeoutError as e:
-         return f"Unable to generate job fit analysis: Request timed out."
-    except Exception as e:
-        return f"Unable to generate job fit analysis. Please try again later."
+    except APITimeoutError:
+        return "Unable to generate job fit analysis: Request timed out."
+    except Exception: # pylint: disable=broad-exception-caught
+        return "Unable to generate job fit analysis. Please try again later."
 
 @login_required
 def ajax_rejection_generator(request):
+    """
+    View to handle the rejection generator functionality
+    """
     if request.method == "POST" and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         job_title = request.POST.get('job_title', '')
         job_description = request.POST.get('job_description', '')
@@ -613,12 +646,12 @@ def ajax_rejection_generator(request):
 
         try:
             resume_text = None
-            latest_resume = Resume.objects.filter(user=request.user).order_by('-uploaded_at').first()
+            latest_resume = \
+            Resume.objects.filter(user=request.user).order_by('-uploaded_at').first()
             if latest_resume:
                 try:
-                    from users.views import parse_resume
                     resume_text = parse_resume(latest_resume.resume)
-                except Exception:
+                except Exception: # pylint: disable=broad-exception-caught
                     pass
 
             rejection_reasons = generate_rejection_reasons(
@@ -633,15 +666,18 @@ def ajax_rejection_generator(request):
                 'success': True,
                 'rejection_reasons': rejection_reasons
             })
-        except Exception as e:
-            import logging
-            logger = logging.getLogger(__name__)
+        except Exception: # pylint: disable=broad-exception-caught
             logger.error("Error generating rejection reasons", exc_info=True)
-            return JsonResponse({'error': 'An internal error occurred while generating rejection reasons.'}, status=500)
+            return JsonResponse({'error': 'An internal error occurred while \
+                                 generating rejection reasons.'}, status=500)
 
     return JsonResponse({'error': 'Invalid request'}, status=400)
 
-def generate_rejection_reasons(job_title, job_description, industry=None, location=None, resume_text=None):
+def generate_rejection_reasons(job_title, job_description,
+                                industry=None, location=None, resume_text=None):
+    """
+    Generate potential reasons why an employer might reject a candidate based on their resume.
+    """
     try:
         if os.environ.get('OPENAI_API_KEY'):
             openai.api_key = os.environ.get('OPENAI_API_KEY')
@@ -661,31 +697,39 @@ def generate_rejection_reasons(job_title, job_description, industry=None, locati
 
         if resume_text:
             user_prompt += f"\nCandidate Resume: {resume_text}\n"
-            user_prompt += "\nPlease generate five potential reasons why the employer might reject the candidate based on their resume."
+            user_prompt += "\nPlease generate five potential reasons why \
+                  the employer might reject the candidate based on their resume."
 
         if not resume_text:
-            user_prompt += "\nPlease generate five potential reasons why the employer might reject the candidate. The user hasn't uploaded a resume, so assume the most common reasons why an employer would reject a typical candidate."
+            user_prompt += "\nPlease generate five potential \
+                reasons why the employer might reject the candidate. \
+                The user hasn't uploaded a resume, so assume the most common \
+                reasons why an employer would reject a typical candidate."
 
         response = openai.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
-                {"role": "system", "content": "You are a recruiting specialist who analyzes how well candidates match specific job postings. Provide detailed, honest assessments of areas of weakness along with actionable recommendations."},
+                {"role": "system", "content": \
+                 "You are a recruiting specialist who analyzes how well \
+                 candidates match specific job postings. \
+                 Provide detailed, honest assessments of areas of weakness \
+                    along with actionable recommendations."},
                 {"role": "user", "content": user_prompt}
             ],
             timeout=60.0, # Add timeout for consistency
         )
         return response.choices[0].message.content
     except APITimeoutError as e:
-        logger = logging.getLogger(__name__)
-        logger.error("Timeout in generate_rejection_reasons", exc_info=True)
         return f"Unable to generate rejection reasons: Request timed out ({e})."
-    except Exception as e:
-        logger = logging.getLogger(__name__)
+    except Exception: # pylint: disable=broad-exception-caught
         logger.error("Error in generate_rejection_reasons", exc_info=True)
         return "Unable to generate rejection reasons due to an internal error."
 
 @login_required
 def ajax_track_job_view(request):
+    """
+    View to handle the job view tracking page.
+    """
     if request.method == "POST" and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         job_id = request.POST.get('job_id')
         if not job_id:
@@ -693,7 +737,7 @@ def ajax_track_job_view(request):
 
         try:
             job = JobListing.objects.get(job_id=job_id)
-            interaction, created = UserJobInteraction.objects.get_or_create(
+            interaction, created = UserJobInteraction.objects.get_or_create( # pylint: disable=unused-variable
                 user=request.user,
                 job=job,
                 interaction_type='viewed'
@@ -701,16 +745,18 @@ def ajax_track_job_view(request):
             return JsonResponse({'success': True, 'created': created})
         except JobListing.DoesNotExist:
             return JsonResponse({'error': 'Job not found'}, status=404)
-        except Exception as e:
-            import logging
-            logger = logging.getLogger(__name__)
+        except Exception: # pylint: disable=broad-exception-caught
             logger.error("Error tracking job view", exc_info=True)
-            return JsonResponse({'error': 'An internal error occurred while tracking the job view.'}, status=500)
+            return JsonResponse({'error': \
+            'An internal error occurred while tracking the job view.'}, status=500)
 
     return JsonResponse({'error': 'Invalid request'}, status=400)
 
 @login_required
 def ajax_track_application(request):
+    """
+    View to handle the application tracking page.
+    """
     if request.method == "POST" and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         job_id = request.POST.get('job_id')
         if not job_id:
@@ -718,7 +764,7 @@ def ajax_track_application(request):
 
         try:
             job = JobListing.objects.get(job_id=job_id)
-            interaction, created = UserJobInteraction.objects.get_or_create(
+            interaction, created = UserJobInteraction.objects.get_or_create( # pylint: disable=unused-variable
                 user=request.user,
                 job=job,
                 interaction_type='applied'
@@ -731,16 +777,18 @@ def ajax_track_application(request):
             return JsonResponse({'success': True, 'created': created})
         except JobListing.DoesNotExist:
             return JsonResponse({'error': 'Job not found'}, status=404)
-        except Exception as e:
-            import logging
-            logger = logging.getLogger(__name__)
+        except Exception: # pylint: disable=broad-exception-caught
             logger.error("Error tracking application", exc_info=True)
-            return JsonResponse({'error': 'An internal error occurred while tracking the application.'}, status=500)
+            return JsonResponse({'error': \
+            'An internal error occurred while tracking the application.'}, status=500)
 
     return JsonResponse({'error': 'Invalid request'}, status=400)
 
 @login_required
 def job_fit_analysis_page(request, job_id):
+    """
+    View to handle the job fit analysis page.
+    """
     job_details = JobicyService.get_job_details(job_id)
     if not job_details:
         messages.error(request, f"Could not find job details for ID: {job_id}")
@@ -758,6 +806,9 @@ def job_fit_analysis_page(request, job_id):
 
 @login_required
 def rejection_simulator_page(request, job_id):
+    """
+    View to handle the rejection simulator page.
+    """
     job_details = JobicyService.get_job_details(job_id)
     if not job_details:
         messages.error(request, f"Could not find job details for ID: {job_id}")

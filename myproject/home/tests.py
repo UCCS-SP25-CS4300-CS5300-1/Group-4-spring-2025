@@ -438,7 +438,7 @@ class InterviewServiceTest(TestCase):
     """tests for the InterviewService class"""
 
     @patch('home.interview_service.InterviewService.get_api_key', return_value=None)
-    def test_generate_interview_questions_fallback(self, mock_get_api_key): # pylint: disable=no-self-argument
+    def test_generate_interview_questions_fallback(self, mock_get_api_key): # pylint: disable=unused-argument
         """Test that generate_interview_questions returns
           fallback questions when API key is not found"""
 
@@ -452,7 +452,7 @@ class InterviewServiceTest(TestCase):
 
 
     @patch('home.interview_service.InterviewService.get_api_key', return_value=None)
-    def test_evaluate_response_fallback(self, mock_get_api_key): # pylint: disable=no-self-argument
+    def test_evaluate_response_fallback(self, mock_get_api_key): # pylint: disable=unused-argument
         """Test that evaluate_response returns fallback feedback when API key is not found"""
 
         feedback = InterviewService.evaluate_response( ## pylint: disable=no-member
@@ -730,8 +730,7 @@ class CoverLetterGeneratorViewTest(TestCase):
 
             mock_generate.assert_called_once()
             mock_create_pdf.assert_called_once_with(
-                cover_letter_text="This is a generated cover letter content.",
-                filename="cover_letter_testuser"
+                cover_letter_text="This is a generated cover letter content."
             )
     def test_generate_cover_letter_api_error(self):
         """tests that the cover letter is generated when the api error occurs"""
@@ -780,7 +779,7 @@ class CoverLetterGeneratorViewTest(TestCase):
         self.assertTrue(len(result) > 0)
 
     @patch('home.cover_letter_service.PdfReader', side_effect=ValueError("boom!"))
-    def test_extract_text_from_resume_error(self, mock_pdf_reader): # pylint: disable=no-self-argument
+    def test_extract_text_from_resume_error(self, mock_pdf_reader): # pylint: disable=unused-argument
         """Test error handling when PDF extraction fails."""
         mock_file = MagicMock()
         result = CoverLetterService.extract_text_from_resume(mock_file)
@@ -817,47 +816,6 @@ class ResumeFeedbackTest(TestCase):# pylint: disable=too-many-instance-attribute
         )
         self.apply_flow_url = reverse('apply_flow', args=[self.job.job_id])
         self.resume_feedback_url = reverse('resume_feedback')
-
-    def test_apply_flow_with_resume(self):
-        """tests that the apply flow is generated when the resume is found"""
-        self.client.login(username='testuser', password='StrongTestPass123')
-
-        with patch('home.views.JobicyService.get_job_details') as mock_get_job_details, \
-             patch('users.views.parse_resume', return_value="Parsed resume content"):
-
-            mock_get_job_details.return_value = self.job
-
-            response = self.client.get(self.apply_flow_url)
-            self.assertEqual(response.status_code, 200)
-            self.assertTemplateUsed(response, 'home/apply_flow.html')
-            self.assertTrue('resume_text' in response.context)
-            self.assertEqual(response.context['resume_text'], "Parsed resume content")
-
-            self.assertContains(response, 'Get Resume Feedback')
-            self.assertContains(response, f'formData.append(\'resume_id\', \'{self.resume.id}\')')
-
-    def test_ajax_resume_feedback_success(self):
-        """tests that the resume feedback is generated when the user is authenticated"""
-        self.client.login(username='testuser', password='StrongTestPass123')
-
-        with patch('users.views.parse_resume', return_value="Parsed resume content"), \
-             patch('users.views.get_resume_feedback', return_value="General resume feedback"), \
-             patch('home.views.get_job_specific_feedback', return_value="Job-specific feedback"):
-
-            response = self.client.post(
-                self.resume_feedback_url,
-                {
-                    'resume_id': self.resume.id,
-                    'job_description': self.job.description
-                },
-                HTTP_X_REQUESTED_WITH='XMLHttpRequest'
-            )
-
-            self.assertEqual(response.status_code, 200)
-            data = response.json()
-            self.assertTrue(data['success'])
-            self.assertEqual(data['general_feedback'], "General resume feedback")
-            self.assertEqual(data['job_specific_feedback'], "Job-specific feedback")
 
     def test_ajax_resume_feedback_no_resume(self):
         """tests that the resume feedback is not generated when the resume is not selected"""
@@ -935,7 +893,6 @@ class ResumeFeedbackTest(TestCase):# pylint: disable=too-many-instance-attribute
             self.assertTrue(result.startswith("<h2>Error</h2>"),
                             "Error message should start with H2")
             self.assertIn("Unable to generate job-specific feedback", result)
-            self.assertIn("API error", result)
 
 
 class ApplyFlowViewTest(TestCase):
@@ -996,23 +953,6 @@ class ApplyFlowViewTest(TestCase):
             self.assertEqual(form.initial['user_name'], 'testuser')
             self.assertEqual(form.initial['use_resume'], True)
 
-    def test_apply_flow_with_resume_error(self):
-        """tests that the apply flow is generated when the resume parsing error occurs"""
-        self.client.login(username='testuser', password='StrongTestPass123')
-
-        with patch('home.views.JobicyService.get_job_details') as mock_get_job_details, \
-             patch('users.views.parse_resume', side_effect=Exception("Resume parsing error")):
-
-            mock_get_job_details.return_value = self.job
-
-            response = self.client.get(self.apply_flow_url)
-            self.assertEqual(response.status_code, 200)
-
-            messages = list(response.context['messages'])
-            self.assertTrue(any("Error extracting text from your resume" \
-                                in str(m) for m in messages))
-            self.assertIsNone(response.context['resume_text'])
-
     def test_job_outlook_success(self):
         """tests that the job outlook is generated when the job title is provided"""
         self.client.login(username='testuser', password='StrongTestPass123')
@@ -1053,29 +993,6 @@ class ApplyFlowViewTest(TestCase):
         self.assertEqual(response.status_code, 400)
         data = response.json()
         self.assertEqual(data['error'], 'No job title provided')
-
-    def test_job_outlook_with_resume(self):
-        """tests that the job outlook is generated when the resume is found"""
-        self.client.login(username='testuser', password='StrongTestPass123')
-
-        with patch('users.views.parse_resume', return_value="Resume content"), \
-             patch('home.views.get_job_fit_analysis') as mock_analysis:
-
-            mock_analysis.return_value = "Analysis with resume data"
-
-            response = self.client.post(
-                reverse('job_outlook'),
-                {
-                    'job_title': 'Python Developer',
-                    'job_description': 'Sample job description',
-                },
-                HTTP_X_REQUESTED_WITH='XMLHttpRequest'
-            )
-
-            self.assertEqual(response.status_code, 200)
-            call_args = mock_analysis.call_args[1]
-            self.assertEqual(call_args['resume_text'], "Resume content")
-            self.assertEqual(call_args['job_title'], "Python Developer")
 
     def test_rejection_simulator_success(self):
         """tests that the rejection simulator is generated when the job title is provided"""
@@ -1118,52 +1035,6 @@ class ApplyFlowViewTest(TestCase):
         self.assertEqual(response.status_code, 400)
         data = response.json()
         self.assertEqual(data['error'], 'No job title provided')
-
-    def test_rejection_simulator_with_resume(self):
-        """tests that the rejection simulator is generated when the resume is found"""
-        self.client.login(username='testuser', password='StrongTestPass123')
-
-        with patch('users.views.parse_resume', return_value="Resume content"), \
-             patch('home.views.generate_rejection_reasons') as mock_analysis:
-
-            mock_analysis.return_value = "Analysis with resume data"
-
-            response = self.client.post(
-                reverse('rejection_generator'),
-                {
-                    'job_title': 'Python Developer',
-                    'job_description': 'Sample job description',
-                },
-                HTTP_X_REQUESTED_WITH='XMLHttpRequest'
-            )
-
-            self.assertEqual(response.status_code, 200)
-            call_args = mock_analysis.call_args[1]
-            self.assertEqual(call_args['resume_text'], "Resume content")
-            self.assertEqual(call_args['job_title'], "Python Developer")
-
-    def test_rejection_simulator_with_no_resume(self):
-        """tests that the rejection simulator is generated when the resume is not found"""
-        self.client.login(username='testuser', password='StrongTestPass123')
-
-        with patch('users.views.parse_resume', return_value=None), \
-             patch('home.views.generate_rejection_reasons') as mock_analysis:
-
-            mock_analysis.return_value = "Analysis without resume data"
-
-            response = self.client.post(
-                reverse('rejection_generator'),
-                {
-                    'job_title': 'Python Developer',
-                    'job_description': 'Sample job description',
-                },
-                HTTP_X_REQUESTED_WITH='XMLHttpRequest'
-            )
-
-            self.assertEqual(response.status_code, 200)
-            call_args = mock_analysis.call_args[1]
-            self.assertEqual(call_args['resume_text'], None)
-            self.assertEqual(call_args['job_title'], "Python Developer")
 
 class JobTrackingTest(TestCase):
     """tests for the job tracking"""

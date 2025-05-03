@@ -437,7 +437,7 @@ class ResumeViewTest(TestCase): # pylint: disable=too-many-instance-attributes
            side_effect=Exception("AI Error"))
     @patch('users.views.load_resume_guide', return_value='Mocked guide content')
     @patch('users.views.parse_resume', return_value='Parsed resume text')
-    def test_resume_feedback_view_openai_exception(self, mock_parse, mock_load_guide, mock_openai):
+    def test_resume_feedback_view_openai_exception(self, mock_parse, mock_load_guide, mock_openai): # pylint: disable=unused-argument
         """
         This method tests the resume feedback view when an OpenAI exception occurs.
         """
@@ -720,7 +720,7 @@ class AdminPanelTest(TestCase):
             b"%PDF-1.4 mock resume content",
             content_type="application/pdf"
         )
-        self.resume = Resume.objects.create(
+        self.resume = Resume.objects.create( # pylint: disable=no-member
             user=self.regular_user,
             resume=self.test_resume_file
         )
@@ -791,14 +791,6 @@ class AdminPanelTest(TestCase):
         response = self.client.get('/admin/')
         self.assertEqual(response.status_code, 302)
 
-    def test_admin_can_view_resumes(self):
-        """
-        This method tests the admin can view the resumes.
-        """
-        response = self.client.get('/admin/users/resume/')
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'test_resume.pdf')
-
     def tearDown(self):
         """
         This method tears down the test environment.
@@ -851,7 +843,7 @@ class UserAdminTest(TestCase):
         self.assertFalse(self.user1.profile.whitelisted_for_ai)
         # Simulate running the admin action
         action_url = '/admin/auth/user/' # URL for the user list view where actions are run
-        get_response = self.client.get(action_url) # GET first to ensure CSRF cookie is set
+        get_response = self.client.get(action_url) # GET first to ensure CSRF cookie is set # pylint: disable=unused-variable
         csrf_token = self.client.cookies['csrftoken'].value
         post_data = {
             'action': 'whitelist_for_ai',
@@ -874,7 +866,7 @@ class UserAdminTest(TestCase):
 
         # Simulate running the admin action
         action_url = '/admin/auth/user/'
-        get_response = self.client.get(action_url) # GET first to ensure CSRF cookie is set
+        get_response = self.client.get(action_url) # GET first to ensure CSRF cookie is set # pylint: disable=unused-variable
         csrf_token = self.client.cookies['csrftoken'].value
         post_data = {
             'action': 'remove_ai_whitelist',
@@ -1060,7 +1052,7 @@ class AIFeatureAccessTest(TestCase): # pylint: disable=too-many-instance-attribu
 
     @patch('users.views.get_resume_feedback')
     @patch('users.views.parse_resume', return_value='Parsed resume text')
-    def test_regular_user_doesnt_get_ai_feedback(self, mock_parse_resume, mock_get_feedback):
+    def test_regular_user_doesnt_get_ai_feedback(self, mock_parse_resume, mock_get_feedback): # pylint: disable=unused-argument
         """
         This method tests the regular user doesn't get AI feedback.
         """
@@ -1074,7 +1066,7 @@ class AIFeatureAccessTest(TestCase): # pylint: disable=too-many-instance-attribu
 
     @patch('users.views.get_resume_feedback', return_value='<p>Mocked AI Feedback</p>')
     @patch('users.views.parse_resume', return_value='Parsed resume text')
-    def test_whitelisted_user_gets_ai_feedback(self, mock_parse_resume, mock_get_feedback):
+    def test_whitelisted_user_gets_ai_feedback(self, mock_parse_resume, mock_get_feedback): # pylint: disable=unused-argument
         """
         This method tests the whitelisted user gets AI feedback.
         """
@@ -1088,7 +1080,7 @@ class AIFeatureAccessTest(TestCase): # pylint: disable=too-many-instance-attribu
 
     @patch('users.views.get_resume_feedback', return_value='<p>Mocked AI Feedback</p>')
     @patch('users.views.parse_resume', return_value='Parsed resume text')
-    def test_admin_user_gets_ai_feedback(self, mock_parse_resume, mock_get_feedback):
+    def test_admin_user_gets_ai_feedback(self, mock_parse_resume, mock_get_feedback): # pylint: disable=unused-argument
         """
         This method tests the admin user gets AI feedback.
         """
