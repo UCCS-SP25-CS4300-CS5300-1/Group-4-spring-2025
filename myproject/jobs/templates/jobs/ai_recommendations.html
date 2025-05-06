@@ -312,7 +312,17 @@
 
 
 
-        {% if job_list %}
+        {% if no_information %}
+            <div class="no-results">
+                <div class="empty-state">
+                    <i class="fas fa-info-circle fa-3x"></i>
+                    <h3>Information Needed</h3>
+                    <p>{{ no_information }}</p>
+                    <a href="{% url 'profile' %}" class="btn btn-primary mt-3">Update Profile</a>
+                    <a href="{% url 'upload_resume' %}" class="btn btn-secondary mt-3">Upload Resume</a>
+                </div>
+            </div>
+        {% elif job_list %}
             <div class="jobs-container">
                 <div class="jobs-header">
                     <h3>Search Results</h3>

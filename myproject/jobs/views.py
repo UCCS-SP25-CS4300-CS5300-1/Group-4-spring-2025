@@ -24,7 +24,7 @@ def get_job_ai_recommendation(user):
 
 
         if has_resume:
-            resume_text = CoverLetterService.extract_text_from_resume(latest_resume)
+            resume_text = CoverLetterService.extract_text_from_resume(latest_resume.resume)
             user_content = f"Resume: \n{resume_text}"
             user_content += f"\n\nIndustry: \n{user.profile.industry_preference}"
             user_content += f"\n\nSalary: \n{user.profile.salary_min_preference}\n"
@@ -69,23 +69,32 @@ def recommendations(request):
     user = request.user
     params = {}
     context = {}
-
     job_list = []
+
     latest_resume = Resume.objects.filter(user=user).order_by('-uploaded_at').first()
 
-    if latest_resume is None and user.profile.industry_preference == '' and \
-        user.profile.salary_min_preference == '':
+    has_sufficient_info = not (latest_resume is None and
+                               user.profile.industry_preference == '' and
+                               user.profile.salary_min_preference == '')
+
+    if not has_sufficient_info:
         no_information_provided_string = "We need more information about your"
         no_information_provided_string += "skills and preferences. "
         no_information_provided_string += "Please consider uploading a resume or"
         no_information_provided_string += "updating your profile "
         no_information_provided_string += "to include industry or salary"
-        context = {'no_information:': no_information_provided_string}
+        context = {'no_information': no_information_provided_string}
     else:
         ai_response = get_job_ai_recommendation(user)
-        job_list = JobicyService.search_jobs(ai_response, params)
-        context = {'job_list': job_list}
 
+        try:
+            job_list = JobicyService.search_jobs(ai_response, params)
+        except Exception: # pylint: disable=broad-exception-caught
+            job_list = []
+
+        context = {'job_list': job_list}
+        if not job_list and 'no_information' not in context:
+            context['no_jobs'] = "No jobs found for your search. Please try again."
 
     return render(request, 'jobs/ai_recommendations.html', context)
 
