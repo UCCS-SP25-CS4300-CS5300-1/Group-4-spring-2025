@@ -1,7 +1,7 @@
 annotated-types==0.7.0
 anyio==4.9.0
 asgiref==3.8.1
-astroid==3.3.9
+astroid==3.3.10
 Authlib==1.5.2
 bandit==1.8.3
 certifi==2025.1.31
