@@ -13,7 +13,7 @@ updates:
       include: "scope"
     target-branch: "main"
     reviewers:
-      - "Bikatr7"
+      - "ktbilyeu"
 
   - package-ecosystem: "github-actions"
     directory: "/"
